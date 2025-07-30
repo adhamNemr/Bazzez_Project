@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/dash.css">
+    <title>Dashboard</title>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="header">
+            <h1>Welcome to BAZEZZ</h1>
+        </header>
+        <section class="orders-section">
+            <div class="orders-links">
+                <a href="./cashier.html" class="order-link">Cashier</a>
+                <a href="./manage_orders.html" class="order-link">Orders</a>
+                <a href="./products.html" class="order-link">Products</a>
+                <a href="./daily.html" class="order-link">Daily Sales</a>
+                <a href="./monthly.html" class="order-link">Monthly Sales</a>
+                <a href="./inventory.html" class="order-link">Inventory</a>
+                <a href="./discount.html" class="order-link">Discounts</a>
+                <a href="./analytics.html" class="order-link">Analytics</a>
+            </div>
+        </section>
+        <main class="main-content">
+            <!-- ✅ إدخال كود الخصومات -->
+            <section class="card">
+                <h2>Manage Customers</h2>
+                <button id="openCustomersPage">Customers</button>
+            </section>
+
+            <!-- ✅ عدد الطلبات -->
+            <section class="card">
+                <h2>Total Orders</h2>
+                <p id="orderCount">Loading</p>
+            </section>
+
+            <!-- ✅ زر Restart Server -->
+            <section class="card">
+                <h2>System Control</h2>
+                <button id="restartServerBtn">Restart Server</button>
+            </section>
+        </main>
+        <footer class="footer">
+            <button id="logoutBtn">Logout</button>
+        </footer>
+    </div>
+
+    <script src="./js/dashboard.js" defer></script>
+    <script src="./js/auth.js"></script>
+
+</body>
+</html>
