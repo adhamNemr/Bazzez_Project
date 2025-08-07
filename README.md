@@ -67,7 +67,7 @@ npm install
 ```env
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=MARWANroma77@#$
+DB_PASSWORD=*********
 DB_NAME=pos_system
 JWT_SECRET=mySuperSecretKey123
 ```
