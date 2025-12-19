@@ -2,6 +2,22 @@
   "name": "bazzez-pos",
   "version": "1.0.0",
   "description": "BAZEZZ POS System",
+  "author": "Adham Nemr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adhamNemr/Bazzez_Project.git"
+  },
+  "keywords": [
+    "pos",
+    "point-of-sale",
+    "restaurant",
+    "electron",
+    "nodejs",
+    "express",
+    "mysql",
+    "javascript"
+  ],
   "main": "main.js",
   "scripts": {
     "start": "node server.js",

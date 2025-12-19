@@ -1,5 +1,12 @@
 # 🍽️ Advanced Restaurant Management System
 
+![License](https://img.shields.io/github/license/adhamNemr/Bazzez_Project?style=flat-square)
+![Issues](https://img.shields.io/github/issues/adhamNemr/Bazzez_Project?style=flat-square)
+![Stars](https://img.shields.io/github/stars/adhamNemr/Bazzez_Project?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey?style=flat-square)
+![Node](https://img.shields.io/badge/Node.js-v16%2B-green?style=flat-square)
+
+
 A full-featured restaurant management system that includes:
 - Order management (Takeaway / Delivery)
 - Customer management
