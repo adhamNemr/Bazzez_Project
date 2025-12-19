@@ -1,0 +1,205 @@
+/* 🔹 حاوية شريط التنقل العلوي */
+/* 🔹 حاوية شريط التنقل العلوي */
+.top-nav-container {
+    /* Match the VISUAL width of the container (90% + 4rem padding) */
+    width: calc(90% + 4rem); 
+    max-width: 1364px; /* 1300px + 64px (2rem left + 2rem right) */
+    margin: 0 auto; /* Center horizontally */
+    padding: 20px 0; /* Vertical padding only */
+    padding-left: 0; /* Button starts at the very edge */
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: transparent;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 100;
+}
+
+/* 🔹 زر العودة بتصميم متناسق مع الماك (Glassy & Minimal) */
+.nav-back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 12px; /* Rounded corners like macOS Big Sur+ */
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-width: 100px; 
+    max-width: 147px;
+    justify-content: center;
+}
+
+.nav-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.nav-back-btn:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 🔹 زر تسجيل الخروج (Consistent Base Style, Red on Hover) */
+.nav-logout-btn {
+    /* Inherit base styles from .nav-back-btn */
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-logout-btn:hover {
+    background: rgba(255, 255, 255, 0.2); /* Match back button hover */
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.nav-back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* 🔹 تعديل للـ Body لضمان الترتيب العمودي */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+}
+
+/* 🔹 تحسينات عامة للـ UI */
+button {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+input, select {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #ff4500;
+    box-shadow: 0 0 8px rgba(255, 69, 0, 0.3);
+}
+
+/* 🔹 Toast Notification Styles */
+/* 🔹 Toast Notification Styles */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.toast {
+    min-width: 320px;
+    max-width: 400px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(30, 30, 30, 0.85); /* Dark glassy background */
+    backdrop-filter: blur(15px); /* Strong blur */
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    opacity: 0;
+    transform: translateX(50px);
+    animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.toast-icon {
+    font-size: 20px;
+    margin-top: 2px;
+}
+
+.toast-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toast-message {
+    font-weight: 500;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+    transition: color 0.2s;
+    margin-left: 5px;
+    margin-top: 2px;
+}
+
+.toast-close:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Status Colors (Left Border or Icon Color) */
+.toast.success .toast-icon { color: #34c759; }
+.toast.error .toast-icon { color: #ff3b30; }
+.toast.warning .toast-icon { color: #ffcc00; }
+.toast.info .toast-icon { color: #0a84ff; }
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(100%); /* Slide out to the right */
+    }
+}
+
+/* Smooth collapse animation for removal */
+.toast.removing {
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.4s ease-out; /* Smoothly transition layout properties */
+}

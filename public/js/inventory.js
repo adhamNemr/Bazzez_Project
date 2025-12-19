@@ -172,11 +172,11 @@ function checkForAlerts(data) {
     });
 
     if (lowStockItems.length > 0) {
-        alert(`⚠️ تنبيه: المنتجات التالية منخفضة المخزون:\n${lowStockItems.map(item => `- ${item.name}: ${item.quantity}`).join('\n')}`);
+        showToast(`⚠️ تنبيه: المنتجات التالية منخفضة المخزون:\n${lowStockItems.map(item => `- ${item.name}: ${item.quantity}`).join('\n')}`, 'warning');
     }
 
     if (nearExpiryItems.length > 0) {
-        alert(`⏰ تنبيه: المنتجات التالية تقترب من تاريخ الصلاحية:\n${nearExpiryItems.map(item => `- ${item.name}: ${formatDate(item.expiryDate)}`).join('\n')}`);
+        showToast(`⏰ تنبيه: المنتجات التالية تقترب من تاريخ الصلاحية:\n${nearExpiryItems.map(item => `- ${item.name}: ${formatDate(item.expiryDate)}`).join('\n')}`, 'warning');
     }
 }
 
@@ -217,7 +217,7 @@ addForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const token = localStorage.getItem("token");
     if (!token) {
-        alert("يجب تسجيل الدخول لإضافة منتجات");
+        showToast("يجب تسجيل الدخول لإضافة منتجات", "error");
         return;
     }
 
@@ -227,7 +227,7 @@ addForm.addEventListener("submit", (event) => {
     const expiryDate = document.getElementById("product-expiry").value;
 
     if (!name || isNaN(quantity) || isNaN(cost) || !expiryDate) {
-        alert("يرجى ملء جميع الحقول بشكل صحيح");
+        showToast("يرجى ملء جميع الحقول بشكل صحيح", "warning");
         return;
     }
 
@@ -266,13 +266,13 @@ function selectProduct(product) {
 
 editButton.addEventListener("click", () => {
     if (!selectedProductId) {
-        alert("يرجى اختيار منتج للتعديل");
+        showToast("يرجى اختيار منتج للتعديل", "warning");
         return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-        alert("يجب تسجيل الدخول لإجراء التعديلات");
+        showToast("يجب تسجيل الدخول لإجراء التعديلات", "error");
         return;
     }
 
@@ -283,7 +283,7 @@ editButton.addEventListener("click", () => {
     const total = quantity * cost;
 
     if (!name || isNaN(quantity) || isNaN(cost) || !expiryDate) {
-        alert("يرجى ملء جميع الحقول بشكل صحيح");
+        showToast("يرجى ملء جميع الحقول بشكل صحيح", "warning");
         return;
     }
 
@@ -307,7 +307,7 @@ editButton.addEventListener("click", () => {
 
 deleteButton.addEventListener("click", () => {
     if (!selectedProductId) {
-        alert("يرجى اختيار منتج للحذف");
+        showToast("يرجى اختيار منتج للحذف", "warning");
         return;
     }
 
@@ -315,7 +315,7 @@ deleteButton.addEventListener("click", () => {
 
     const token = localStorage.getItem("token");
     if (!token) {
-        alert("يجب تسجيل الدخول للحذف");
+        showToast("يجب تسجيل الدخول للحذف", "error");
         return;
     }
 

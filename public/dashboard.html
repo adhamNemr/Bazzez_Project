@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/dash.css">
+    <link rel="stylesheet" href="./css/common.css">
     <title>Dashboard</title>
 </head>
 <body>
+
+    </div>
     <div class="dashboard-container">
         <header class="header">
             <h1>Welcome to BAZEZZ</h1>
@@ -20,16 +23,11 @@
                 <a href="./monthly.html" class="order-link">Monthly Sales</a>
                 <a href="./inventory.html" class="order-link">Inventory</a>
                 <a href="./discount.html" class="order-link">Discounts</a>
+                <a href="./customers.html" class="order-link">Customers</a>
                 <a href="./analytics.html" class="order-link">Analytics</a>
             </div>
         </section>
         <main class="main-content">
-            <!-- ✅ إدخال كود الخصومات -->
-            <section class="card">
-                <h2>Manage Customers</h2>
-                <button id="openCustomersPage">Customers</button>
-            </section>
-
             <!-- ✅ عدد الطلبات -->
             <section class="card">
                 <h2>Total Orders</h2>
@@ -42,8 +40,14 @@
                 <button id="restartServerBtn">Restart Server</button>
             </section>
         </main>
+        <!-- ✅ Logout Button -->
         <footer class="footer">
-            <button id="logoutBtn">Logout</button>
+                <button id="logoutBtn" >
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg> -->
+                    Logout
+                </button>
         </footer>
     </div>
 

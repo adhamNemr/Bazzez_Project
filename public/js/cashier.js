@@ -73,7 +73,7 @@ deliveryPriceSelect.addEventListener('change', () => {
 });
 
 function fetchProducts() {
-    fetch('/products', {
+    fetch('/api/products', {
         headers: { 
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
@@ -100,7 +100,7 @@ function fetchProducts() {
 }
 
 function showMenu(category) {
-    fetch(`/products/${category}`, {
+    fetch(`/api/products/${category}`, {
         method: 'GET',
         headers: { 
             'Content-Type': 'application/json',

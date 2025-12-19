@@ -52,8 +52,8 @@ You can explore and test the full API using Postman:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/adham4/pos_system.git
-cd pos-system/server
+git clone https://github.com/adhamNemr/Bazzez_Project.git
+cd Bazzez_Project/pos-system/server
 ```
 
 ### 2. Install dependencies
@@ -67,9 +67,9 @@ npm install
 ```env
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=MARWANroma77@#$
+DB_PASSWORD=your_password_here
 DB_NAME=pos_system
-JWT_SECRET=mySuperSecretKey123
+JWT_SECRET=your_super_secret_key
 ```
 
 ### 4. Run the server

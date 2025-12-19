@@ -100,15 +100,15 @@ async function saveDiscountCode(event) {
         const data = await response.json();
 
         if (data.success) {
-            alert(data.message);
+            showToast(data.message, "success");
             resetForm();
             fetchDiscountCodes();
         } else {
-            alert(`Failed to save discount code: ${data.message}`);
+            showToast(`Failed to save discount code: ${data.message}`, "error");
         }
     } catch (error) {
         console.error('Error saving discount code:', error);
-        alert('An error occurred while saving the discount code.');
+        showToast('An error occurred while saving the discount code.', "error");
     }
 }
 
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const discountId = document.getElementById("discount-id")?.value; // 🔍 احصل على ID الخصم المحدد
 
             if (!discountId) {
-                alert("❌ الرجاء تحديد كود خصم لحذفه!");
+                showToast("❌ الرجاء تحديد كود خصم لحذفه!", "warning");
                 return;
             }
 
@@ -220,15 +220,15 @@ function deleteDiscount(discountId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert("✅ تم حذف كود الخصم بنجاح!");
+            showToast("✅ تم حذف كود الخصم بنجاح!", "success");
             location.reload(); // 🔄 تحديث الصفحة بعد الحذف
         } else {
-            alert(`❌ خطأ: ${data.message}`);
+            showToast(`❌ خطأ: ${data.message}`, "error");
         }
     })
     .catch(error => {
         console.error("❌ فشل حذف كود الخصم:", error);
-        alert("❌ حدث خطأ أثناء الحذف، حاول مجددًا!");
+        showToast("❌ حدث خطأ أثناء الحذف، حاول مجددًا!", "error");
     });
 }
 

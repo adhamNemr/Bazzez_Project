@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
 
     if (userRole !== "manager") {
-        alert("🚫 ليس لديك صلاحية لدخول هذه الصفحة!");
+        // showToast("🚫 ليس لديك صلاحية لدخول هذه الصفحة!", "error");
         window.location.href = "/cashier.html";
         return;
     }
@@ -77,14 +77,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 sessionStorage.setItem("serverRestartSuccess", "true");
                 window.location.reload(); // إعادة تحميل الصفحة بعد التشغيل الناجح
             } else {
-                alert("❌ لم يتم تشغيل السيرفر بعد إعادة التشغيل. حاول مرة أخرى.");
+                showToast("❌ لم يتم تشغيل السيرفر بعد إعادة التشغيل. حاول مرة أخرى.", "error");
                 restartBtn.textContent = originalText;
                 restartBtn.disabled = false;
             }
 
         } catch (error) {
             console.error("❌ Error restarting server:", error);
-            alert("❌ حدث خطأ أثناء إعادة تشغيل السيرفر.");
+            showToast("❌ حدث خطأ أثناء إعادة تشغيل السيرفر.", "error");
             restartBtn.textContent = "Restart Server";
             restartBtn.disabled = false;
         }
@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // ✅ عرض رسالة النجاح بعد إعادة التحميل فقط إذا كانت العملية ناجحة
     if (sessionStorage.getItem("serverRestartSuccess") === "true") {
-        alert("✅ Server restarted successfully!");
+        showToast("✅ Server restarted successfully!", "success");
         sessionStorage.removeItem("serverRestartSuccess");
     }
 });

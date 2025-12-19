@@ -30,7 +30,7 @@ const fetchCustomers = async () => {
         });
     } catch (error) {
         console.error("❌ خطأ أثناء جلب العملاء:", error);
-        alert("⚠️ حدث خطأ أثناء جلب البيانات");
+        showToast("⚠️ حدث خطأ أثناء جلب البيانات", "error");
     }
 };
 
@@ -74,7 +74,7 @@ addButton.addEventListener("click", async () => {
     const address = customerAddressInput.value.trim();
 
     if (!name || !phone) {
-        alert("⚠️ الاسم ورقم الهاتف مطلوبين");
+        showToast("⚠️ الاسم ورقم الهاتف مطلوبين", "warning");
         return;
     }
 
@@ -87,21 +87,21 @@ addButton.addEventListener("click", async () => {
 
         const data = await res.json();
         if (res.ok) {
-            alert("✅ تم إضافة العميل بنجاح");
+            showToast("✅ تم إضافة العميل بنجاح", "success");
             fetchCustomers(); 
             resetForm();
         } else {
-            alert(data.message || "⚠️ فشل في إضافة العميل");
+            showToast(data.message || "⚠️ فشل في إضافة العميل", "error");
         }
     } catch (error) {
         console.error("❌ خطأ أثناء إضافة العميل:", error);
-        alert("⚠️ حدث خطأ أثناء إضافة العميل");
+        showToast("⚠️ حدث خطأ أثناء إضافة العميل", "error");
     }
 });
 
 editButton.addEventListener("click", async () => {
     if (!selectedCustomerId) {
-        alert("⚠️ حدد عميلًا لتحديثه");
+        showToast("⚠️ حدد عميلًا لتحديثه", "warning");
         return;
     }
 
@@ -110,7 +110,7 @@ editButton.addEventListener("click", async () => {
     const address = customerAddressInput.value.trim();
 
     if (!name || !phone) {
-        alert("⚠️ الاسم ورقم الهاتف مطلوبين");
+        showToast("⚠️ الاسم ورقم الهاتف مطلوبين", "warning");
         return;
     }
 
@@ -123,21 +123,21 @@ editButton.addEventListener("click", async () => {
 
         const data = await res.json();
         if (res.ok) {
-            alert("✅ تم تحديث بيانات العميل بنجاح");
+            showToast("✅ تم تحديث بيانات العميل بنجاح", "success");
             fetchCustomers(); 
             resetForm();
         } else {
-            alert(data.message || "⚠️ فشل في تحديث البيانات");
+            showToast(data.message || "⚠️ فشل في تحديث البيانات", "error");
         }
     } catch (error) {
         console.error("❌ خطأ أثناء تحديث العميل:", error);
-        alert("⚠️ حدث خطأ أثناء تحديث العميل");
+        showToast("⚠️ حدث خطأ أثناء تحديث العميل", "error");
     }
 });
 
 deleteButton.addEventListener("click", async () => {
     if (!selectedCustomerId) {
-        alert("⚠️ حدد عميلًا للحذف");
+        showToast("⚠️ حدد عميلًا للحذف", "warning");
         return;
     }
 
@@ -150,15 +150,15 @@ deleteButton.addEventListener("click", async () => {
 
         const data = await res.json();
         if (res.ok) {
-            alert("🗑️ تم حذف العميل بنجاح");
+            showToast("🗑️ تم حذف العميل بنجاح", "success");
             fetchCustomers(); 
             resetForm();
         } else {
-            alert(data.message || "⚠️ فشل في حذف العميل");
+            showToast(data.message || "⚠️ فشل في حذف العميل", "error");
         }
     } catch (error) {
         console.error("❌ خطأ أثناء حذف العميل:", error);
-        alert("⚠️ حدث خطأ أثناء حذف العميل");
+        showToast("⚠️ حدث خطأ أثناء حذف العميل", "error");
     }
 });
 

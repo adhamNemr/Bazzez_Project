@@ -9,14 +9,12 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    overflow: hidden; /* منع التمرير */
 }
 
 /* 🔹 الحاوية الرئيسية */
 .container {
     width: 90%;
     max-width: 1300px;
-    height: 95vh; /* جعل الحاوية تأخذ أغلب الشاشة */
     background: #222;
     padding: 2rem;
     border-radius: 10px;
@@ -24,7 +22,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    overflow-y: auto; /* تمكين التمرير داخل الحاوية */
 }
 
 /* 🔹 العنوان الرئيسي */

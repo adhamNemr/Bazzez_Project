@@ -47,12 +47,12 @@ async function closeDay() {
         const result = await response.json();
 
         if (result.success) {
-            alert("✅ تم إغلاق اليوم بنجاح!");
+            showToast("✅ تم إغلاق اليوم بنجاح!", "success");
             location.reload(); // تحديث الصفحة بعد الإغلاق
         }
     } catch (error) {
         console.error("❌ Error closing the day:", error);
-        alert("❌ خطأ في النظام!");
+        showToast("❌ خطأ في النظام!", "error");
     }
 }
 

@@ -48,7 +48,7 @@ document.getElementById("closeMonthBtn").addEventListener("click", async functio
     try {
         const token = localStorage.getItem("token");
         if (!token) {
-            alert("❌ لا يوجد توكن!");
+            showToast("❌ لا يوجد توكن!", "error");
             return;
         }
 
@@ -63,15 +63,15 @@ document.getElementById("closeMonthBtn").addEventListener("click", async functio
         const result = await response.json();
 
         if (response.ok && result.success) {
-            alert("✅ تم إغلاق الشهر بنجاح!");
+            showToast("✅ تم إغلاق الشهر بنجاح!", "success");
             location.reload();
         } else {
             console.error("❌ خطأ في إغلاق الشهر:", result.message || "خطأ غير معروف");
-            alert("❌ خطأ في النظام!");
+            showToast("❌ خطأ في النظام!", "error");
         }
     } catch (error) {
         console.error("❌ خطأ أثناء إغلاق الشهر:", error);
-        alert("❌ خطأ في النظام!");
+        showToast("❌ خطأ في النظام!", "error");
     }
 });
 

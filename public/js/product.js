@@ -13,7 +13,7 @@ async function fetchProducts() {
         });
 
         if (response.status === 401) {
-            alert("⚠️ يجب تسجيل الدخول للوصول إلى هذه الصفحة.");
+            // showToast("⚠️ يجب تسجيل الدخول للوصول إلى هذه الصفحة.", "error");
             window.location.href = "/index.html";
             return;
         }
@@ -123,11 +123,11 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
         });
 
         if (response.ok) {
-            alert('✅ تم إضافة المنتج بنجاح.');
+            showToast('✅ تم إضافة المنتج بنجاح.', 'success');
             fetchProducts(); // إعادة تحميل المنتجات
             document.getElementById('add-product-form').reset(); // إعادة تعيين الحقول
         } else {
-            alert('⚠️ خطأ أثناء إضافة المنتج.');
+            showToast('⚠️ خطأ أثناء إضافة المنتج.', 'error');
         }
     } catch (error) {
         console.error('⚠️ خطأ أثناء الاتصال بالخادم:', error);
@@ -138,7 +138,7 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
 document.getElementById('edit-btn').addEventListener('click', async () => {
     const productId = document.getElementById('product-id').value;
     if (!productId) {
-        alert('⚠️ يرجى اختيار منتج للتعديل.');
+        showToast('⚠️ يرجى اختيار منتج للتعديل.', 'warning');
         return;
     }
 
@@ -159,11 +159,11 @@ document.getElementById('edit-btn').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            alert('✅ تم تعديل المنتج بنجاح.');
+            showToast('✅ تم تعديل المنتج بنجاح.', 'success');
             fetchProducts();
             document.getElementById('add-product-form').reset();
         } else {
-            alert('⚠️ خطأ أثناء تعديل المنتج.');
+            showToast('⚠️ خطأ أثناء تعديل المنتج.', 'error');
         }
     } catch (error) {
         console.error('⚠️ خطأ أثناء الاتصال بالخادم:', error);
@@ -173,7 +173,7 @@ document.getElementById('edit-btn').addEventListener('click', async () => {
 document.getElementById('delete-btn').addEventListener('click', async () => {
     const productId = document.getElementById('product-id').value;
     if (!productId) {
-        alert('⚠️ يرجى اختيار منتج للحذف.');
+        showToast('⚠️ يرجى اختيار منتج للحذف.', 'warning');
         return;
     }
 
@@ -188,11 +188,11 @@ document.getElementById('delete-btn').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            alert('🗑️ تم حذف المنتج بنجاح.');
+            showToast('🗑️ تم حذف المنتج بنجاح.', 'success');
             fetchProducts();
             document.getElementById('add-product-form').reset();
         } else {
-            alert('⚠️ خطأ أثناء حذف المنتج.');
+            showToast('⚠️ خطأ أثناء حذف المنتج.', 'error');
         }
     } catch (error) {
         console.error('⚠️ خطأ أثناء الاتصال بالخادم:', error);
@@ -256,7 +256,7 @@ function exportProductsToPDF() {
     const productsArray = Object.values(allProducts).flat(); // تحويل `allProducts` إلى مصفوفة
 
     if (!productsArray.length) {
-        alert("Nothing To Export ⚠️");
+        showToast("Nothing To Export ⚠️", "warning");
         return;
     }
 
@@ -278,7 +278,7 @@ function exportProductsToExcel() {
     const productsArray = Object.values(allProducts).flat(); // تحويل `allProducts` إلى مصفوفة
 
     if (!productsArray.length) {
-        alert("Nothing To Export ⚠️");
+        showToast("Nothing To Export ⚠️", "warning");
         return;
     }
 

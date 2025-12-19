@@ -1,6 +1,10 @@
 * {
     margin: 0;
     padding: 0;
+}
+
+/* Fix content overflow inside the non-border-box container */
+.dashboard-container * {
     box-sizing: border-box;
 }
 
@@ -10,141 +14,214 @@ body {
     color: #ffffff;
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
+    /* Match other pages: Center vertically */
+    justify-content: center; 
     align-items: center;
-    justify-content: center;
+    /* overflow-x: hidden; */
 }
 
+/* Wrapper to center content in remaining space after nav */
 .dashboard-container {
-    max-width: 1350px;
-    background: rgba(255, 255, 255, 0.1);
+    width: 90%;
+    max-width: 1300px;
+    height: 680px;
+    background: rgba(255, 255, 255, 0.05);
     padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* Removed margin: auto to rely on body centering like other pages */
+    /* margin: auto; */
+    margin: 20px 0; /* Small top margin for spacing from nav */
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* overflow-y: auto; */
 }
+
+/* ... scrollbar styles ... */
 
 .header {
     text-align: center;
     margin-bottom: 2rem;
+    width: 100%;
 }
 
 .header h1 {
     font-size: 2.5rem;
     color: #ffffff;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    letter-spacing: 1.5px;
 }
 
 .orders-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    width: 100%;
 }
 
 .orders-links {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* مسافة بين الأزرار */
-    margin: 20px 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    width: 100%;
 }
+
 .order-link {
-    background-color: #ff4500; /* اللون الأساسي */
+    background: #ff4500;
     color: white;
     border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 15px 30px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-    text-decoration: none; /* إزالة الخط السفلي */
+    border-radius: 15px;
+    padding: 25px 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-decoration: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
 }
 
 .order-link:hover {
-    background-color: #ff4500; /* لون الخلفية عند التمرير */
-    color: #ffffff; /* تغيير لون النص عند التمرير */
-    transform: translateY(-2px); /* تأثير رفع عند التمرير */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* إضافة ظل */
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 69, 0, 0.4);
+    background: #ff5714;
 }
+
+/* Bottom Section */
 .main-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
+    display: flex;
+    justify-content: space-around; 
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    margin-top: 30px; 
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 1.5rem;
-    border-radius: 10px;
+    flex: 0 1 45%; /* Cards take up 45% width each, leaving space */
+    max-width: 500px; /* Limit max width */
+    /* ... rest of card styles ... */
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 15px;
     text-align: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease;
+    flex: 1;
+    min-width: 250px;
+    max-width: 600px;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .card h2 {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: #eee;
 }
 
-.card p {
-    background-color: #ff4500; /* اللون الأساسي */
+/* Unified Style for Card Content (Paragraphs & Buttons) */
+.card p, .card button {
+    width: 100%;
+    background: #ff4500; /* Solid color, no gradient */
     color: white;
     border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
+    border-radius: 50px;
+    padding: 12px 25px;
+    font-size: 1.1rem; /* Same font size as button */
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    cursor: default; /* Default cursor for text */
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50px; /* Ensure consistent height */
 }
+
 .card button {
-    width: 90%;
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
+    cursor: pointer;
 }
-/* ✅ تنسيق حقل الإدخال وزر الحفظ */
+
+.card button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 69, 0, 0.4);
+}
+
 .card input[type="text"] {
-    width: 80%;
-    padding: 10px;
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
     outline: none;
     text-align: center;
     color: white;
-    background-color: #ff4500; 
+    background-color: rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
-/* ✅ تغيير لون الـ placeholder إلى الأبيض */
+.card input[type="text"]:focus {
+    border-color: #ff4500;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
 .card input[type="text"]::placeholder {
-    color: white;
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    font-weight: normal;
 }
 
 .footer {
     text-align: center;
     margin-top: 2rem;
     font-size: 0.9rem;
-    color: #ccc;
-}
-#logoutBtn {
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 15px 30px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-    text-decoration: none; /* إزالة الخط السفلي */
+    color: rgba(255, 255, 255, 0.5);
 }
 
+#logoutBtn {
+    background: #ff4500;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 25px 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    text-decoration: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-top: 20px;
+    width: 350px;
+}
+
+#logoutBtn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(255, 69, 0, 0.4);
+    background: #ff5714;
+}

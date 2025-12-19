@@ -3,3 +3,8 @@ node_modules/
 *.zip
 *.rar
 *.7z
+.env
+logs/
+dist/
+coverage/
+.vscode/
