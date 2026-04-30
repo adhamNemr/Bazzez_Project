@@ -86,6 +86,8 @@ const t = {
 
 let activeFilter = 'all';
 let currentOrders = [];
+let appSettings = {};
+let vatRate = 0.14; // Default fallback
 let selectedDate = new Date().toISOString().split('T')[0]; // Default to today
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -95,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('date-filter');
     dateInput.value = selectedDate;
 
+    fetchSettings();
     fetchOrders();
 
     // Tab Filtering
@@ -213,6 +216,12 @@ function applyTranslations() {
 
     const todayLabel = document.getElementById('today-total-label');
     if (todayLabel) todayLabel.textContent = t.todayTotal;
+
+    const vatLabel = document.querySelector('span[data-i18n="sidebarVat"]');
+    if (vatLabel) {
+        const percentage = (vatRate * 100).toFixed(0);
+        vatLabel.textContent = isAr ? `القيمة المضافة (${percentage}%):` : `VAT (${percentage}%):`;
+    }
 }
 
 function updateCounts() {
@@ -248,6 +257,18 @@ function updateCounts() {
     document.getElementById('count-pending').textContent = counts.pending;
     document.getElementById('count-cancelled').textContent = counts.cancelled;
     document.getElementById('today-count').textContent = counts.todayGlobal;
+}
+
+async function fetchSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        appSettings = await response.json();
+        if (appSettings.vat_percent !== undefined) {
+            vatRate = parseFloat(appSettings.vat_percent) / 100;
+        }
+    } catch (error) {
+        console.error('❌ Error fetching settings:', error);
+    }
 }
 
 async function fetchOrders() {
@@ -416,8 +437,15 @@ function openSidebar(order, dailySerial = null) {
     document.getElementById('side-customer-address').textContent = order.customerAddress || t.noAddress;
     
     const isPaid = order.payment_status === 'Paid';
-    const paymentMethod = order.payment_method || (isPaid ? 'Card/Wallet' : 'Cash');
+    const rawMethod = order.payment_method || (isPaid ? 'Card/Wallet' : 'Cash');
     
+    // Friendly display for payment methods
+    let displayMethod = rawMethod;
+    if (rawMethod.toLowerCase() === 'vcash') displayMethod = isAr ? 'فودافون كاش' : 'Vodafone Cash';
+    if (rawMethod.toLowerCase() === 'instapay') displayMethod = isAr ? 'إنستا باي' : 'Instapay';
+    if (rawMethod.toLowerCase() === 'card') displayMethod = isAr ? 'فيزا / بطاقة' : 'Card / Wallet';
+    if (rawMethod.toLowerCase() === 'cash') displayMethod = isAr ? 'نقدي' : 'Cash';
+
     const statusBadge = `
         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
             <span class="status-badge status-completed">
@@ -425,7 +453,7 @@ function openSidebar(order, dailySerial = null) {
                 ${isPaid ? t.paidStatus : t.pendingStatus}
             </span>
             ${isPaid ? `<span style="font-size: 0.75rem; color: #6d7175; font-weight: 600;">
-                <i class="fas fa-wallet" style="font-size: 0.7rem; margin-left: 2px;"></i> ${paymentMethod}
+                <i class="fas fa-wallet" style="font-size: 0.7rem; margin-left: 2px;"></i> ${displayMethod}
             </span>` : ''}
         </div>`;
     document.getElementById('side-payment-status').innerHTML = statusBadge;
@@ -434,13 +462,22 @@ function openSidebar(order, dailySerial = null) {
     const delivery = parseFloat(order.deliveryPrice || 0);
     const subtotalWithVat = total - delivery;
     
-    // Calculate Base Price and 14% VAT from the subtotal
-    // Base * 1.14 = SubtotalWithVat => Base = SubtotalWithVat / 1.14
-    const basePrice = subtotalWithVat / 1.14;
+    // Calculate Base Price and VAT from the subtotal using the live vatRate
+    // Base * (1 + vatRate) = SubtotalWithVat => Base = SubtotalWithVat / (1 + vatRate)
+    const basePrice = subtotalWithVat / (1 + vatRate);
     const vatAmount = subtotalWithVat - basePrice;
 
     document.getElementById('side-subtotal').innerHTML = `<span style="color: var(--text-main);">${basePrice.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
-    document.getElementById('side-vat').innerHTML = `<span style="color: var(--text-main);">${vatAmount.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
+    
+    // 💡 Only show VAT row if VAT is > 0
+    const vatRow = document.getElementById('side-vat').parentElement;
+    if (vatRate > 0) {
+        vatRow.style.display = 'flex';
+        document.getElementById('side-vat').innerHTML = `<span style="color: var(--text-main);">${vatAmount.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
+    } else {
+        vatRow.style.display = 'none';
+    }
+
     document.getElementById('side-delivery').innerHTML = `<span style="color: var(--text-main);">${delivery.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
     document.getElementById('side-total').innerHTML = `<span>${total.toFixed(2)}</span> <small style="font-size: 0.8rem; opacity: 0.9;">EGP</small>`;
 

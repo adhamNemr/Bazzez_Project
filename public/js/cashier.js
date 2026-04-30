@@ -23,7 +23,7 @@ const t = {
         subtotal: 'المجموع الفرعي',
         delivery: 'توصيل',
         total: 'الإجمالي',
-        checkout: 'إتمام الطلب وطباعة',
+        checkout: 'إتمام الطلب',
         selectDelivery: 'اختر منطقة التوصيل',
         items: 'أصناف',
         msgEmptyCart: '⚠️ لا يمكن إرسال طلب فارغ',
@@ -140,6 +140,7 @@ function initDelivery() {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = `${i} EGP`;
+            option.dir = 'ltr';
             deliveryPriceSelect.appendChild(option);
         }
         deliveryPriceSelect.addEventListener('change', renderOrderSummary);
@@ -316,9 +317,9 @@ function renderOrderSummary() {
     const delivery = parseFloat(deliveryPriceSelect.value) || 0;
     const total = subtotal + delivery;
 
-    document.getElementById('subtotal-val').textContent = `${subtotal.toFixed(2)} EGP`;
-    document.getElementById('delivery-val').textContent = `${delivery.toFixed(2)} EGP`;
-    document.getElementById('order-total').textContent = `${total.toFixed(2)} EGP`;
+    document.getElementById('subtotal-val').innerHTML = `<span dir="ltr">${subtotal.toFixed(2)} EGP</span>`;
+    document.getElementById('delivery-val').innerHTML = `<span dir="ltr">${delivery.toFixed(2)} EGP</span>`;
+    document.getElementById('order-total').innerHTML = `<span dir="ltr">${total.toFixed(2)} EGP</span>`;
     document.getElementById('cart-count').textContent = `${itemCount} ${t[currentLang].items}`;
 }
 
@@ -446,7 +447,15 @@ async function submitOrder() {
     if (paymentMethod !== 'cash') {
         const confirmed = await Swal.fire({
             title: t[currentLang].confirmPayment,
-            text: `${t[currentLang].total}: ${total.toFixed(2)} EGP via ${paymentMethod.toUpperCase()}`,
+            html: `
+                <div style="font-size: 1.1rem; line-height: 1.6;">
+                    ${t[currentLang].total}: <span dir="ltr" style="font-weight: 800; color: var(--primary);">${total.toFixed(2)} EGP</span>
+                    <br>
+                    <span style="color: #666; font-size: 0.9rem;">
+                        ${currentLang === 'ar' ? 'عبر' : 'via'} <b style="color: var(--text-main);">${paymentMethod.toUpperCase()}</b>
+                    </span>
+                </div>
+            `,
             icon: 'info',
             showCancelButton: true,
             confirmButtonText: t[currentLang].confirmReceipt,

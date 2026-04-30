@@ -78,8 +78,6 @@ exports.applyAutomaticDiscount = async (orderDetails, orderTotal, discountCode) 
 
 exports.createOrder = async (req, res) => {
     try {
-        console.log("📥 البيانات المستلمة عند إنشاء الطلب:", req.body);
-
         const { customer, deliveryPrice, orderTotal, orderDetails, payment_method, discountCode, commentText } = req.body;
 
         if (!customer || !customer.phone) {
@@ -140,7 +138,8 @@ exports.createOrder = async (req, res) => {
             orderTotal: finalTotal,
             orderDetails: JSON.stringify(orderDetails),
             discountAmount: discountValue,
-            payment_status: payment_method === 'cash' ? "Pending" : "Paid"
+            payment_status: payment_method === 'cash' ? "Pending" : "Paid",
+            payment_method: payment_method
         });
 
         // ✅ تسجيل الدفع إذا المبلغ النهائي أكبر من الصفر
