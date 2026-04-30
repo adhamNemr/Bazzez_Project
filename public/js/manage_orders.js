@@ -216,14 +216,23 @@ function applyTranslations() {
 }
 
 function updateCounts() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Use local date string (YYYY-MM-DD) to avoid timezone shifts
+    const getLocalDate = (date) => {
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const todayStr = getLocalDate(new Date());
     const activeDate = selectedDate || todayStr;
 
     // Filter orders for the active date once for tab counts
     const ordersForDate = currentOrders.filter(o => {
-        const d = o.createdAt ? new Date(o.createdAt) : new Date();
-        if (isNaN(d.getTime())) return false;
-        return d.toISOString().split('T')[0] === activeDate;
+        const orderDate = getLocalDate(o.createdAt || new Date());
+        return orderDate === activeDate;
     });
 
     const counts = {
@@ -231,11 +240,7 @@ function updateCounts() {
         paid: ordersForDate.filter(o => o.payment_status === 'Paid' && o.isCancelled !== 'Yes').length,
         pending: ordersForDate.filter(o => o.payment_status === 'Pending' && o.isCancelled !== 'Yes').length,
         cancelled: ordersForDate.filter(o => o.isCancelled === 'Yes').length,
-        todayGlobal: currentOrders.filter(o => {
-            const d = o.createdAt ? new Date(o.createdAt) : new Date();
-            if (isNaN(d.getTime())) return false;
-            return d.toISOString().split('T')[0] === todayStr;
-        }).length
+        todayGlobal: currentOrders.filter(o => getLocalDate(o.createdAt || new Date()) === todayStr).length
     };
 
     document.getElementById('count-all').textContent = counts.all;
@@ -332,9 +337,26 @@ function renderOrders(orders) {
         return;
     }
 
+    // 🏆 Calculate Daily Serials: Rank orders of the same day by ID/Time ASC
+    const sortedAll = [...currentOrders].sort((a, b) => (a.id || 0) - (b.id || 0));
+    const dailyCounts = {};
+    const orderSerials = {};
+
+    sortedAll.forEach(o => {
+        const d = new Date(o.createdAt || Date.now());
+        const dateKey = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+        dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
+        orderSerials[o.id] = dailyCounts[dateKey];
+    });
+
+    // 🚀 Render latest orders first (DESC)
+    orders.sort((a, b) => (b.id || 0) - (a.id || 0));
+
     orders.forEach(order => {
         const tr = document.createElement('tr');
-        tr.onclick = () => openSidebar(order);
+        const dailySerial = orderSerials[order.id] || order.id;
+        
+        tr.onclick = () => openSidebar(order, dailySerial);
 
         const createdAt = new Date(order.createdAt || Date.now());
         const dateMain = createdAt.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -346,7 +368,7 @@ function renderOrders(orders) {
         const isDelivery = parseFloat(order.deliveryPrice) > 0;
 
         tr.innerHTML = `
-            <td><span class="order-id">#${order.id}</span></td>
+            <td><span class="order-id">#${dailySerial}</span></td>
             <td>
                 <div class="order-date-cell">
                     <span class="date-main">${dateMain}</span>
@@ -386,8 +408,9 @@ function renderOrders(orders) {
     });
 }
 
-function openSidebar(order) {
-    document.getElementById('side-order-id').textContent = `#${order.id}`;
+function openSidebar(order, dailySerial = null) {
+    const displayId = dailySerial || order.id;
+    document.getElementById('side-order-id').textContent = `#${displayId}`;
     document.getElementById('side-customer-name').textContent = order.customerName || t.cashCustomer;
     document.getElementById('side-customer-phone').textContent = order.customerPhone || t.noPhone;
     document.getElementById('side-customer-address').textContent = order.customerAddress || t.noAddress;
