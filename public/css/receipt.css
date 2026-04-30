@@ -1,133 +1,169 @@
+/* 
+ * Vortex POS - Printer-Friendly Receipt Styles
+ * Professional, Clean, and Minimalist.
+ */
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     text-align: center;
     direction: ltr;
-    background: #f4f4f4;
+    background: #f1f5f9;
     margin: 0;
     padding: 20px;
+    color: #0f172a;
 }
 
 #receipt-container {
     width: 350px;
     margin: auto;
-    padding: 20px;
+    padding: 24px;
     background: #fff;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     text-align: left;
+    border: 1px solid #e2e8f0;
 }
 
 h2 {
     text-align: center;
-    /* margin-bottom: 10px; */
-    font-size: 22px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-.customerBox {
-    border: 2px solid #000;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    background: #f9f9f9;
-}
-.customerBox p {
-    margin: 5px 0;
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: #6366f1;
+    letter-spacing: -0.025em;
 }
 
-.info{
-    padding: 10px;
-    border-radius: 5px;
-    /* margin-bottom: 10px; */
-    background: #f9f9f9;
+.customerBox {
+    border: 1px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+}
+
+.customerBox p {
+    margin: 4px 0;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 .dataBox {
-    border: 1px solid;
-    padding: 10px;
-    border-radius: 5px;
-    /* margin-bottom: 10px; */
-    background: #f9f9f9;
-    text-align: center;
     display: flex;
-    flex-wrap: wrap;
     justify-content: space-between;
+    margin-bottom: 1rem;
+    font-size: 0.8125rem;
+    color: #64748b;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 8px;
 }
 
-.dataBox p {
-    margin: 5px 0;
-    width: 48%;
-}
-.order-details {
-    border: 2px solid #000;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    background: #f9f9f9;
+.dataBox p { margin: 0; }
+
+.info {
+    margin-bottom: 1rem;
 }
 
-
-h3 {
-    text-align: center;
-    margin: 15px 0;
+.info p {
+    margin: 2px 0;
+    font-size: 0.875rem;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 10px;
+    margin-bottom: 1.5rem;
 }
 
-table, th, td {
-    border: 1px solid black;
-    text-align: center;
+th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f1f5f9;
 }
 
-th, td {
-    padding: 5px;
-    font-size: 14px;
+td {
+    padding: 8px 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.item-name {
+    font-weight: 700;
+}
+
+.item-addons {
+    margin-top: 2px;
+}
+
+.addon-line {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+    line-height: 1.2;
 }
 
 .totalBox {
-    border: 2px solid black;
-    padding: 10px;
-    border-radius : 5px;
-    background: #f9f9f9;
-    text-align: left;
-    font-size: 14px;
-    font-weight: bold;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
 }
 
 .totalBox p {
-    margin: 5px 0;
-    width: 48%;
+    display: flex;
+    justify-content: space-between;
+    margin: 4px 0;
+    font-size: 0.875rem;
+}
+
+.totalBox p:last-child {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #6366f1;
 }
 
 .footer {
-    margin-top: 10px;
     text-align: center;
-    font-size: 12px;
-    border-top: 1px solid black;
-    padding-top: 5px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 1rem;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 12px;
 }
+
+.footer span { display: block; margin-bottom: 4px; }
 
 button {
     width: 100%;
-    padding: 10px;
-    background: green;
+    padding: 0.875rem;
+    background: #6366f1;
     color: white;
     border: none;
-    border-radius: 5px;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
-    margin-top: 10px;
+    transition: background 0.2s;
+    margin-top: 1rem;
 }
 
 button:hover {
-    background: darkgreen;
+    background: #4f46e5;
+}
+
+@media print {
+    body { background: white; padding: 0; }
+    #receipt-container { 
+        box-shadow: none; 
+        border: none; 
+        width: 100%; 
+        padding: 0; 
+    }
+    button { display: none; }
 }

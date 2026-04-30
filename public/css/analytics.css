@@ -1,212 +1,144 @@
-/* 🔹 الخطوط العامة */
-body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(to bottom right, #ff4500, #000);
-    color: #fff;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+/* 
+ * Vortex POS - Analytics Styles
+ * Monochromatic Premium Professional Theme
+ */
 
-/* 🔹 الحاوية الرئيسية */
 .container {
-    width: 90%;
-    max-width: 1300px;
-    background: #222;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    max-width: 1400px;
+    padding: 2.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 3rem;
+    animation: fadeIn 0.4s ease-out;
 }
 
-/* 🔹 الهيدر */
 .header {
-    width: 100%;
-    text-align: center;
-    background: #ff4500;
-    color: #fff;
-    border-radius: 5px;
-    padding: 15px;
-    transition: background 0.3s;
+    text-align: left;
 }
 
 .header h1 {
-    font-size: 30px;
-    color: #ffffff;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.05em;
 }
 
-/* 🔹 ترتيب الصفوف */
+/* 🔹 Analytics Grid */
 .analytics-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
-    justify-content: center;
 }
 
-/* 🔹 كروت التحليلات */
+/* 🔹 Analytics Cards */
 .analytics-card {
-    background: #333;
-    padding: 1.5rem;
-    border-radius: 10px;
+    background-color: var(--bg-surface);
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 48%;
-    box-sizing: border-box;
-    transition: background 0.3s, transform 0.2s;
+    align-items: flex-start;
+    gap: 1.25rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
+    width: 100%;
 }
 
 .analytics-card:hover {
-    background: #444;
-    transform: scale(1.05);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05);
+    border-color: #cbd5e1;
 }
 
 .analytics-title {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background: #ff4500;
-    color: #fff;
-    border-radius: 5px;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
 }
 
 .analytics-value {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    font-weight: bold;
-    background: #2a2929;
-    padding: 15px;
-    width: 100%;
-    border-radius: 5px;
-    margin-top: 15px;
-    box-sizing: border-box;
-    color: #ffdd57;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.05em;
 }
 
-/* 🔹 قائمة المنتجات والعملاء */
+/* 🔹 List inside cards */
 .analytics-card ul {
-    list-style: none;
-    padding: 0;
-    margin: 10px 0 0;
-    text-align: center;
     width: 100%;
+    list-style: none;
+    margin-top: 0.75rem;
 }
 
 .analytics-card ul li {
-    background: #2a2929;
-    padding: 8px;
-    margin: 5px 0;
-    border-radius: 5px;
-    color: #ffdd57;
-    font-size: 16px;
-}
-
-/* 🔹 كروت الرسوم البيانية */
-.analytics-chart {
-    background: #333;
-    padding: 1.5rem;
-    border-radius: 10px;
-    width: 48%;
-    box-sizing: border-box;
+    background-color: #f8fafc;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 0.75rem;
+    font-size: 0.9375rem;
+    color: var(--text-main);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
+    border: 1px solid #f1f5f9;
 }
 
-canvas {
-    width: 100% !important;
-    height: 300px !important;
+.analytics-card ul li span:last-child {
+    font-weight: 700;
 }
 
-/* 🔹 النافذة المنبثقة (Overlay) */
+/* 🔹 Overlay / Modal for Charts */
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 0.3s, visibility 0.3s;
-}
-
-.hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-/* 🔹 الكارد الخاص بالرسم البياني */
-.chart-container {
-    background: #222;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    width: 80%;
-    max-width: 600px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 🔹 تحسين استجابة التصميم */
-@media (max-width: 768px) {
-    .analytics-card, .analytics-chart {
-        width: 100%;
-    }
-
-    .chart-container {
-        width: 90%;
-    }
-}
-
-/* 🔹 تصميم الخلفية عند فتح الكارد */
-.chart-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(2, 6, 23, 0.6);
     backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    transition: all 0.3s ease;
+}
+
+.overlay.hidden {
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-/* 🔹 الكارد الذي يظهر في المنتصف */
-.chart-content {
-    background: #222;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    width: 50%;
-    text-align: center;
-    position: relative;
+.chart-container {
+    background-color: var(--bg-surface);
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    width: 90%;
+    max-width: 900px;
+    box-shadow: var(--shadow-lg);
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 🔹 عرض الكارد عند تفعيله */
-.chart-modal.active {
-    opacity: 1;
-    visibility: visible;
+/* 🔹 Error Message */
+#error-message {
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    background-color: #fef2f2;
+    color: var(--error);
+    font-weight: 600;
+    border: 1px solid #fee2e2;
+}
+
+/* 🔹 Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+    .analytics-row {
+        grid-template-columns: 1fr;
+    }
 }

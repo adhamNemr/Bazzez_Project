@@ -37,7 +37,8 @@ exports.login = async (req, res) => {
             success: true,
             message: "✅ تسجيل الدخول ناجح!",
             token,
-            userRole: user.role // تأكيد إرسال الدور
+            role: user.role, // Changed userRole to role to match frontend expectation
+            username: user.username
         });
 
     } catch (error) {

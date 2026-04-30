@@ -5,22 +5,22 @@ const authRoutes = require("./auth");
 const productRoutes = require("./Products");
 const saleRoutes = require("./sales");
 const userRoutes = require("./users");
-const pageRoutes = require("./pages");
 const paymentRoutes = require("./payments");
 const {
   authMiddleware,
   authorizeRoles,
-} = require("../middleware/authMiddleware"); // ✅ استيراد صحيح
+} = require("../middleware/authMiddleware");
 
-// حماية جميع الصفحات بالـ Middleware
+// ✅ Authentication API
 router.use("/auth", authRoutes);
-router.use("/products", authMiddleware(["manager"]), productRoutes);
-router.use("/sales", authMiddleware(["manager"]), saleRoutes);
-router.use("/users", authMiddleware(["manager"]), userRoutes);
-router.use("/pages", authMiddleware(["manager", "cashier"]), pageRoutes);
+
+// ⚠️ Note: Root-level /products and /sales are now handled by pages.js for HTML.
+// API calls should use the /api prefix defined in server.js.
+
+// Extra API Logic if needed
 router.use("/payments", authMiddleware(["manager", "cashier"]), paymentRoutes);
 
-// مثال على صفحة محمية
+// Protected examples
 router.get(
   "/protected-route",
   authMiddleware(["manager", "cashier"]),

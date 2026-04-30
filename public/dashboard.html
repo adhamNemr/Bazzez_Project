@@ -1,58 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./css/dash.css">
+    <title id="page-title-tag">Vortex POS | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="./css/common.css">
-    <title>Dashboard</title>
-</head>
-<body>
+    <link rel="stylesheet" href="./css/dash.css">
+    <!-- 🌐 Localization: runs before render -->
+    <script>
+        const _lang = localStorage.getItem('lang') || 'ar';
+        const _isAr = _lang === 'ar';
+        document.addEventListener('DOMContentLoaded', () => {
+            // Direction & lang
+            document.documentElement.lang = _lang;
+            document.documentElement.dir = _isAr ? 'rtl' : 'ltr';
 
-    </div>
-    <div class="dashboard-container">
-        <header class="header">
-            <h1>Welcome to BAZEZZ</h1>
-        </header>
-        <section class="orders-section">
-            <div class="orders-links">
-                <a href="./cashier.html" class="order-link">Cashier</a>
-                <a href="./manage_orders.html" class="order-link">Orders</a>
-                <a href="./products.html" class="order-link">Products</a>
-                <a href="./daily.html" class="order-link">Daily Sales</a>
-                <a href="./monthly.html" class="order-link">Monthly Sales</a>
-                <a href="./inventory.html" class="order-link">Inventory</a>
-                <a href="./discount.html" class="order-link">Discounts</a>
-                <a href="./customers.html" class="order-link">Customers</a>
-                <a href="./analytics.html" class="order-link">Analytics</a>
+            const T = {
+                pageTitle:      _isAr ? 'لوحة التحكم' : 'Dashboard',
+                pill:           _isAr ? 'لوحة التحكم الإدارية' : 'Admin Dashboard',
+                home:           _isAr ? 'الرئيسية' : 'Home',
+                statRevenue:    _isAr ? 'إجمالي مبيعات اليوم' : "Today's Revenue",
+                statOrders:     _isAr ? 'عدد الطلبات' : 'Total Orders',
+                statAvg:        _isAr ? 'متوسط قيمة الفاتورة' : 'Avg. Bill',
+                statCustomers:  _isAr ? 'عملاء جدد' : 'New Customers',
+                trendStable:    _isAr ? 'ثابت' : 'Stable',
+                chartTitle:     _isAr ? 'نبض المبيعات المباشر' : 'Live Sales Pulse',
+                chartSub:       _isAr ? 'تتبع أداء المبيعات لحظة بلحظة' : 'Real-time sales performance tracking',
+                today:          _isAr ? 'اليوم' : 'Today',
+                yesterday:      _isAr ? 'أمس' : 'Yesterday',
+                week:           _isAr ? 'الأسبوع' : 'Week',
+                activity:       _isAr ? 'آخر العمليات' : 'Recent Activity',
+                engineControl:  _isAr ? 'تحكم المحرك' : 'Engine Control',
+                restart:        _isAr ? 'إعادة تشغيل النظام' : 'Restart System',
+                topProducts:    _isAr ? 'أكثر المنتجات طلباً' : 'Top Products',
+                viewAll:        _isAr ? 'عرض كل المنتجات' : 'View All Products',
+            };
+
+            document.title = `Vortex POS | ${T.pageTitle}`;
+            document.getElementById('pill-text').textContent = T.pill;
+            document.getElementById('home-btn-text').textContent = T.home;
+            document.getElementById('stat-revenue-label').textContent = T.statRevenue;
+            document.getElementById('stat-orders-label').textContent = T.statOrders;
+            document.getElementById('stat-avg-label').textContent = T.statAvg;
+            document.getElementById('stat-avg-trend').textContent = T.trendStable;
+            document.getElementById('stat-customers-label').textContent = T.statCustomers;
+            document.getElementById('chart-title').textContent = T.chartTitle;
+            document.getElementById('chart-sub').textContent = T.chartSub;
+            document.getElementById('toggle-today').textContent = T.today;
+            document.getElementById('toggle-yesterday').textContent = T.yesterday;
+            document.getElementById('toggle-week').textContent = T.week;
+            document.getElementById('activity-title').textContent = T.activity;
+            document.getElementById('engine-title').textContent = T.engineControl;
+            document.getElementById('restart-text').textContent = T.restart;
+            document.getElementById('top-products-title').textContent = T.topProducts;
+            document.getElementById('view-all-link').innerHTML = `${T.viewAll} <i class="fas fa-${_isAr ? 'arrow-left' : 'arrow-right'}"></i>`;
+        });
+    </script>
+</head>
+<body class="luxury-workstation">
+    <div class="dash-container">
+        <!-- 🏗️ Dynamic Premium Header -->
+        <div id="header-container" data-title="Admin Dashboard" data-icon="fa-shield-halved"></div>
+
+        <!-- 📊 Stats Row -->
+        <section class="stats-marquee">
+            <div class="stat-box">
+                <div class="stat-label" id="stat-revenue-label">Today's Revenue</div>
+                <div class="stat-value" id="revenueCount">0 <small>L.E</small></div>
+                <div class="stat-trend positive">+8.4%</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-box">
+                <div class="stat-label" id="stat-orders-label">Total Orders</div>
+                <div class="stat-value" id="orderCount">0</div>
+                <div class="stat-trend positive">+12%</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-box">
+                <div class="stat-label" id="stat-avg-label">Avg. Bill</div>
+                <div class="stat-value" id="avgOrderValue">0 <small>L.E</small></div>
+                <div class="stat-trend neutral" id="stat-avg-trend">Stable</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-box">
+                <div class="stat-label" id="stat-customers-label">New Customers</div>
+                <div class="stat-value" id="activeCustomers">0</div>
+                <div class="stat-trend positive">+5%</div>
             </div>
         </section>
-        <main class="main-content">
-            <!-- ✅ عدد الطلبات -->
-            <section class="card">
-                <h2>Total Orders</h2>
-                <p id="orderCount">Loading</p>
-            </section>
 
-            <!-- ✅ زر Restart Server -->
-            <section class="card">
-                <h2>System Control</h2>
-                <button id="restartServerBtn">Restart Server</button>
-            </section>
+        <!-- 🚀 Core Analytics Workspace -->
+        <main class="analytics-workspace">
+            <!-- Left Panel: Sales Pulse -->
+            <div class="panel main-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <h2 id="chart-title">Live Sales Pulse</h2>
+                        <p id="chart-sub">Real-time sales performance tracking</p>
+                    </div>
+                    <div class="panel-actions">
+                        <div class="time-toggles">
+                            <button class="time-btn active" id="toggle-today" data-period="today">Today</button>
+                            <button class="time-btn" id="toggle-yesterday" data-period="yesterday">Yesterday</button>
+                            <button class="time-btn" id="toggle-week" data-period="week">Week</button>
+                        </div>
+                        <button class="btn-refresh" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>
+                <div class="chart-canvas-wrapper">
+                    <canvas id="salesPulseChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <aside class="side-panel">
+                <!-- Activity Stream -->
+                <div class="panel secondary-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title-sm" id="activity-title">Recent Activity</h3>
+                    </div>
+                    <div class="activity-feed" id="recentActivityStream"></div>
+                </div>
+
+                <!-- System Command -->
+                <div class="panel control-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title-sm" id="engine-title">Engine Control</h3>
+                    </div>
+                    <div class="control-body">
+                        <button id="restartServerBtn" class="btn-engine-restart">
+                            <i class="fas fa-power-off"></i>
+                            <span id="restart-text">Restart System</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
         </main>
-        <!-- ✅ Logout Button -->
-        <footer class="footer">
-                <button id="logoutBtn" >
-                    <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg> -->
-                    Logout
-                </button>
-        </footer>
+
+        <!-- 🏆 Product Leaderboard -->
+        <section class="leaderboard-section">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="section-title-group">
+                        <h3 id="top-products-title">Top Products</h3>
+                        <span class="section-badge">Top 4</span>
+                    </div>
+                    <a href="/products.html" class="section-link" id="view-all-link">View All Products <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="products-row" id="topProductsList"></div>
+                <div class="panel-alerts-row" id="stockAlerts"></div>
+            </div>
+        </section>
     </div>
 
-    <script src="./js/dashboard.js" defer></script>
-    <script src="./js/auth.js"></script>
-
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/sidebar-loader.js"></script>
+    <script src="./js/dashboard.js"></script>
 </body>
 </html>

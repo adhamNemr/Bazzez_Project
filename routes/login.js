@@ -29,10 +29,18 @@ router.post('/', async (req, res) => {
         }
 
         // إنشاء توكن JWT
-        const token = jwt.sign({ username: user.username, role: user.role }, secretKey, { expiresIn: '1h' });
+        const token = jwt.sign(
+            { username: user.username, role: user.role }, 
+            process.env.JWT_SECRET || 'mySuperSecretKey123', 
+            { expiresIn: '1h' }
+        );
 
-        console.log('🟢 تسجيل الدخول ناجح، دور المستخدم:', user.role);
-        return res.json({ token, role: user.role });
+        console.log('🟢 تسجيل الدخول ناجح، اسم المستخدم:', user.username);
+        return res.json({ 
+            token, 
+            role: user.role,
+            username: user.username // ✅ إضافة اسم المستخدم للرد
+        });
 
     } catch (error) {
         console.error('❌ خطأ أثناء تسجيل الدخول:', error);

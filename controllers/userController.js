@@ -44,7 +44,7 @@ exports.getUserRole = async (req, res) => {
     try {
         console.log("🛠️ التحقق من الصلاحيات لليوزر ID:", req.user.id);
 
-        const user = await Users.findOne({ where: { id: req.user.id } });
+        const user = await User.findOne({ where: { id: req.user.id } });
 
         if (!user) {
             console.log("❌ المستخدم غير موجود!");

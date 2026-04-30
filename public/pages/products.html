@@ -3,14 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <title>Vortex POS - Products Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
 </head>
-<body>
-    <div class="products-container">
-        <h1>Products</h1>
-        <div id="products-list"></div>
+<body class="polaris-theme">
+    <div id="sidebar-container"></div>
+
+    <div class="dashboard-wrapper">
+        <header class="dash-header">
+            <div class="header-left">
+                <div class="breadcrumb">Vortex POS / Products</div>
+                <h1>Products Inventory</h1>
+            </div>
+        </header>
+        <div class="main-grid" style="padding: 2rem;">
+            <div class="widget large">
+                <div class="widget-header">
+                    <h3>Product Catalog</h3>
+                    <button class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button>
+                </div>
+                <div class="table-container" style="margin-top: 1.5rem;">
+                    <table id="productsTable">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="../js/products.js"></script>
+
+    <script src="/js/sidebar-loader.js"></script>
+    <script src="/js/auth.js"></script>
 </body>
 </html>

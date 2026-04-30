@@ -21,21 +21,41 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (receiptData.orderDetails && Array.isArray(receiptData.orderDetails)) {
         receiptData.orderDetails.forEach(item => {
-            const quantity = item.quantity || 0;
-            const price = item.price || 0;
-            subtotal += quantity * price;
+            const quantity = Number(item.quantity) || 0;
+            const price = parseFloat(item.price) || 0;
+            
+            // Calculate item total including add-ons
+            let addonsTotal = 0;
+            let commentsText = "";
+            if (Array.isArray(item.comments)) {
+                item.comments.forEach(c => {
+                    addonsTotal += parseFloat(c.price || 0);
+                    commentsText += `<div class="addon-line">• ${c.text} (+${c.price})</div>`;
+                });
+            }
+            
+            const itemFinalTotal = (price + addonsTotal) * quantity;
+            subtotal += itemFinalTotal;
 
             const row = document.createElement("tr");
             row.innerHTML = `
-                <td>${item.name || "N/A"}</td>
+                <td>
+                    <div class="item-name">${item.name || "N/A"}</div>
+                    <div class="item-addons">${commentsText}</div>
+                </td>
                 <td>${quantity}</td>
-                <td>${price} EGP</td>
+                <td>${(price + addonsTotal).toFixed(2)} EGP</td>
             `;
             orderDetailsContainer.appendChild(row);
         });
     }
 
-    document.getElementById("subtotal").innerText = `${subtotal} EGP`;
-    const discount = receiptData.discount || 0;
-    document.getElementById("discount").innerText = `${discount} EGP`;
+    document.getElementById("subtotal").innerText = `${subtotal.toFixed(2)} EGP`;
+    const discount = parseFloat(receiptData.discount || 0);
+    document.getElementById("discount").innerText = `${discount.toFixed(2)} EGP`;
+    
+    // Force Grand Total update based on actual subtotal + delivery - discount
+    const delivery = parseFloat(receiptData.deliveryPrice || 0);
+    const grandTotal = subtotal + delivery - discount;
+    document.getElementById("order-total").innerText = `${grandTotal.toFixed(2)} EGP`;
 });

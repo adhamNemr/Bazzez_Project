@@ -6,11 +6,10 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
 
     console.log('📥 إرسال بيانات تسجيل الدخول:', { username, password });
 
-    fetch('http://127.0.0.1:8083/login', {
+    fetch('/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-            
         },
         body: JSON.stringify({ username, password })
     })
@@ -22,17 +21,14 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
     })
     .then(data => {
         if (data.token) {
-            console.log('🟢 تسجيل الدخول ناجح، دور المستخدم:', data.role);
-            localStorage.clear(); // 🧹 تفريغ البيانات القديمة
+            console.log('🟢 Login successful:', data);
+            localStorage.clear(); 
             localStorage.setItem('token', data.token);
             localStorage.setItem('role', data.role);
+            localStorage.setItem('username', data.username || username); // Fallback to provided username
     
-            // إعادة التوجيه حسب دور المستخدم
-            if (data.role === 'manager') {
-                window.location.href = '/dashboard.html';
-            } else if (data.role === 'cashier') {
-                window.location.href = '/cashier.html';
-            }
+            // إعادة التوجيه لصفحة الـ Hub المركزية
+            window.location.href = '/launcher.html';
         } else {
             alert(data.error || 'فشل تسجيل الدخول.');
         }

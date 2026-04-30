@@ -72,30 +72,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (!token) {
         // showToast('غير مصرح لك بالدخول. من فضلك سجل الدخول أولًا.', 'error'); // لا يمكن استخدام التوست هنا لأننا سننتقل فوراً
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
         return;
     }
 
-    // مثال على إرسال التوكن في الطلبات المحمية
-    fetch('/protected-route', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            // alert('غير مصرح لك بالدخول.');
-            window.location.href = 'index.html';
-        }
-    })
-    .catch(error => {
-        console.error('خطأ أثناء المصادقة:', error);
-        window.location.href = 'index.html';
-    });
+    // Skip the /protected-route check - it was causing false redirects
+    // Security is enforced by the API endpoints themselves.
 
-    const allowedPagesForCashier = ['/cashier.html', '/receipt.html'];
+    const allowedPagesForCashier = ['/cashier.html', '/receipt.html', '/manage_orders.html', '/expenses.html'];
     const allowedPagesForManager = [
         '/dashboard.html',
         '/cashier.html',
@@ -106,31 +90,37 @@ window.addEventListener('DOMContentLoaded', () => {
         '/daily_closing.html',
         '/monthly_report.html',
         '/products.html',
+        '/pages/products.html',  // ✅ Subdirectory path
         '/sales.html',
+        '/pages/sales.html',     // ✅ Subdirectory path
         '/users.html',
+        '/pages/users.html',     // ✅ Subdirectory path
         '/receipt.html',
         '/customers.html',
         '/discount.html',
-        '/analytics.html'
+        '/analytics.html',
+        '/expenses.html',
+        '/settings.html'
     ];
+
 
     // إذا المستخدم غير مسجل الدخول
     if (!userRole) {
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
         return;
     }
 
     // التحقق من صلاحيات الكاشير
     if (userRole === 'cashier' && !allowedPagesForCashier.includes(currentPage)) {
         // showToast('غير مصرح لك بالدخول لهذه الصفحة.', 'error');
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
         return;
     }
 
     // التحقق من صلاحيات المدير
     if (userRole === 'manager' && !allowedPagesForManager.includes(currentPage)) {
         // showToast('غير مصرح لك بالدخول لهذه الصفحة.', 'error');
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
         return;
     }
 
@@ -140,7 +130,7 @@ window.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', () => {
             localStorage.removeItem('role');
             localStorage.removeItem('token');
-            window.location.href = 'index.html';
+            window.location.href = '/index.html';
         });
     }
 

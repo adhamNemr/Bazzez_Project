@@ -1,205 +1,488 @@
-/* 🔹 حاوية شريط التنقل العلوي */
-/* 🔹 حاوية شريط التنقل العلوي */
-.top-nav-container {
-    /* Match the VISUAL width of the container (90% + 4rem padding) */
-    width: calc(90% + 4rem); 
-    max-width: 1364px; /* 1300px + 64px (2rem left + 2rem right) */
-    margin: 0 auto; /* Center horizontally */
-    padding: 20px 0; /* Vertical padding only */
-    padding-left: 0; /* Button starts at the very edge */
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    background-color: transparent;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 100;
+/* 
+ * Vortex POS - Monochromatic Premium Design System (Refined by Shopify Polaris)
+ * Focus: High-end Minimalist, Clarity, and Modernity.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+
+:root {
+    /* Color Palette - Premium Refinement */
+    --bg-main: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-glass: rgba(255, 255, 255, 0.75);
+    
+    --primary: #008060;       /* Brand Emerald */
+    --primary-hover: #006e52;
+    --accent: #475569;        /* Sophisticated Slate */
+    
+    --success: #008060;
+    --warning: #f59e0b;
+    --error: #dc2626;
+    
+    /* Text Colors */
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-inverse: #ffffff;
+    
+    /* Spacing & Borders */
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-full: 100px;
+    
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.03);
+    --shadow-lg: 0 12px 30px rgba(0,0,0,0.06);
+    
+    /* Sidebar Width */
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
 }
 
-/* 🔹 زر العودة بتصميم متناسق مع الماك (Glassy & Minimal) */
-.nav-back-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 20px;
-    border-radius: 12px; /* Rounded corners like macOS Big Sur+ */
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    min-width: 100px; 
-    max-width: 147px;
-    justify-content: center;
-}
-
-.nav-back-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    color: #fff;
-}
-
-.nav-back-btn:active {
-    transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.15);
-}
-
-/* 🔹 زر تسجيل الخروج (Consistent Base Style, Red on Hover) */
-.nav-logout-btn {
-    /* Inherit base styles from .nav-back-btn */
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-logout-btn:hover {
-    background: rgba(255, 255, 255, 0.2); /* Match back button hover */
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    color: #fff;
-}
-
-.nav-back-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
-/* 🔹 تعديل للـ Body لضمان الترتيب العمودي */
-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-}
-
-/* 🔹 تحسينات عامة للـ UI */
-button {
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
-}
-
-button:active {
-    transform: scale(0.98);
-}
-
-input, select {
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: #ff4500;
-    box-shadow: 0 0 8px rgba(255, 69, 0, 0.3);
-}
-
-/* 🔹 Toast Notification Styles */
-/* 🔹 Toast Notification Styles */
-#toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 99999;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.toast {
-    min-width: 320px;
-    max-width: 400px;
-    padding: 15px;
-    border-radius: 12px;
-    background: rgba(30, 30, 30, 0.85); /* Dark glassy background */
-    backdrop-filter: blur(15px); /* Strong blur */
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    opacity: 0;
-    transform: translateX(50px);
-    animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    position: relative;
-    overflow: hidden;
-}
-
-.toast-icon {
-    font-size: 20px;
-    margin-top: 2px;
-}
-
-.toast-content {
+.main-content {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    min-height: 100vh;
+    background-color: var(--bg-main);
+    transition: all 0.3s ease;
 }
 
-.toast-message {
-    font-weight: 500;
-    line-height: 1.4;
-    color: rgba(255, 255, 255, 0.9);
+/* RTL Adjustment for Body */
+[dir="rtl"] body {
+    flex-direction: row-reverse;
 }
 
-.toast-close {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
+* {
+    margin: 0;
     padding: 0;
-    font-size: 18px;
-    line-height: 1;
-    transition: color 0.2s;
-    margin-left: 5px;
-    margin-top: 2px;
+    box-sizing: border-box;
 }
 
-.toast-close:hover {
-    color: rgba(255, 255, 255, 0.9);
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(0, 128, 96, 0.03) 0, transparent 50%),
+        radial-gradient(at 50% 0%, rgba(56, 189, 248, 0.02) 0, transparent 50%);
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    min-height: 100vh;
 }
 
-/* Status Colors (Left Border or Icon Color) */
-.toast.success .toast-icon { color: #34c759; }
-.toast.error .toast-icon { color: #ff3b30; }
-.toast.warning .toast-icon { color: #ffcc00; }
-.toast.info .toast-icon { color: #0a84ff; }
-
-@keyframes slideIn {
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+/* 🔹 Common Layout Components */
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
 }
 
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        transform: translateX(100%); /* Slide out to the right */
-    }
-}
+/* 🔹 Typography */
+h1 { font-size: 2.25rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.025em; }
+h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.025em; }
+h3 { font-size: 0.875rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.1em; }
+p { color: var(--text-muted); }
 
-/* Smooth collapse animation for removal */
-.toast.removing {
-    max-height: 0;
-    margin-top: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+/* 🔹 Modern Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.4s ease-out; /* Smoothly transition layout properties */
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--text-inverse);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid #e1e3e5;
+}
+
+.btn-secondary:hover {
+    background-color: #f6f6f7;
+}
+
+/* 🔹 Form Inputs */
+input, select, textarea {
+    background-color: var(--bg-surface);
+    border: 1px solid #d2d5d8;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    color: var(--text-main);
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: #008060;
+    box-shadow: 0 0 0 1px #008060;
+}
+
+/* 🔹 Professional Tables */
+.table-container {
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid #e1e3e5;
+    box-shadow: var(--shadow-sm);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+th {
+    background-color: #f6f6f7;
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+td {
+    padding: 1rem;
+    border-top: 1px solid #e1e3e5;
+    font-size: 0.875rem;
+    color: var(--text-main);
+}
+
+tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* 🔹 Shopify-style Badges */
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: #f1f2f3;
+    color: #5c5f62;
+}
+
+.badge-success { background-color: #c4f2e6; color: #006e52; }
+.badge-warning { background-color: #ffebcc; color: #8a6116; }
+
+/* 🔹 Animation Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* 🔹 Premium Brand Header (Global) */
+.hub-header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0 2rem 0;
+    position: relative;
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.6rem 1.8rem;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 100px;
+    border: var(--glass-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.hub-header img {
+    width: 42px;
+    height: 42px;
+    mix-blend-mode: multiply;
+}
+
+.brand-divider {
+    width: 1px;
+    height: 20px;
+    background: #cbd5e1;
+}
+
+.hub-header h1 {
+    font-size: 1.4rem;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    margin: 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+}
+
+.hub-header h1 span {
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.02em;
+}
+
+.header-subtitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.75rem;
+}
+
+/* 🌍 Hub Wrapper - Full Width & Centered */
+.hub-wrapper {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 0 2rem !important;
+    box-sizing: border-box !important;
+}
+
+/* 🏔️ Integrated Brand Header (Global) */
+.main-brand-header {
+    width: 100%;
+    padding: 0.75rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    position: relative;
+    margin-bottom: 1.25rem;
+}
+
+.page-context {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 250px;
+}
+
+.system-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 250px;
+    justify-content: flex-end;
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    mix-blend-mode: multiply;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.brand-text h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    margin: 0;
+    line-height: 1;
+    color: #1e293b;
+}
+
+.brand-text span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    margin-right: -0.5em;
+}
+
+.context-pill {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 0.6rem 1.4rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #1e293b;
+    border: 1px solid rgba(0, 128, 96, 0.15);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    letter-spacing: 0.02em;
+    transition: all 0.4s ease;
+}
+
+.context-pill i {
+    font-size: 0.85rem;
+    color: var(--primary);
+}
+
+.context-pill::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+    margin-right: 4px;
+    box-shadow: 0 0 0 3px rgba(0, 128, 96, 0.1);
+}
+
+.context-pill:hover {
+    background: white;
+    transform: scale(1.03);
+    border-color: var(--primary);
+    box-shadow: 0 10px 25px rgba(0, 128, 96, 0.1);
+}
+
+.header-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    color: #1e293b;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.header-nav-btn:hover {
+    background: #f8fafc;
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* ✨ Premium SweetAlert2 Global Override */
+.swal2-popup {
+    font-family: 'Inter', 'Noto Sans Arabic', sans-serif !important;
+    border-radius: 24px !important;
+    padding: 2.5rem !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+.swal2-title {
+    font-size: 1.4rem !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.02em !important;
+}
+
+.swal2-html-container {
+    font-size: 0.95rem !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+.swal2-confirm {
+    background: #008060 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    padding: 0.8rem 2rem !important;
+    box-shadow: 0 8px 20px rgba(0, 128, 96, 0.25) !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-confirm:hover {
+    filter: brightness(1.1) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 25px rgba(0, 128, 96, 0.35) !important;
+}
+
+.swal2-cancel {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    padding: 0.8rem 2rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-cancel:hover {
+    background: #e2e8f0 !important;
+    transform: translateY(-2px) !important;
+}
+
+.swal2-icon.swal2-success {
+    border-color: #008060 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+    border-color: rgba(0, 128, 96, 0.3) !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+    background-color: #008060 !important;
+}
+
+.swal2-icon.swal2-warning {
+    border-color: #f59e0b !important;
+    color: #f59e0b !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #ef4444 !important;
+}
+
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+    background-color: #ef4444 !important;
+}
+
+.swal2-loader {
+    border-color: #008060 transparent #008060 transparent !important;
+}
+
+/* Animation override */
+.swal2-show {
+    animation: swal2-show 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }

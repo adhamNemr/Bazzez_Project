@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المصروفات - Vortex POS</title>
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .expenses-container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, min-minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-info h4 {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .stat-info p {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .expense-form-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .input-group input, .input-group select {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .submit-btn {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: auto;
+        }
+
+        .submit-btn:hover {
+            background: #1e293b;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: right;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+        }
+
+        .category-tag {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .cat-supplies { background: #e0f2fe; color: #0369a1; }
+        .cat-rent { background: #fef3c7; color: #92400e; }
+        .cat-utilities { background: #dcfce7; color: #166534; }
+        .cat-other { background: #f1f5f9; color: #475569; }
+
+        .delete-btn {
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-container"></div>
+    
+    <div class="main-content">
+        <div class="expenses-container">
+            <div class="header-section">
+                <h1>إدارة المصروفات</h1>
+                <div id="current-date" style="color: #64748b; font-weight: 500;"></div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #dcfce7; color: #166534;">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4>مصروفات اليوم</h4>
+                        <p id="today-total">0.00 EGP</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h4>مصروفات الشهر</h4>
+                        <p id="month-total">0.00 EGP</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expense-form-card">
+                <h3>تسجيل مصروف جديد</h3>
+                <form id="expense-form" class="form-grid">
+                    <div class="input-group">
+                        <label>الوصف</label>
+                        <input type="text" id="description" placeholder="مثلاً: خضروات، فاتورة كهرباء..." required>
+                    </div>
+                    <div class="input-group">
+                        <label>المبلغ</label>
+                        <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="input-group">
+                        <label>الفئة</label>
+                        <select id="category" required>
+                            <option value="Supplies">خامات ومشتريات</option>
+                            <option value="Rent">إيجار</option>
+                            <option value="Utilities">مرافق (كهرباء/مياه)</option>
+                            <option value="Salaries">رواتب</option>
+                            <option value="Maintenance">صيانة</option>
+                            <option value="Other">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>طريقة الدفع</label>
+                        <select id="payment_method">
+                            <option value="cash">كاش (من الدرج)</option>
+                            <option value="card">فيزا</option>
+                            <option value="vcash">فودافون كاش</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-plus"></i> إضافة
+                    </button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوصف</th>
+                            <th>الفئة</th>
+                            <th>المبلغ</th>
+                            <th>بواسطة</th>
+                            <th>الدفع</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenses-table-body">
+                        <!-- البيانات سيتم حقنها هنا -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/sidebar-loader.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/expenses.js"></script>
+    <script>
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ar-EG', { 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+        });
+    </script>
+</body>
+</html>

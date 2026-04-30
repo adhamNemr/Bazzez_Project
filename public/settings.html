@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="loc-title">إعدادات النظام - Vortex POS</title>
+    
+    <!-- 🎨 Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 📄 Stylesheets -->
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/settings.css">
+</head>
+<body>
+    <!-- 🏗️ Dynamic Premium Header -->
+    <div id="header-container" data-title="إعدادات النظام" data-icon="fa-cog"></div>
+
+    <div class="settings-container">
+        <div class="settings-card">
+            <form id="settings-form">
+                <!-- 🏢 Section 1: Store Info -->
+                <div class="settings-section">
+                    <h3><i class="fas fa-store"></i> <span id="loc-sec-store">بيانات المحل</span></h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label id="loc-store-name">اسم المحل</label>
+                            <input type="text" name="store_name" placeholder="Vortex POS">
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-store-address">العنوان</label>
+                            <input type="text" name="store_address" placeholder="العنوان بالتفصيل">
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-store-phone">رقم الهاتف</label>
+                            <input type="text" name="store_phone" placeholder="01xxxxxxxxx">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🧾 Section 2: Receipt Config -->
+                <div class="settings-section">
+                    <h3><i class="fas fa-receipt"></i> <span id="loc-sec-receipt">إعدادات الفاتورة</span></h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label id="loc-receipt-footer">رسالة التذييل (Footer)</label>
+                            <input type="text" name="receipt_footer" placeholder="شكراً لزيارتكم">
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-currency">العملة</label>
+                            <input type="text" name="currency" value="EGP">
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-vat">ضريبة القيمة المضافة (%)</label>
+                            <input type="number" name="vat_percent" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🖥️ Section 3: System Mode & Prefs -->
+                <div class="settings-section">
+                    <h3><i class="fas fa-desktop"></i> <span id="loc-sec-system">إعدادات النظام</span></h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label id="loc-language">لغة الواجهة</label>
+                            <select name="language" id="language-select">
+                                <option value="ar">العربية (Arabic)</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-system-mode">نوع النشاط (System Mode)</label>
+                            <select name="system_mode" id="system-mode">
+                                <option value="restaurant">مطعم / كافيه (Restaurant)</option>
+                                <option value="retail">تجاري / ملابس (Retail)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label id="loc-print-mode">وضع الطباعة</label>
+                            <select name="print_mode">
+                                <option value="thermal">طابعة حرارية (Thermal)</option>
+                                <option value="pdf">تصدير PDF فقط</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 💾 Action Container -->
+                <div class="save-btn-container">
+                    <button type="submit" class="save-btn">
+                        <i class="fas fa-save"></i>
+                        <span id="loc-btn-save">حفظ كل الإعدادات</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📚 Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/settings.js"></script>
+</body>
+</html>

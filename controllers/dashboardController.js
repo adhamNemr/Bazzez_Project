@@ -1,6 +1,6 @@
 const { Order, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const printer = require('node-thermal-printer');
+const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
 
 // ✅ الدالة لجلب بيانات الـ Dashboard (تعتمد على قاعدة البيانات)
 exports.getDashboardData = async (req, res) => {
@@ -51,8 +51,8 @@ exports.checkSystemStatus = async (req, res) => {
 
         // ✅ التحقق من اتصال الطابعة الحرارية
         try {
-            printer.init({
-                type: 'epson',
+            const printer = new ThermalPrinter({
+                type: PrinterTypes.EPSON,
                 interface: 'usb',
             });
 

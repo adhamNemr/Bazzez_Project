@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex POS - Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/common.css">
+    <style>
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto; /* ← CENTER FIX */
+            animation: staggerIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes staggerIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Last row centering logic */
+        .hub-grid > a:nth-last-child(-n+2) {
+            grid-column: span 1;
+        }
+        
+        .hub-grid > a:nth-last-child(2) {
+            grid-column-start: 3;
+        }
+
+        .hub-item {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 2rem 1rem;
+            border-radius: 28px;
+            text-align: center;
+            text-decoration: none;
+            color: #1e293b;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+        }
+
+        .icon-bg {
+            width: 70px;
+            height: 70px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s ease;
+        }
+
+        .hub-item i {
+            font-size: 1.75rem;
+            color: #475569;
+            transition: all 0.4s ease;
+        }
+
+        .hub-item span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #334155;
+            transition: color 0.4s ease;
+        }
+
+        .hub-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .hub-item:hover .icon-bg {
+            background: rgba(0, 128, 96, 0.1);
+            transform: rotate(5deg);
+        }
+
+        .hub-item:hover i {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .hub-item.logout-tile:hover .icon-bg {
+            background: rgba(220, 38, 38, 0.1);
+        }
+        .hub-item.logout-tile:hover i { color: #dc2626; }
+
+        .hub-item.logout-tile {
+            border-color: #fecaca;
+        }
+        .hub-item.logout-tile i { color: #dc2626; }
+        .hub-item.logout-tile:hover {
+            background: #fff5f5;
+            border-color: #dc2626;
+        }
+
+        .hub-footer {
+            display: none;
+        }
+
+        .logout-link {
+            color: #d72c0d;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            .hub-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hub-wrapper">
+        <header class="hub-header">
+            <div class="brand-container">
+                <h1>VORTEX <span>POS</span></h1>
+                <div class="brand-divider"></div>
+                <img src="/img/logo.png" alt="Vortex" width="48">
+            </div>
+        </header>
+
+        <div class="hub-grid" id="hub-grid">
+            <!-- JS will populate based on role -->
+        </div>
+    </div>
+
+
+    <script src="./js/sidebar-loader.js"></script>
+    <script>
+        const userRole = localStorage.getItem('role') || 'cashier';
+        const isManager = userRole === 'manager';
+        const lang = localStorage.getItem('lang') || 'ar';
+
+        const menuItems = [
+            { id: 'dashboard', icon: 'fa-chart-line', ar: 'لوحة التحكم', en: 'Dashboard', url: '/dashboard.html', managerOnly: true },
+            { id: 'cashier', icon: 'fa-cash-register', ar: 'الكاشير', en: 'Cashier', url: '/cashier.html', managerOnly: false },
+            { id: 'orders', icon: 'fa-shopping-basket', ar: 'الطلبات', en: 'Orders', url: '/manage_orders.html', managerOnly: false },
+            { id: 'products', icon: 'fa-hamburger', ar: 'المنتجات', en: 'Products', url: '/products.html', managerOnly: true },
+            { id: 'inventory', icon: 'fa-boxes', ar: 'المخزن', en: 'Inventory', url: '/inventory.html', managerOnly: true },
+            { id: 'discount', icon: 'fa-tags', ar: 'الخصومات', en: 'Discounts', url: '/discount.html', managerOnly: true },
+            { id: 'customers', icon: 'fa-users', ar: 'العملاء', en: 'Customers', url: '/customers.html', managerOnly: true },
+            { id: 'expenses', icon: 'fa-file-invoice-dollar', ar: 'المصروفات', en: 'Expenses', url: '/expenses.html', managerOnly: false },
+            { id: 'analytics', icon: 'fa-chart-pie', ar: 'التحليلات', en: 'Analytics', url: '/analytics.html', managerOnly: true },
+            { id: 'daily', icon: 'fa-calendar-day', ar: 'التقرير اليومي', en: 'Daily Report', url: '/daily.html', managerOnly: true },
+            { id: 'monthly', icon: 'fa-calendar-alt', ar: 'التقرير الشهري', en: 'Monthly Report', url: '/monthly.html', managerOnly: true },
+            { id: 'users', icon: 'fa-user-tie', ar: 'الموظفين', en: 'Users', url: '/pages/users.html', managerOnly: true },
+            { id: 'settings', icon: 'fa-cog', ar: 'الإعدادات', en: 'Settings', url: '/settings.html', managerOnly: true },
+            { id: 'logout', icon: 'fa-sign-out-alt', ar: 'تسجيل الخروج', en: 'Logout', url: '#', managerOnly: false, isLogout: true }
+        ];
+
+        const grid = document.getElementById('hub-grid');
+        menuItems.forEach(item => {
+            if (!isManager && item.managerOnly) return;
+            
+            const a = document.createElement('a');
+            a.href = item.url;
+            a.className = `hub-item ${item.isLogout ? 'logout-tile' : ''}`;
+            a.innerHTML = `
+                <div class="icon-bg">
+                    <i class="fas ${item.icon}"></i>
+                </div>
+                <span>${lang === 'ar' ? item.ar : item.en}</span>
+            `;
+            
+            if (item.isLogout) {
+                a.onclick = (e) => {
+                    e.preventDefault();
+                    localStorage.clear();
+                    window.location.href = '/index.html';
+                };
+            }
+            grid.appendChild(a);
+        });
+    </script>
+</body>
+</html>

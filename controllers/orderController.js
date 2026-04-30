@@ -102,11 +102,23 @@ exports.createOrder = async (req, res) => {
             existingCustomer = await Customer.create({ name, phone, address });
         }
 
+        // ✅ حساب إجمالي المنتجات مع مراعاة الإضافات (Add-ons) في الكومنتات
+        const productTotal = orderDetails.reduce((total, product) => {
+            let itemBase = Number(product.price) * (Number(product.quantity) || 0);
+            
+            // إضافة أسعار الكومنتات/الإضافات إذا وجدت
+            let addonsPrice = 0;
+            if (Array.isArray(product.comments)) {
+                addonsPrice = product.comments.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
+            }
+            
+            return total + itemBase + (addonsPrice * (Number(product.quantity) || 0));
+        }, 0);
+
         // ✅ تطبيق الخصم تلقائيًا
         const { discountValue, appliedDiscounts } = await this.applyAutomaticDiscount(orderDetails, orderTotal, discountCode);
-        const productTotal = orderDetails.reduce((total, product) => total + (product.price * product.quantity), 0);
         const finalProductTotal = productTotal - discountValue;
-        const finalTotal = Math.max(finalProductTotal + deliveryPrice, 0);
+        const finalTotal = Math.max(finalProductTotal + finalDeliveryPrice, 0);
 
         // ✅ إضافة التعليق للـ orderDetails (إذا وُجد)
         if (commentText) {
@@ -205,10 +217,8 @@ exports.createOrder = async (req, res) => {
             comment: commentText || null
         };
 
-        // ✅ طباعة الإيصال عند الدفع كاش
-        if (payment_method === 'cash') {
-            printReceipt(orderData);
-        }
+        // ✅ طباعة الإيصال لجميع طرق الدفع
+        printReceipt(orderData);
 
         res.status(201).json({
             message: "✅ تم إنشاء الطلب بنجاح مع تطبيق الخصم تلقائيًا!",

@@ -14,13 +14,18 @@ Product.init({
         allowNull: false
     },
     category: {
-        type: DataTypes.ENUM('beef', 'chicken', 'french', 'combo', 'Add_ons'),
+        type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'beef'
+        defaultValue: 'General'
     },
     price: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
+    },
+    wholesalePrice: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: 0
     },
     sold: {
         type: DataTypes.INTEGER,

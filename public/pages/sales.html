@@ -3,14 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <title>Vortex POS - Sales Reports</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
 </head>
-<body>
-    <div class="sales-container">
-        <h1>Sales</h1>
-        <div id="sales-list"></div>
+<body class="polaris-theme">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <div class="dashboard-wrapper">
+        <header class="dash-header">
+            <div class="header-left">
+                <div class="breadcrumb">Vortex POS / Reports</div>
+                <h1>Sales Performance</h1>
+            </div>
+        </header>
+
+        <div class="main-grid" style="padding: 2rem;">
+            <div class="widget large">
+                <div class="widget-header">
+                    <h3>Recent Transactions</h3>
+                    <div class="actions">
+                        <button class="btn btn-secondary"><i class="fas fa-file-export"></i> Export PDF</button>
+                    </div>
+                </div>
+                <div class="table-container" style="margin-top: 1.5rem;">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data injected via sales.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="../js/sales.js"></script>
+
+    <!-- Scripts -->
+    <script src="/js/sidebar-loader.js"></script>
+    <script src="/js/sales.js"></script>
 </body>
 </html>

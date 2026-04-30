@@ -59,36 +59,38 @@ exports.formatOrderDetails = (req, res) => {
 
         // ✅ بناء مصفوفة منسقة بدلاً من HTML
         const formatted = items.map((item) => {
-            let totalCommentsPrice = 0;
+            let addonsTotal = 0;
 
-            // 🔥 حساب إجمالي التعليقات
-            const comments = item.comments?.map(comment => {
-                totalCommentsPrice += parseFloat(comment.price || 0);
+            // 🔥 حساب إجمالي الإضافات (Add-ons)
+            const comments = (item.comments || []).map(comment => {
+                const addPrice = parseFloat(comment.price || 0);
+                addonsTotal += addPrice;
                 return {
                     text: comment.text,
-                    price: parseFloat(comment.price).toFixed(2)
+                    price: addPrice.toFixed(2)
                 };
-            }) || [];
+            });
 
-            const manualComments = item.manualComments?.map(comment => {
-                if (typeof comment === "object" && comment.text && comment.price !== undefined) {
-                    totalCommentsPrice += parseFloat(comment.price || 0);
-                    return {
-                        text: comment.text,
-                        price: parseFloat(comment.price).toFixed(2)
-                    };
-                } else if (typeof comment === "string") {
-                    return { text: comment, price: null };
+            // دعم manualComments كحالة احتياطية للطلبات القديمة
+            const manualComments = (item.manualComments || []).map(comment => {
+                if (typeof comment === "object") {
+                    const addPrice = parseFloat(comment.price || 0);
+                    addonsTotal += addPrice;
+                    return { text: comment.text, price: addPrice.toFixed(2) };
                 }
-            }) || [];
+                return { text: comment, price: "0.00" };
+            });
+
+            const quantity = Number(item.quantity) || 1;
+            const basePrice = parseFloat(item.price) || 0;
 
             return {
                 name: item.name,
-                price: parseFloat(item.price).toFixed(2),
-                quantity: item.quantity,
+                price: basePrice.toFixed(2),
+                quantity: quantity,
                 comments,
                 manualComments,
-                total: (parseFloat(item.price) * item.quantity) + totalCommentsPrice
+                total: (basePrice + addonsTotal) * quantity
             };
         });
 

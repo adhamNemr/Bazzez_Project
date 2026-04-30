@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
-const secretKey = 'mySuperSecretKey123'; // تأكد من استخدام نفس الـ Secret Key في التوكن
+require('dotenv').config();
+
+const secretKey = process.env.JWT_SECRET || 'mySuperSecretKey123';
 
 // ✅ Middleware للتحقق من صلاحية المستخدم بناءً على الدور المسموح
 const authMiddleware = (allowedRoles) => (req, res, next) => {
@@ -11,6 +13,7 @@ const authMiddleware = (allowedRoles) => (req, res, next) => {
 
     jwt.verify(token, secretKey, (err, decoded) => {
         if (err) {
+            console.error('❌ JWT Verify Error:', err.message);
             return res.status(401).json({ message: 'جلسة غير صالحة أو انتهت.' });
         }
 

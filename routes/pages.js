@@ -1,43 +1,49 @@
-// routes/pages.js
+// routes/pages.js - Clean URL Page Routing (No Auth Middleware)
+// Security is handled client-side via localStorage token checks in each page's JS.
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const { authMiddleware, authorizeRoles } = require('../middleware/authMiddleware'); // ✅ استيراد صحيح
 
-// صفحة تسجيل الدخول متاحة للجميع
+const publicDir = path.join(__dirname, '../public');
+
+// Root -> redirect based on role (client-side handles it)
+router.get('/', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+// Login
 router.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pages/login.html'));
+    res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// صفحة الكاشير متاحة للكاشير والمدير
-router.get('/cashier', authMiddleware(['cashier', 'manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/cashier.html'));
+// Cashier
+router.get('/cashier', (req, res) => {
+    res.sendFile(path.join(publicDir, 'cashier.html'));
 });
 
-// صفحات المدير فقط
-router.get('/dashboard', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+// Dashboard
+router.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(publicDir, 'dashboard.html'));
 });
 
-router.get('/inventory', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/inventory.html'));
+// Inventory
+router.get('/inventory', (req, res) => {
+    res.sendFile(path.join(publicDir, 'inventory.html'));
 });
 
-router.get('/products', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pages/products.html'));
+// Products Management Page
+router.get('/products', (req, res) => {
+    res.sendFile(path.join(publicDir, 'pages/products.html'));
 });
 
-router.get('/sales', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pages/sales.html'));
+// Sales Reports Page
+router.get('/sales', (req, res) => {
+    res.sendFile(path.join(publicDir, 'pages/sales.html'));
 });
 
-router.get('/users', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/pages/users.html'));
-});
-
-// الصفحة الرئيسية (لوحة التحكم) متاحة للمدير فقط
-router.get('/', authMiddleware(['manager']), (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+// Users Management Page
+router.get('/users', (req, res) => {
+    res.sendFile(path.join(publicDir, 'pages/users.html'));
 });
 
 module.exports = router;

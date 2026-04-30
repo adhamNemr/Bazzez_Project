@@ -1,6 +1,6 @@
-# Contributing to BAZEZZ POS
+# Contributing to Vortex POS POS
 
-Thank you for your interest in contributing to the BAZEZZ POS System! We welcome contributions to improve this project.
+Thank you for your interest in contributing to the Vortex POS POS System! We welcome contributions to improve this project.
 
 ## How to Contribute
 

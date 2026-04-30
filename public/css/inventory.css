@@ -1,308 +1,352 @@
-body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(to bottom right, #ff4500, #000);
-    color: #fff;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+/* 
+ * Vortex POS - Inventory Management Styles
+ * Luxury Workstation Design Language
+ */
+
+:root {
+    --luxury-emerald: #008060;
+    --luxury-emerald-light: #f0fdf4;
+    --luxury-slate: #1e293b;
+    --luxury-border: #e2e8f0;
+    --luxury-bg: #f8fafc;
 }
 
-    .amiri-regular {
-        font-family: "Amiri", serif;
-        font-weight: 400;
-        font-style: normal;
-    }
-    
-    .amiri-bold {
-        font-family: "Amiri", serif;
-        font-weight: 700;
-        font-style: normal;
-    }
-    
-    .amiri-regular-italic {
-        font-family: "Amiri", serif;
-        font-weight: 400;
-        font-style: italic;
-    }
-    
-    .amiri-bold-italic {
-        font-family: "Amiri", serif;
-        font-weight: 700;
-        font-style: italic;
-    }
-    
+body {
+    background-color: var(--luxury-bg);
+    font-family: 'Outfit', 'Noto Sans Arabic', sans-serif;
+    margin: 0;
+    padding-top: 85px; /* Space for fixed header */
+    color: var(--luxury-slate);
+    overflow-x: hidden;
+}
 
-.container {
-    width: 90%;
-    max-width: 1300px;
-    height: 680px;
-    background: #222;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+/* 🏔️ Header Logo & Navigation Fix */
+.main-brand-header {
+    background: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding: 0.75rem 2rem;
+    box-shadow: 0 1px 10px rgba(0,0,0,0.05);
     display: flex;
-    flex-direction: column;
+    align-items: center;
+}
+
+.header-left, .header-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.header-center {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.context-pill {
+    background: var(--luxury-emerald-light);
+    padding: 0.5rem 1.25rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--luxury-emerald);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid rgba(0, 128, 96, 0.1);
+    white-space: nowrap;
+}
+
+
+
+.brand-logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-text h1 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    margin: 0;
+    line-height: 1;
+    color: var(--luxury-slate);
+}
+
+.brand-text span {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--luxury-emerald);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
     gap: 1.5rem;
 }
 
-
-/* شريط الأدوات */
-.toolbar {
-    background: #333;
-    padding: 1rem;
-    border-radius: 10px;
+.header-action-btn {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 130px;
-}  
-.container main{
-    background: #333;
-    padding: 1rem;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    height: 470px;
-}
-.actions {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* مسافة بين الأزرار */
-    margin: 5px 0;
-}  
-.actions .main-button {
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-}  
-.actions .main-button:hover {
-    background-color: #e63e00; /* لون مختلف عند التمرير */
-    transform: scale(1.1); /* يكبر الزر قليلاً */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* ظل أعمق */
-}
-.toolbar form {
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
-    }
-
-.toolbar input {
-    padding: 0.75rem;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    background: #444;
-    color: #fff;
-    width: 30%;
-    }
-
-.toolbar .main-button {
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-}
-.toolbar .main-button:hover {
-    background-color: #c43400;
-}
-
-.table-area {
-    flex: 2;
-    background: #2a2929;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    max-height: 550px;
-}
-.category-buttons{
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* مسافة بين الأزرار */
-    margin: 5px 0;
-}
-
-.category-buttons button {
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-}
-
-.category-buttons button:hover {
-    background-color: #e63e00; /* لون مختلف عند التمرير */
-    transform: scale(1.1); /* يكبر الزر قليلاً */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* ظل أعمق */
-}
-
-.category-buttons button:active {
-    transform: scale(1); /* عند الضغط يعود لحجمه الطبيعي */
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* ظل أقل */
-}
-/* تصميم شريط البحث */
-.search-bar {
-    margin: 1rem 0;
-    text-align: center;
-}
-
-.search-bar#search-input {
-    width: 50%; /* عرض شريط البحث */
-    padding: 0.75rem;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    background: #444;
-    color: #fff;
-}
-#search-input{
-    background-color: #444; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-}
-#filter-option{
-    background-color: #ff4500; /* اللون الأساسي */
-    color: white;
-    border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
-}
-/* ستايل صندوق الاقتراحات */
-.suggestions {
-    position: absolute;
-    background: #333;
-    border: 1px solid #ff4500;
-    width: calc(50% - 20px); /* عرض الاقتراحات أقل من شريط البحث */
-    max-height: 150px;
-    overflow-y: auto;
-    display: none;
-    border-radius: 5px;
-    margin-top: 5px;
-    z-index: 10;
-    left: 50%; /* مركز الاقتراحات */
-    transform: translateX(-50%); /* لتحريك الاقتراحات إلى اليسار بمقدار نصف عرضها */
-}
-
-.suggestion-item {
-    padding: 10px;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-weight: 700;
     cursor: pointer;
-    color: #fff;
+    transition: all 0.3s;
 }
 
-.suggestion-item:hover {
-    background: #ff4500;
+.header-action-btn:hover {
+    background: white;
+    border-color: var(--luxury-emerald);
+    color: var(--luxury-emerald);
+    transform: translateY(-2px);
 }
 
-/* الجدول */
-.inventory {
-    height: 475px; /* تحديد الحد الأقصى للارتفاع */
-    overflow-y: auto; /* إظهار شريط التمرير العمودي عند الحاجة */
-    border: 1px solid #ff4500; /* حدود الحاوية */
-    border-radius: 5px; /* زوايا مدورة */
+.brand-v-logo img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    mix-blend-mode: multiply;
 }
 
-table {
-    width: 100%; /* عرض الجدول بالكامل */
-    border-collapse: collapse; /* دمج الحدود */
-}
 
-th, td {
-    border: 1px solid #ff4500; /* حدود الخلايا */
-    padding: 10px; /* مسافة داخل الخلايا */
-    text-align: center; /* محاذاة النص إلى اليسار */
-}
-
-#product-table:hover {
-    background-color: #3e3e3e; /* لون مختلف عند التمرير */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* ظل أعمق */
-}
-
-th {
-    background-color: #ff4500; /* لون خلفية رأس الجدول */
-    position: sticky; /* جعل الرأس ثابتًا */
-    top: 0; /* تحديد موضع الرأس عند التمرير */
-    z-index: 10; /* التأكد من أن الرأس يظهر فوق المحتوى */
-}
-
-/* تحديد عرض الأعمدة */
-td:nth-child(1), th:nth-child(1) { /* عمود ID */
-    width: 50px; /* عرض صغير */
-}
-
-td:nth-child(2), th:nth-child(2) { /* عمود الاسم */
-    width: 200px; /* عرض أكبر */
-}
-
-td:nth-child(3), th:nth-child(3) { /* عمود الكمية */
-    width: 100px; /* عرض متوسط */
-}
-
-td:nth-child(4), th:nth-child(4) { /* عمود الكمية المباعة */
-    width: 100px; /* عرض متوسط */
-}
-
-td:nth-child(5), th:nth-child(5) { /* عمود التكلفة */
-    width: 100px; /* عرض متوسط */
-}
-
-td:nth-child(6), th:nth-child(6) { /* عمود السعر */
-    width: 100px; /* عرض متوسط */
-}
-
-td:nth-child(7), th:nth-child(7) { /* عمود تاريخ انتهاء الصلاحية */
-    width: 120px; /* عرض متوسط */
-}
-
-td:nth-child(8), th:nth-child(8) { /* عمود تاريخ الإدخال */
-    width: 120px; /* عرض متوسط */
-}
-.footer{
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem; /* Reduced top padding */
     display: flex;
-    justify-content: center;
-    gap: 20px; /* مسافة بين الأزرار */
+    flex-direction: column;
+    gap: 0.75rem; /* Tighter gap between components */
 }
-.footer button{
-    background-color: #ff4500; /* اللون الأساسي */
+
+/* 🔹 Toolbar (Search & Form) */
+.toolbar {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: 1.5rem 2rem; /* More compact */
+    margin-bottom: 0.25rem;
+}
+
+
+.search-bar-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-bar {
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.search-bar:focus {
+    background: white;
+    border-color: var(--luxury-emerald);
+    box-shadow: 0 0 0 4px rgba(0, 128, 96, 0.1);
+    outline: none;
+}
+
+.filter-dropdown {
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+}
+
+/* 🔹 Input Styles */
+input[type="text"], 
+input[type="number"], 
+input[type="date"], 
+select {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: var(--luxury-emerald);
+    background: white;
+    outline: none;
+}
+
+/* 🔹 Table Refinement */
+.products-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid var(--luxury-border);
+    overflow: hidden;
+}
+
+.table-container {
+    height: 585px; /* Exact height for header + 8 rows */
+    overflow-y: auto;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.orders-table th, .orders-table td {
+    padding: 1.25rem 0.5rem;
+    text-align: center !important;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.orders-table th {
+    background: #f8fafc;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--luxury-border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    height: 65px;
+}
+
+.orders-table td {
+    border-bottom: 1px solid var(--luxury-border);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.orders-table tbody tr {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    height: 65px;
+}
+
+.orders-table tbody tr:hover td {
+    background: var(--luxury-emerald-light);
+    color: var(--luxury-emerald);
+}
+
+.empty-row td {
+    background: rgba(248, 250, 252, 0.4) !important;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
+}
+
+/* 🚀 Action Buttons */
+.main-button {
+    background: var(--luxury-emerald);
     color: white;
+    padding: 0.85rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 700;
     border: none;
-    border-radius: 25px; /* يجعل الحواف دائرية */
-    padding: 10px 20px; /* حجم الأزرار */
-    font-size: 16px; /* حجم الخط */
-    font-weight: bold; /* الخط عريض */
-    cursor: pointer; /* شكل المؤشر عند التمرير */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ظل جميل */
-    transition: all 0.3s ease; /* تأثير سلس */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 15px rgba(0, 128, 96, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-button:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+}
+
+.cancel-button {
+    background: #ef4444;
+    color: white;
+    padding: 0.85rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 15px rgba(239, 68, 68, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-button:hover {
+    transform: translateY(-3px);
+}
+
+/* 📊 Footer Actions */
+.footer {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.footer button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    font-size: 1rem;
+    font-weight: 800;
+    background: var(--luxury-emerald);
+    color: white;
+    border-radius: 16px;
+    border: none;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
+}
+
+.footer button:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+/* 📏 Balanced Column Widths (%) */
+.orders-table th:nth-child(1), .orders-table td:nth-child(1) { width: 6%; }   /* ID */
+.orders-table th:nth-child(2), .orders-table td:nth-child(2) { width: 22%; }  /* Name */
+.orders-table th:nth-child(3), .orders-table td:nth-child(3) { width: 14%; }  /* Qty */
+.orders-table th:nth-child(4), .orders-table td:nth-child(4) { width: 10%; }  /* Min */
+.orders-table th:nth-child(5), .orders-table td:nth-child(5) { width: 12%; }  /* Cost */
+.orders-table th:nth-child(6), .orders-table td:nth-child(6) { width: 12%; }  /* Total */
+.orders-table th:nth-child(7), .orders-table td:nth-child(7) { width: 12%; }  /* Added */
+.orders-table th:nth-child(8), .orders-table td:nth-child(8) { width: 12%; }  /* Expiry */
+
+/* 🌍 LTR Overrides */
+html[dir="ltr"] .search-container i {
+    right: auto !important;
+    left: 1rem !important;
+}
+
+html[dir="ltr"] .search-bar {
+    padding-right: 1.25rem !important;
+    padding-left: 2.5rem !important;
 }

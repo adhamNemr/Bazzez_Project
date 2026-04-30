@@ -1,6 +1,6 @@
-# 📚 API Documentation - BAZEZZ POS System
+# 📚 API Documentation - Vortex POS POS System
 
-This document provides a reference for all API endpoints used in the BAZEZZ Restaurant POS system.
+This document provides a reference for all API endpoints used in the Vortex POS Restaurant POS system.
 
 ---
 

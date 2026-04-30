@@ -2,10 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const path = require("path");
+const helmet = require("helmet");
+const errorHandler = require("./middleware/errorHandler");
 const sequelize = require("./config/db");
 
+// ✅ Route Imports
 const userRoutes = require("./routes/users");
-const loginRoutes = require("./routes/login"); 
+const loginRoutes = require("./routes/login");
 const productsRoutes = require("./routes/Products");
 const orderRoutes = require("./routes/order");
 const salesRoutes = require("./routes/sales");
@@ -21,41 +24,66 @@ const dashboardRoutes = require("./routes/dashboard");
 const systemRoutes = require("./routes/systemRoutes");
 const analyticsRoutes = require("./routes/analytics");
 const commentRoutes = require('./routes/comment');
+const expenseRoutes = require("./routes/expenses");
+const settingsRoutes = require("./routes/settings");
 
 const app = express();
 
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use("/api/users", userRoutes); 
-app.use("/api/auth", authRoutes); 
+// ✅ Static file serving - this handles ALL .html files directly
+app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ API Routes (prefixed with /api to avoid conflicts)
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/discounts", discountRoutes);
 app.use("/api", closingRoutes);
-app.use("/api/customers", customerRoutes); 
-app.use("/login", loginRoutes);
+app.use("/api/customers", customerRoutes);
 app.use("/api/orders", ordersRoutes);
-app.use("/", indexRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api", dashboardRoutes);
 app.use("/api", systemRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/comments', commentRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/settings", settingsRoutes);
 
-app.use(express.static(path.join(__dirname, "public")));
+// ✅ Auth & Login
+app.use("/login", loginRoutes);
+
+// ✅ Other index helpers
+app.use("/", indexRoutes);
+
+// ✅ Error Handler (must be last)
+app.use(errorHandler);
 
 require("dotenv").config();
-console.log("🔑 JWT Secret عند التشغيل:", process.env.JWT_SECRET);
+console.log("🔑 JWT Secret:", process.env.JWT_SECRET);
+
+const { Setting } = require("./models");
 
 sequelize
   .authenticate()
-  .then(() => console.log("✅ Connected to the database successfully!"))
+  .then(async () => {
+    console.log("✅ Connected to the database successfully!");
+    try {
+      await Setting.sync();
+      console.log("✅ Settings table synced");
+    } catch (err) {
+      console.error("⚠️ Error syncing Settings table:", err);
+    }
+  })
   .catch((err) => console.error("⚠️ Error connecting to the database:", err));
 
-// ✅ تشغيل السيرفر
 const PORT = process.env.PORT || 8083;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);

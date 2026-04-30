@@ -1,128 +1,106 @@
-/* 🔹 الخطوط العامة */
-body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(to bottom right, #ff4500, #000);
-    color: #fff;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column; /* Ensure vertical stacking */
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
+/* 
+ * Vortex POS - Daily Reports Styles
+ * Monochromatic Premium Professional Theme
+ */
 
-/* 🔹 الحاوية الرئيسية */
 .container {
-    width: 90%;
-    max-width: 1300px;
-    background: #222;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    max-width: 1400px;
+    padding: 2.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 3rem;
+    animation: fadeIn 0.4s ease-out;
 }
 
-/* 🔹 الهيدر */
 .header {
-    width: 100%;
-    text-align: center;
-    background: #ff4500;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: background 0.3s;
+    text-align: left;
 }
 
 .header h1 {
-    font-size: 30px;
-    color: #ffffff;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.05em;
 }
 
-/* 🔹 ترتيب الأقسام */
+/* 🔹 Categories Grid */
 .first-categories {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
-    justify-content: center;
 }
 
-/* 🔹 المربعات الأساسية */
+/* 🔹 Statistic Cards */
 .orders-summary, 
 .orders-revenue, 
 .orders-cost, 
 .orders-earnings, 
 .orders-discount, 
 .orders-online-payments {
-    background: #333;
-    padding: 1.5rem;
-    border-radius: 10px;
+    background-color: var(--bg-surface);
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-lg);
+    padding: 2.5rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 48%; /* عرض 50% مع ترك مساحة للفجوة */
-    box-sizing: border-box;
-    transition: background 0.3s;
+    align-items: flex-start;
+    gap: 1.5rem;
+    width: 100%;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 🔹 العناوين داخل المربعات */
+.orders-summary:hover,
+.orders-revenue:hover,
+.orders-cost:hover,
+.orders-earnings:hover {
+    transform: translateY(-4px);
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+
+/* 🔹 Card Titles */
 .orders, 
 .revenue, 
 .cost, 
 .earnings, 
 .discount, 
 .online-payments {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background: #ff4500;
-    color: #fff;
-    border-radius: 5px;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
 }
 
-/* 🔹 ترتيب البيانات داخل المربعات */
+/* 🔹 Data Display */
 .orders-data, 
 .revenue-data, 
 .cost-data, 
 .earnings-data, 
 .discount-data, 
 .online-payments-data {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 22px;
-    font-weight: bold;
-    background: #2a2929;
-    padding: 15px;
     width: 100%;
-    border-radius: 5px;
-    margin-top: 15px;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-/* 🔹 ترتيب البيانات داخل "ملخص الطلبات" */
 .order-item {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
-    background: #2a2929;
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 15px;
-    font-size: 18px;
-    font-weight: bold;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 0;
 }
 
-/* 🔹 تحسين شكل الأرقام */
+.order-item span:first-child {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* 🔹 Values */
 #totalOrders, 
 #totalSandwiches, 
 #total-revenue, 
@@ -130,34 +108,75 @@ body {
 #total-earnings, 
 #total-discount, 
 #total-online-payments {
-    color: #ffdd57;
-    font-size: 22px;
-    font-weight: bold;
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    color: var(--text-main);
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
 }
 
-/* 🔹 الفوتر */
+/* Specific formatting for financial health */
+#total-earnings {
+    color: var(--success);
+}
+
+#total-cost {
+    color: var(--text-main);
+    opacity: 0.8;
+}
+
+/* 🔹 Footer Actions */
 .footer {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 1rem;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.print-button, .excel-button, .close-btn {
+    padding: 1rem 2rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
     justify-content: center;
-}
-
-/* ✅ زر الطباعة */
-.print-button, #close-day-btn {
-    width: 100%;
-    padding: 0.75rem;
-    background: #ff4500;
-    color: #fff;
+    gap: 0.75rem;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    transition: background 0.3s;
+    transition: all 0.2s;
 }
 
-.print-button:hover, #close-day-btn:hover {
-    background: #c43400;
+.print-button { 
+    background-color: var(--primary); 
+    color: white; 
+}
+
+.excel-button { 
+    background-color: var(--bg-surface); 
+    color: var(--text-main);
+    border: 1px solid #e2e8f0;
+}
+
+.close-btn { 
+    background-color: #fef2f2; 
+    color: #ef4444; 
+}
+
+.print-button:hover { 
+    background-color: var(--primary-hover); 
+}
+
+.excel-button:hover { 
+    background-color: #f8fafc; 
+}
+
+.close-btn:hover { 
+    background-color: #fee2e2; 
+}
+
+/* 🔹 Responsive */
+@media (max-width: 768px) {
+    .container { padding: 1.5rem; }
+    .first-categories { grid-template-columns: 1fr; }
+    .footer { flex-direction: column; }
 }

@@ -3,88 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة المنتجات</title>
-    <link rel="stylesheet" href="./css/products.css">
+    <title id="page-title-tag">إدارة المنتجات - Vortex POS</title>
     <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/products.css">
+</head>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+        /* Layout specifics - inherits background and fonts from common.css */
+        body[dir="rtl"], html[dir="rtl"] body {
+            padding-left: 0;
+            padding-right: 260px;
+        }
+
+        body[dir="ltr"], html[dir="ltr"] body {
+            padding-right: 0;
+            padding-left: 260px;
+        }
+
+        /* 🏔️ Fix Header to match Inventory EXACTLY */
+        #header-container .main-brand-header {
+            background: white;
+            padding: 0.75rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+            border-radius: 0;
+        }
+
+        #header-container .context-pill {
+            background: var(--luxury-emerald-light, #f0fdf4);
+            color: var(--luxury-emerald, #008060);
+            border: 1px solid rgba(0, 128, 96, 0.1);
+        }
+
+        #header-container .context-pill i {
+            color: var(--luxury-emerald, #008060);
+        }
+
+        .main-content {
+            width: 100%;
+            min-height: 100vh;
+            padding: 0; /* Removed padding so header can span full width */
+        }
+
+        .container {
+            padding: 2rem; /* Moved padding here to keep content centered */
+        }
+
+        /* Luxury Card Styles */
+        .toolbar, .products-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .products-card {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* 📊 Stats Row Styles */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 0.75rem; /* Reduced distance to toolbar */
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.25rem 1.5rem; /* More compact padding */
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.5rem; /* Tighter gap */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            border: 1px solid var(--luxury-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 140px; /* Consistent compact height */
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--luxury-emerald);
+            opacity: 0.1;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+            border-color: var(--luxury-emerald);
+        }
+
+        .orders-table th, .orders-table td {
+            padding: 1.25rem 0.5rem;
+            text-align: center !important; /* Force center for all columns */
+            vertical-align: middle;
+        }
+
+        /* 📏 Balanced Column Widths (%) */
+        .orders-table th:nth-child(1), .orders-table td:nth-child(1) { width: 8%; }   /* ID */
+        .orders-table th:nth-child(2), .orders-table td:nth-child(2) { width: 27%; }  /* Name */
+        .orders-table th:nth-child(3), .orders-table td:nth-child(3) { width: 17%; }  /* Category */
+        .orders-table th:nth-child(4), .orders-table td:nth-child(4) { width: 16%; }  /* Retail */
+        .orders-table th:nth-child(5), .orders-table td:nth-child(5) { width: 16%; }  /* Wholesale */
+        .orders-table th:nth-child(6), .orders-table td:nth-child(6) { width: 16%; }  /* Sold */
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-info span {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-info h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--luxury-slate);
+        }
+
+        /* 🎨 Dynamic Category Colors */
+        .cat-beef { background: #fee2e2; color: #b91c1c; }
+        .cat-chicken { background: #fef3c7; color: #b45309; }
+        .cat-drink { background: #e0f2fe; color: #0369a1; }
+        .cat-combo { background: #f3e8ff; color: #7e22ce; }
+        .cat-dessert { background: #fce7f3; color: #be185d; }
+        .cat-appetizer { background: #ecfdf5; color: #047857; }
     </style>
 </head>
 <body>
-    <div class="top-nav-container">
-        <button onclick="window.location.href='dashboard.html'" class="nav-back-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Dashboard
-        </button>
-    </div>
-    <div class="container">
-        <!-- شريط الأدوات مع الفورم الذي يملىء المساحة بالكامل -->
+    <div id="sidebar-container"></div>
+    
+    <div class="main-content">
+        <!-- 🏗️ Dynamic Premium Header -->
+        <div id="header-container" data-title="إدارة المنتجات" data-icon="fa-box"></div>
+
+        <div class="container">
+            <!-- 📊 Quick Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--luxury-emerald-light); color: var(--luxury-emerald);">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span id="loc-stat-total">Total Products</span>
+                        <h3 id="stat-total-count">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span id="loc-stat-best">Best Seller</span>
+                        <h3 id="stat-best-seller">---</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span id="loc-stat-sold">Total Sold</span>
+                        <h3 id="stat-total-sold">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✨ Optimized Toolbar -->
         <div class="toolbar">
             <form id="add-product-form">
-                <!-- شريط البحث والقائمة المنسدلة -->
+                <!-- 🔍 Row 1: Search & Filter -->
                 <div class="search-bar-container">
-                    <input 
-                        type="text" 
-                        id="search-bar" 
-                        class="search-bar" 
-                        placeholder="🔍 Search..." 
-                        oninput="searchProducts()" 
-                    />
-                    <select id="filter-options" class="filter-dropdown" onchange="applyFilter()">
-                        <option value="">Filter by...</option>
-                        <option value="most-sold">best seller </option>
-                        <option value="highest-price">most expensive</option>
-                        <option value="lowest-price">The cheapest</option>
-                        <option value="category">By Type</option>
+                    <div class="search-container" style="position:relative; flex:1;">
+                        <i class="fas fa-search" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                        <input 
+                            type="text" 
+                            id="search-bar" 
+                            class="search-bar" 
+                            placeholder="Search..." 
+                            oninput="searchProducts()" 
+                            style="padding-right: 2.5rem; width: 100%;"
+                        />
+                    </div>
+                    <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="max-width: 250px;">
+                        <option value="" id="loc-filter-by">Filter by...</option>
+                        <option value="most-sold" id="loc-best-seller">Best Seller</option>
+                        <option value="highest-price" id="loc-expensive">Most Expensive</option>
+                        <option value="lowest-price" id="loc-cheapest">Cheapest</option>
+                        <option value="category" id="loc-by-type">By Type</option>
                     </select>
                 </div>
         
+                <!-- 📝 Row 2: All Inputs in One Line -->
+                <div class="form-inputs-row" style="margin-top: 1.5rem; display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr; gap: 1rem;">
+                    <input type="text" id="product-name" placeholder="Name" required />
+                    <input type="text" id="product-category" placeholder="Category" list="category-list" required />
+                    <datalist id="category-list">
+                        <!-- Dynamic Categories will be loaded here -->
+                    </datalist>
+                    <input type="number" id="product-price" placeholder="Retail Price" required />
+                    <input type="number" id="product-wholesale-price" placeholder="Wholesale" required />
+                </div>
+
+                <!-- 🚀 Row 3: All Actions in One Line -->
+                <div class="form-actions-row" id="form-actions-container" style="margin-top: 1rem; display: flex; gap: 1rem; width: 100%;">
+                    <button type="submit" class="main-button" id="loc-btn-add" style="flex: 1;">Add</button>
+                    <button type="button" id="edit-btn" class="main-button" style="display:none; flex: 1; background: var(--luxury-emerald);">Edit</button>
+                    <button type="button" id="delete-btn" class="cancel-button" style="display:none; flex: 1;">Delete</button>
+                    <button type="button" id="reset-btn" class="main-button" style="display:none; flex: 0.3; background: #64748b;" title="Cancel Edit">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
                 <input type="hidden" id="product-id" />
-                <input type="text" id="product-name" placeholder="Name" required />
-                <input type="text" id="product-category" placeholder="Category" required />
-                <input type="number" id="product-price" placeholder="Price" required />
-        
-                <button type="submit" class="main-button">Add</button>
-                <button type="button" id="edit-btn" class="main-button">Edit</button>
-                <button type="button" id="delete-btn" class="main-button">Delete</button>
             </form>
         </div>
 
         <!-- جدول المنتجات وأزرار التصدير والطباعة -->
         <main>
-            <div class="products">
-                <table>
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">ID</th>
-                            <th onclick="sortTable(1)">Name</th>
-                            <th onclick="sortTable(2)">Category</th>
-                            <th onclick="sortTable(3)">Price</th>
-                            <th onclick="sortTable(4)">Sold</th>
-
-                        </tr>
-                    </thead>
-                    <tbody id="product-table">
-                        <!-- Customer data will be populated here using JavaScript -->
-                    </tbody>
-                </table>
+            <div class="products-card">
+                <div class="table-container">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)" id="loc-id">ID</th>
+                                <th onclick="sortTable(1)" id="loc-name">Name</th>
+                                <th onclick="sortTable(2)" id="loc-category">Category</th>
+                                <th onclick="sortTable(3)" id="loc-price">Retail</th>
+                                <th onclick="sortTable(4)" id="loc-wholesale">Wholesale</th>
+                                <th onclick="sortTable(5)" id="loc-sold">Sold</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table">
+                            <!-- Data populated here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- أزرار التصدير والطباعة -->
             <div class="footer">
-                <button onclick="exportProductsToPDF()" class="main-button"> Export PDF</button>
-                <button onclick="exportProductsToExcel()" class="main-button">Export Excel</button>
+                <button onclick="exportProductsToPDF()" class="main-button" id="loc-btn-pdf">Export PDF</button>
+                <button onclick="exportProductsToExcel()" class="main-button" id="loc-btn-excel">Export Excel</button>
             </div>
         </main>
     </div>
 
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/sidebar-loader.js"></script>
     <script src="./js/product.js"></script>
     <script src="./js/auth.js"></script>
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
 </body>
 </html>

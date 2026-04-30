@@ -3,15 +3,16 @@ const { Product } = require('../models'); // ✅ تعديل الاسم إلى Pr
 // إنشاء منتج جديد
 exports.addProduct = async (req, res) => {
     try {
-        const { name, price, category,  } = req.body;
+        const { name, price, wholesalePrice, category } = req.body;
 
         if (!name || !price || !category) {
             return res.status(400).json({ error: "⚠️ جميع الحقول مطلوبة." });
         }
 
-        const newProduct = await Product.create({ // ✅ استخدام Product بدلًا من Products
+        const newProduct = await Product.create({ 
             name,
             price,
+            wholesalePrice: wholesalePrice || price,
             category,
         });
 
@@ -44,7 +45,7 @@ exports.getProductsByCategory = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
     try {
         const products = await Product.findAll({
-            attributes: ['id', 'name', 'price', 'category', 'sold']
+            attributes: ['id', 'name', 'price', 'wholesalePrice', 'category', 'sold']
         });
         // تقسيم المنتجات حسب التصنيف لسهولة العرض في صفحة الكاشير
         const categorizedProducts = products.reduce((acc, product) => {
@@ -65,8 +66,8 @@ exports.getAllProducts = async (req, res) => {
 // جلب منتج معين عبر الـ ID
 exports.getProductById = async (req, res) => {
     try {
-        const product = await Product.findByPk(req.params.id, { // ✅ استخدام Product بدلًا من Products
-            attributes: ['id', 'name', 'price', 'category', 'sold']
+        const product = await Product.findByPk(req.params.id, { 
+            attributes: ['id', 'name', 'price', 'wholesalePrice', 'category', 'sold']
         });
 
         if (!product) {
@@ -83,7 +84,7 @@ exports.getProductById = async (req, res) => {
 // تحديث منتج معين
 exports.updateProduct = async (req, res) => {
     try {
-        const { name, price, category } = req.body;
+        const { name, price, wholesalePrice, category } = req.body;
         const product = await Product.findByPk(req.params.id); // ✅ استخدام Product بدلًا من Products
 
         if (!product) {
@@ -97,6 +98,7 @@ exports.updateProduct = async (req, res) => {
         await product.update({
             name,
             price,
+            wholesalePrice: wholesalePrice || price,
             category,
         });
 

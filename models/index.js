@@ -14,6 +14,8 @@ const MonthlyClosing = require('./MonthlyClosing')(sequelize, DataTypes);
 const Payment = require('./Payments'); 
 const DiscountCode = require("./DiscountCode"); // تأكد أن الاسم متطابق
 const Comment = require("./Comment")(sequelize, DataTypes);
+const Expense = require("./Expense")(sequelize, DataTypes);
+const Setting = require("./Setting")(sequelize, DataTypes);
 
 // ✅ العلاقات بين الجداول
 Product.hasMany(Sale, { foreignKey: "product_id" });
@@ -44,4 +46,6 @@ module.exports = {
     Payment,
     DiscountCode,
     Comment,
+    Expense,
+    Setting,
 };

@@ -1,58 +1,747 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Orders</title>
-    <link rel="stylesheet" href="./css/manage_orders.css">
+    <title>إدارة الطلبات - Vortex POS</title>
     <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Layout specifics - inherits background and fonts from common.css */
+        body[dir="rtl"], html[dir="rtl"] body {
+            padding-left: 0;
+            padding-right: 260px;
+        }
+
+        @media (max-width: 992px) {
+            body[dir="rtl"], html[dir="rtl"] body { padding-right: 0 !important; }
+            body[dir="ltr"], html[dir="ltr"] body { padding-left: 0 !important; }
+            .order-details-sidebar { width: 100%; max-width: 100%; }
+        }
+
+        body[dir="ltr"], html[dir="ltr"] body {
+            padding-right: 0;
+            padding-left: 260px;
+        }
+
+        /* 🏔️ Fix Header to match Inventory EXACTLY */
+        #header-container .main-brand-header {
+            background: white;
+            padding: 0.75rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+            border-radius: 0;
+        }
+
+        #header-container .context-pill {
+            background: var(--luxury-emerald-light, #f0fdf4);
+            color: var(--luxury-emerald, #008060);
+            border: 1px solid rgba(0, 128, 96, 0.1);
+        }
+
+        #header-container .context-pill i {
+            color: var(--luxury-emerald, #008060);
+        }
+
+        .main-content {
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .orders-page {
+            padding:1rem 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        /* Luxury Card Style */
+        .orders-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            overflow: hidden;
+        }
+
+        /* Tabs */
+        .orders-tabs {
+            display: flex;
+            justify-content: space-between !important;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 0 1rem;
+            background: transparent;
+        }
+
+        .tabs-list {
+            display: flex;
+            gap: 0;
+        }
+
+        .tab-item {
+            padding: 1.25rem 1.25rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-count {
+            background: rgba(0, 128, 96, 0.08);
+            color: var(--primary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            min-width: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .tab-item.active .tab-count {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tab-item:hover {
+            color: var(--primary);
+        }
+
+        .tab-item.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .btn-refresh-inline {
+            background: white;
+            border: 1px solid rgba(0, 128, 96, 0.15);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: auto;
+        }
+
+        .btn-refresh-inline:hover {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* 🏷️ Luxury Status Badges */
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 100px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .status-completed { 
+            background: rgba(0, 128, 96, 0.08); 
+            color: #008060;
+            border: 1px solid rgba(0, 128, 96, 0.15);
+        }
+
+        .status-pending { 
+            background: rgba(245, 158, 11, 0.08); 
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+        }
+
+        .status-cancelled { 
+            background: rgba(220, 38, 38, 0.08); 
+            color: #dc2626;
+            border: 1px solid rgba(220, 38, 38, 0.15);
+        }
+
+        /* 📊 Table Row Interaction */
+        .orders-table tbody tr {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .orders-table tbody tr:hover {
+            background: rgba(0, 128, 96, 0.02) !important;
+        }
+
+        /* Filter Bar Improvement */
+        .filter-bar {
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-stats {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .stat-item i {
+            color: var(--primary);
+            font-size: 0.8rem;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 550px; /* Slightly wider for better balance */
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 128, 96, 0.1);
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* 🗓️ Date Filter Styles */
+        .date-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .date-filter-container:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 128, 96, 0.1);
+        }
+
+        .date-input {
+            border: none;
+            outline: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .btn-clear-date {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            display: none; /* Shown only when a date is picked */
+            padding: 0 0.2rem;
+            transition: color 0.2s;
+        }
+
+        .btn-clear-date:hover {
+            color: #dc2626;
+        }
+
+        /* Table Styling Refined */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center; /* Centered everything */
+            white-space: nowrap;
+        }
+
+        .orders-table th {
+            padding: 1.25rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            background: #fafbfc;
+            text-align: center;
+        }
+
+        .orders-table td {
+            padding: 1.25rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+            text-align: center;
+        }
+
+        .order-id {
+            background: rgba(0, 128, 96, 0.05);
+            color: var(--primary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-weight: 800;
+            font-size: 0.95rem;
+            border: 1px dashed rgba(0, 128, 96, 0.2);
+            display: inline-block;
+        }
+
+        .order-date-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.1rem;
+            min-height: 40px;
+        }
+
+        .customer-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .date-main { font-weight: 700; color: var(--text-main); }
+        .date-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+        .orders-table tbody tr:hover {
+            background-color: #f8fafc;
+            transform: scale(1.002);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .badge {
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-success { background: #e0f2ec; color: var(--primary); }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+        .badge-critical { background: #fee2e2; color: #b91c1c; }
+
+        .order-id {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.05rem;
+        }
+
+        /* Modal / Sidebar Details */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 2000;
+        }
+
+        /* ✨ Luxury Sidebar Redesign ✨ */
+        .order-details-sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 480px;
+            max-width: 95vw;
+            height: 100%;
+            background: #f8fafc; /* Subtle background color */
+            box-shadow: -20px 0 50px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .sidebar-header {
+            padding: 1.8rem 1.5rem;
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .close-sidebar-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-muted);
+        }
+
+        .close-sidebar-btn:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* 📦 Sidebar Info Cards */
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .info-card h4 {
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .item-row:last-child { border-bottom: none; }
+
+        .item-main { display: flex; align-items: center; gap: 0.75rem; }
+        .item-qty {
+            background: #f1f5f9;
+            color: var(--primary);
+            font-weight: 800;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        .customer-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .customer-detail i {
+            width: 32px;
+            height: 32px;
+            background: #f0fdf4;
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* 🧾 Soft Receipt Style Totals */
+        .receipt-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 1.5rem;
+            border: 2px dashed #e2e8f0;
+            position: relative;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .receipt-divider {
+            border-top: 2px dashed #e2e8f0;
+            margin: 1rem 0;
+        }
+
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 900;
+            font-size: 1.4rem;
+            color: var(--text-main);
+        }
+
+        .total-label {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            background: white;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            height: 52px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.95rem;
+        }
+
+        .btn-cancel { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .btn-cancel:hover { background: #ef4444; color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.2); }
+        .btn-print { background: var(--primary); color: white; border: none; }
+        .btn-print:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 128, 96, 0.2); }
+
+        /* Ensure SweetAlert is always above our sidebar */
+        .swal2-container { z-index: 9999 !important; }
+    </style>
 </head>
 <body>
-    <div class="top-nav-container">
-        <button onclick="window.location.href='dashboard.html'" class="nav-back-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Dashboard
-        </button>
-    </div>
-    <div class="container">
-        <header class="header">
-            <h1>Manage Orders</h1>
-        </header>
-        <!-- عناصر التحكم -->
-        <div class="toolbar">
-            <form id="add-product-form">
-                <input type="text" id="order-id" placeholder="id "  />
-                <input type="number" id="order-quantity" placeholder="الدليفري"  />
-                <input type="number" id="order-total" placeholder="الإجمالي"  />
-                <button type="button" id="cancel-btn" class="cancel-button">cancel</button>
-            </form>
-        </div>
-        
-        <!-- جدول الطلبات -->
-        <div class="list">
-            <table>
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Id</th>
-                        <th onclick="sortTable(1)">Name</th>
-                        <th onclick="sortTable(2)">Phone</th>
-                        <th onclick="sortTable(3)">Address</th>
-                        <th onclick="sortTable(4)">Total</th>
-                        <th onclick="sortTable(5)">Order Details</th>
-                        <th onclick="sortTable(6)">Method</th>
-                        <th onclick="sortTable(7)">Cancelled</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-table-body">
-                    <!-- Customer data will be populated here using JavaScript -->
-                </tbody>
-            </table>
-        </div>
+    <div id="sidebar-container"></div>
+    
+    <div class="main-content">
+        <!-- 🏗️ Dynamic Premium Header -->
+        <div id="header-container" data-title="إدارة الطلبات" data-icon="fa-list-alt"></div>
 
+        <div class="orders-page">
+
+            <div class="orders-card">
+                <div class="orders-tabs">
+                    <div class="tabs-list">
+                        <div class="tab-item active" data-filter="all">
+                            <span class="tab-text">الكل</span>
+                            <span class="tab-count" id="count-all">0</span>
+                        </div>
+                        <div class="tab-item" data-filter="Paid">
+                            <span class="tab-text">أونلاين</span>
+                            <span class="tab-count" id="count-paid">0</span>
+                        </div>
+                        <div class="tab-item" data-filter="Pending">
+                            <span class="tab-text">نقدي</span>
+                            <span class="tab-count" id="count-pending">0</span>
+                        </div>
+                        <div class="tab-item" data-filter="cancelled">
+                            <span class="tab-text">ملغي</span>
+                            <span class="tab-count" id="count-cancelled">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="search-input" id="order-search" placeholder="ابحث برقم الطلب أو اسم العميل...">
+                    </div>
+
+                    <div class="date-filter-container">
+                        <i class="fas fa-calendar-alt" style="color: var(--primary); font-size: 0.9rem;"></i>
+                        <input type="date" class="date-input" id="date-filter">
+                        <button class="btn-clear-date" id="clear-date-btn" title="الرجوع لطلبات اليوم">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
+
+                    <div class="filter-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="today-total-label">إجمالي الطلبات اليوم:</span> <span id="today-count" style="font-weight: 800; color: var(--primary);">0</span>
+                        </div>
+                        <button class="btn-refresh-inline" onclick="fetchOrders()" id="refresh-btn-text" style="margin-right: 1rem; border-left: 1px solid #e2e8f0; padding-right: 1rem;">
+                            <i class="fas fa-sync-alt"></i> تحديث
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>الطلب</th>
+                                <th>التاريخ</th>
+                                <th>العميل</th>
+                                <th>الإجمالي</th>
+                                <th>حالة الدفع</th>
+                                <th>التوصيل</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <!-- Orders will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="./js/manage_orders.js"></script>
+    <!-- Order Details Sidebar -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="order-details-sidebar" id="details-sidebar">
+        <div class="sidebar-header">
+            <h3>تفاصيل الطلب <span id="side-order-id" style="color: var(--primary); font-family: monospace;">#1001</span></h3>
+            <button class="close-sidebar-btn" onclick="closeSidebar()">&times;</button>
+        </div>
+        <div class="sidebar-content">
+            <!-- 🏷️ Items Card -->
+            <div class="info-card">
+                <h4><i class="fas fa-utensils"></i> الأصناف</h4>
+                <div id="side-items-list"></div>
+            </div>
+
+            <!-- 👤 Customer Card -->
+            <div class="info-card">
+                <h4><i class="fas fa-user-circle"></i> بيانات العميل</h4>
+                <div class="customer-detail">
+                    <i class="fas fa-user"></i>
+                    <span id="side-customer-name"></span>
+                </div>
+                <div class="customer-detail">
+                    <i class="fas fa-phone-alt"></i>
+                    <span id="side-customer-phone"></span>
+                </div>
+                <div class="customer-detail">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span id="side-customer-address" style="font-size: 0.85rem; opacity: 0.8;"></span>
+                </div>
+            </div>
+
+            <!-- 💳 Payment Status Card -->
+            <div class="info-card">
+                <h4><i class="fas fa-credit-card"></i> حالة الدفع</h4>
+                <div id="side-payment-status"></div>
+            </div>
+
+            <!-- 🧾 Receipt Style Card -->
+            <div class="receipt-card">
+                <div class="receipt-row">
+                    <span>السعر:</span>
+                    <span id="side-subtotal"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>القيمة المضافة (14%):</span>
+                    <span id="side-vat"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>خدمة التوصيل:</span>
+                    <span id="side-delivery"></span>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-total">
+                    <span class="total-label">الإجمالي النهائي:</span>
+                    <span id="side-total"></span>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="btn btn-print" id="print-receipt-btn"><i class="fas fa-print"></i> طباعة فاتورة</button>
+            <button class="btn btn-cancel" id="cancel-order-btn"><i class="fas fa-ban"></i> إلغاء الطلب</button>
+        </div>
+    </div>
+
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/sidebar-loader.js"></script>
     <script src="./js/auth.js"></script>
-
+    <script src="./js/manage_orders.js"></script>
 </body>
 </html>

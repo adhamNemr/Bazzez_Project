@@ -24,6 +24,6 @@ function getDirectoryStructure(dirPath) {
 }
 
 // استبدل 'your_directory_path' بالمسار الذي تريد استعراضه
-const directoryPath = '/Users/adham/Desktop/BAZEZZ/BAZEZZ_STM/pos-system/server';
+const directoryPath = '/Users/adham/Desktop/Vortex POS/Vortex POS_STM/pos-system/server';
 const structure = getDirectoryStructure(directoryPath);
 console.log(JSON.stringify(structure, null, 2));

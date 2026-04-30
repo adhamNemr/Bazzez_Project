@@ -3,14 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <title>Vortex POS - Users Management</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/sidebar.css">
 </head>
-<body>
-    <div class="users-container">
-        <h1>Users</h1>
-        <div id="users-list"></div>
+<body class="polaris-theme">
+    <!-- Sidebar Placeholder -->
+    <div id="sidebar-container"></div>
+
+    <div class="dashboard-wrapper">
+        <header class="dash-header">
+            <div class="header-left">
+                <div class="breadcrumb">Vortex POS / Users</div>
+                <h1>System Users</h1>
+            </div>
+        </header>
+
+        <div class="main-grid" style="padding: 2rem;">
+            <div class="widget large">
+                <div class="widget-header">
+                    <h3>Staff Accounts</h3>
+                    <button class="btn btn-primary"><i class="fas fa-user-plus"></i> Add User</button>
+                </div>
+                <div class="table-container" style="margin-top: 1.5rem;">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data injected via users.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <script src="../js/users.js"></script>
+
+    <!-- Scripts -->
+    <script src="/js/sidebar-loader.js"></script>
+    <script src="/js/users.js"></script>
 </body>
 </html>
