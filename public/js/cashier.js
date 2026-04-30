@@ -1,770 +1,564 @@
+/**
+ * Vortex POS - Cashier Engine
+ * Optimized for Luxury Workstation Theme & Enterprise Best Practices
+ */
+
+const currentLang = localStorage.getItem('lang') || 'ar';
+const isAr = currentLang === 'ar';
+
+const t = {
+    ar: {
+        pageTitle: 'نافذة البيع - Vortex POS',
+        headerPill: 'منصة البيع المباشر',
+        home: 'الرئيسية',
+        operator: 'المشغل',
+        searchCustomer: 'ابحث عن عميل بالاسم أو الرقم...',
+        phonePlaceholder: 'رقم الهاتف...',
+        cash: 'كاش',
+        card: 'فيزا / بطاقة',
+        instapay: 'إنستاباي',
+        vcash: 'فودافون كاش',
+        cartSummary: 'ملخص السلة',
+        emptyCart: 'السلة فارغة حالياً',
+        subtotal: 'المجموع الفرعي',
+        delivery: 'توصيل',
+        total: 'الإجمالي',
+        checkout: 'إتمام الطلب وطباعة',
+        selectDelivery: 'اختر منطقة التوصيل',
+        items: 'أصناف',
+        msgEmptyCart: '⚠️ لا يمكن إرسال طلب فارغ',
+        sessionExpired: 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً',
+        confirmPayment: 'تأكيد استلام المبلغ',
+        confirmReceipt: 'تم تأكيد الاستلام',
+        cancel: 'إلغاء'
+    },
+    en: {
+        pageTitle: 'Cashier Workspace - Vortex POS',
+        headerPill: 'Direct Sales Platform',
+        home: 'Home',
+        operator: 'Operator',
+        searchCustomer: 'Search customer by name or phone...',
+        phonePlaceholder: 'Phone number...',
+        cash: 'Cash',
+        card: 'Card',
+        instapay: 'InstaPay',
+        vcash: 'V-Cash',
+        cartSummary: 'Cart Summary',
+        emptyCart: 'Cart is currently empty',
+        subtotal: 'Subtotal',
+        delivery: 'Delivery',
+        total: 'Total',
+        checkout: 'Complete & Print',
+        selectDelivery: 'Select Delivery Area',
+        items: 'items',
+        msgEmptyCart: '⚠️ Cannot submit an empty order',
+        sessionExpired: 'Session expired, please log in again',
+        confirmPayment: 'Confirm Payment Receipt',
+        confirmReceipt: 'Confirm Receipt',
+        cancel: 'Cancel'
+    }
+};
+
+let allCategorizedProducts = {};
+let currentOrder = {};
+let selectedItem = null;
+
+// --- DOM Elements ---
 const orderSummary = document.getElementById('order-summary');
-const orderTotal = document.getElementById('order-total');
 const menuItemsContainer = document.getElementById('menu-items');
+const categoryPillsContainer = document.getElementById('category-pills');
 const phoneInput = document.getElementById('customer-phone');
 const nameInput = document.getElementById('customer-name');
-const addressInput = document.getElementById('customer-address');
 const deliveryPriceSelect = document.getElementById('delivery-price');
 const submitButton = document.getElementById('submit-order');
+const suggestionsBox = document.getElementById("suggestions");
 
-function fetchCustomerData(phone) {
-    fetch(`/api/customers/${phone}`)            
-    .then(response => {
-            if (!response.ok) {
-                throw new Error("❌ العميل غير موجود");
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("✅ بيانات العميل المسترجعة:", data); // ✅ راقب البيانات في الكونسول
-            if (data.length > 0) {
-                const customer = data[0]; // ✅ أول عميل مطابق للبحث
-                nameInput.value = customer.name || "";
-                addressInput.value = customer.address || "";
-            } else {
-                nameInput.value = "";
-                addressInput.value = "";
-            }
-        })
-        .catch(error => {
-            console.warn(error);
-            nameInput.value = "";
-            addressInput.value = "";
-        });
+// --- 1. Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+    applyTranslations();
+    initUser();
+    initDelivery();
+    fetchProducts();
+    setupEventListeners();
+    
+    // Clean up empty sidebar space
+    setTimeout(() => {
+        const sidebar = document.getElementById('sidebar-container');
+        if (sidebar && sidebar.innerHTML.trim() === '') {
+            sidebar.style.display = 'none';
+        }
+    }, 500);
+});
+
+function applyTranslations() {
+    const langT = t[currentLang];
+    document.title = langT.pageTitle;
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.documentElement.lang = currentLang;
+
+    // Static Texts
+    const updateLoc = (id, text) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = text;
+    };
+
+    updateLoc('loc-header-pill', langT.headerPill);
+    updateLoc('loc-home', langT.home);
+    updateLoc('loc-cash', langT.cash);
+    updateLoc('loc-card', langT.card);
+    updateLoc('loc-instapay', langT.instapay);
+    updateLoc('loc-vcash', langT.vcash);
+    updateLoc('loc-cart-summary', langT.cartSummary);
+    updateLoc('loc-empty-cart', langT.emptyCart);
+    updateLoc('loc-subtotal', langT.subtotal);
+    updateLoc('loc-delivery', langT.delivery);
+    updateLoc('loc-total', langT.total);
+    updateLoc('loc-checkout', langT.checkout);
+
+    // Placeholders
+    if(nameInput) nameInput.placeholder = langT.searchCustomer;
+    if(phoneInput) {
+        phoneInput.placeholder = langT.phonePlaceholder;
+        phoneInput.oninput = (e) => {
+            e.target.value = e.target.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9]/g, '');
+        };
+    }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const phoneInput = document.getElementById("customer-phone");
-    const nameInput = document.getElementById("customer-name");
-    const addressInput = document.getElementById("customer-address");
+function initUser() {
+    const activeUserBadge = document.getElementById('activeUserBadge');
+    let storedUsername = localStorage.getItem('username') || t[currentLang].operator;
+    if (activeUserBadge) {
+        activeUserBadge.querySelector('span').textContent = storedUsername;
+    }
+}
 
-    if (!phoneInput || !nameInput || !addressInput) {
-        console.warn("⚠️ تأكد من وجود جميع الحقول المطلوبة في HTML");
+function initDelivery() {
+    if (deliveryPriceSelect) {
+        deliveryPriceSelect.innerHTML = `<option value="0">${t[currentLang].selectDelivery}</option>`;
+        for (let i = 5; i <= 100; i += 5) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `${i} EGP`;
+            deliveryPriceSelect.appendChild(option);
+        }
+        deliveryPriceSelect.addEventListener('change', renderOrderSummary);
+    }
+}
+
+// --- 2. Data Fetching ---
+async function fetchProducts() {
+    try {
+        const response = await fetch('/api/products', {
+            headers: { 
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                Swal.fire({ icon: 'error', title: t[currentLang].sessionExpired })
+                .then(() => window.location.href = "/index.html");
+                return;
+            }
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Server responded with ${response.status}`);
+        }
+        
+        const rawData = await response.json();
+        allCategorizedProducts = rawData;
+        
+        renderCategories();
+        
+        const categories = Object.keys(allCategorizedProducts);
+        if (categories.length > 0) {
+            showCategory(categories[0]);
+        } else {
+             menuItemsContainer.innerHTML = `<div class="empty-state">
+                <i class="fas fa-box-open" style="font-size:2.5rem; margin-bottom:1rem; opacity:0.5;"></i>
+                <p>${isAr ? 'لا يوجد منتجات متاحة حالياً' : 'No products available'}</p>
+                <small>${isAr ? 'أضف منتجات من صفحة المخزن لتظهر هنا' : 'Add products from inventory to see them here'}</small>
+             </div>`;
+        }
+
+    } catch (error) {
+        console.error("❌ Error loading products:", error);
+        menuItemsContainer.innerHTML = `<div class="empty-state">
+            <i class="fas fa-exclamation-triangle" style="font-size:2rem; margin-bottom:1rem; color:#f59e0b;"></i>
+            <p>${isAr ? 'عذراً، فشل الاتصال بالسيرفر' : 'Connection failed'}</p>
+            <small style="margin-top:10px; font-size:0.8rem; opacity:0.6;">${error.message}</small>
+            <button onclick="fetchProducts()" class="btn-primary" style="margin-top:20px; padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">${isAr ? 'إعادة المحاولة' : 'Retry'}</button>
+        </div>`;
+    }
+}
+
+function renderCategories() {
+    if (!categoryPillsContainer) return;
+    categoryPillsContainer.innerHTML = '';
+    
+    const categories = Object.keys(allCategorizedProducts);
+    if (categories.length === 0) return;
+
+    categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'pill';
+        btn.textContent = cat;
+        btn.dataset.category = cat;
+        btn.onclick = () => showCategory(cat);
+        categoryPillsContainer.appendChild(btn);
+    });
+}
+
+function showCategory(category) {
+    // Update active pill UI
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    const activePill = document.querySelector(`.pill[data-category="${category}"]`);
+    if (activePill) activePill.classList.add('active');
+
+    const products = allCategorizedProducts[category] || [];
+    menuItemsContainer.innerHTML = '';
+
+    if (products.length === 0) {
+        menuItemsContainer.innerHTML = `<div class="empty-state">${isAr ? 'لا توجد منتجات في هذا القسم' : 'No products in this category'}</div>`;
         return;
     }
 
-    phoneInput.addEventListener("input", function () {
-        let phone = phoneInput.value.trim();
-        if (phone.length === 11) {
-            fetchCustomerData(phone);
-        }
+    products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'menu-item animate-fade-in';
+        card.onclick = () => addToOrder(product.name, product.price);
+        card.innerHTML = `
+            <h3>${product.name}</h3>
+            <p>${parseFloat(product.price).toFixed(2)} <small>EGP</small></p>
+        `;
+        menuItemsContainer.appendChild(card);
     });
-});
+}
 
-function setPaymentMethod(method) {
-    document.getElementById('payment-method').value = method;
-
-    const buttons = document.querySelectorAll('.payment-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-
-    const activeButton = document.querySelector(`.payment-btn[data-method="${method}"]`);
-    if (activeButton) {
-        activeButton.classList.add('active');
+// --- 3. Order Logic ---
+function addToOrder(name, price) {
+    if (!currentOrder[name]) {
+        currentOrder[name] = { price: parseFloat(price), quantity: 1, comment: [] };
+    } else {
+        currentOrder[name].quantity++;
     }
-}
-
-let currentOrder = [];
-let products = {};
-let deliveryPrice = 0;
-
-deliveryPriceSelect.addEventListener('change', () => {
-    deliveryPrice = parseFloat(deliveryPriceSelect.value) || 0;
-    updateOrderTotal(); // ✅ تحديث التوتال بعد تعديل الديليفري
-});
-
-function fetchProducts() {
-    fetch('/api/products', {
-        headers: { 
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 401) {
-                alert("❌ Unauthorized! Please log in again.");
-                window.location.href = "/index.html";
-            }
-            return Promise.reject(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("Products Data:", data);
-        window.categorizedProducts = data; 
-        showMenu('beef'); // عرض قائمة "beef" بشكل افتراضي عند التحميل الأول
-    })
-    .catch(error => {
-        console.error("❌ خطأ أثناء تحميل المنتجات:", error);
-    });
-}
-
-function showMenu(category) {
-    fetch(`/api/products/${category}`, {
-        method: 'GET',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            if (response.status === 404) {
-                menuItemsContainer.innerHTML = `<p>❌ لا توجد منتجات في هذه الفئة.</p>`;
-                return [];
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        menuItemsContainer.innerHTML = ''; // تفريغ القائمة القديمة
-
-        if (data.length === 0) {
-            menuItemsContainer.innerHTML = `<p>❌ لا توجد منتجات في هذه الفئة.</p>`;
-            return;
-        }
-
-        data.forEach(product => {
-            const menuItem = document.createElement('div');
-            menuItem.className = 'menu-item';
-            
-            menuItem.onclick = () => addToOrder(product.name, product.price); 
-            
-            menuItem.innerHTML = `
-                <p class="menu-text">${product.name} - ${product.price} EGP</p>
-            `;
-
-            menuItemsContainer.appendChild(menuItem);
-        });
-    })
-    .catch(error => console.error('❌ خطأ أثناء جلب العناصر من القائمة:', error));
-}
-
-function addToOrder(itemName, itemPrice) {
-    currentOrder[itemName] = currentOrder[itemName] || { price: itemPrice, quantity: 0 };
-    currentOrder[itemName].quantity++;
     renderOrderSummary();
 }
 
-function increaseQuantity(item) {
-    if (currentOrder[item]) {
-        currentOrder[item].quantity++;
-        renderOrderSummary();
-    }
-}
-
-function decreaseQuantity(item) {
-    if (currentOrder[item] && currentOrder[item].quantity > 1) {
-        currentOrder[item].quantity--;
-        renderOrderSummary();
-    }
-}
-
-function removeItem(item) {
-    const itemRow = document.querySelector(`.order-row[data-item="${item}"]`);
-
-    if (itemRow) {
-        itemRow.classList.add('removing');
-        setTimeout(() => {
-            delete currentOrder[item];
-            itemRow.remove(); // إزالة العنصر المحدد فقط
-            renderOrderSummary(); // إعادة الحساب بدون مسح القائمة
-        }, 300); // نفس مدة الـ transition في الـ CSS
-    }
+function updateQty(name, delta) {
+    if (!currentOrder[name]) return;
+    currentOrder[name].quantity += delta;
+    if (currentOrder[name].quantity <= 0) delete currentOrder[name];
+    renderOrderSummary();
 }
 
 function renderOrderSummary() {
-    let total = 0;
+    let subtotal = 0;
+    let itemCount = 0;
+    orderSummary.innerHTML = '';
 
-    for (let item in currentOrder) {
-        let { price, quantity, comment = [] } = currentOrder[item];
-        price = parseFloat(price) || 0;
+    const items = Object.keys(currentOrder);
+    
+    if (items.length === 0) {
+        orderSummary.innerHTML = `
+            <div class="empty-cart">
+                <i class="fas fa-shopping-basket"></i>
+                <p>${t[currentLang].emptyCart}</p>
+            </div>
+        `;
+    } else {
+        items.forEach(name => {
+            const item = currentOrder[name];
+            const cost = item.price * item.quantity;
+            subtotal += cost;
+            itemCount += item.quantity;
 
-        total += price * quantity;
+            // Handle comments/add-ons
+            let commentsHtml = '';
+            item.comment.forEach((c, idx) => {
+                const addPrice = parseFloat(c.price) || 0;
+                subtotal += addPrice * item.quantity;
+                commentsHtml += `
+                    <div style="display: inline-flex; align-items: center; background: rgba(0, 128, 96, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
+                        <span>${c.text} (+${addPrice})</span>
+                        <button onclick="removeComment('${name}', ${idx})" style="background:none; border:none; color:inherit; cursor:pointer; font-size:0.8rem;"><i class="fas fa-times-circle"></i></button>
+                    </div>
+                `;
+            });
 
-        let orderRow = document.querySelector(`.order-row[data-item="${item}"]`);
-
-        if (orderRow) {
-            orderRow.querySelector('.order-quantity').textContent = quantity;
-            orderRow.querySelector('.order-price').textContent = `${price.toFixed(2)} EGP`;
-
-            const commentContainer = orderRow.querySelector('.order-comment');
-            commentContainer.innerHTML = '';
-
-            if (comment.length > 0) {
-                comment.forEach(({ text, price }) => {
-                    price = parseFloat(price) || 0;
-
-                    const commentElement = document.createElement('div');
-                    commentElement.classList.add('comment-item');
-                    commentElement.innerHTML = `
-                        <span>${text.trim()}</span>
-                        <span>${price.toFixed(2)} </span>
-                    `;
-                    commentContainer.appendChild(commentElement);
-                });
-
-                commentContainer.style.display = 'block';
-            } else {
-                commentContainer.style.display = 'none';
-            }
-        } else {
-            orderRow = document.createElement('div');
-            orderRow.className = 'order-row adding';
-            orderRow.setAttribute('data-item', item);
-
-            orderRow.innerHTML = `
+            const row = document.createElement('div');
+            row.className = 'order-row';
+            row.innerHTML = `
                 <div class="order-info">
-                    <span class="order-item">${item}</span>
-                    <span class="order-quantity">${quantity}</span>
-                    <span class="order-price">${price.toFixed(2)} EGP</span>
+                    <span class="order-item-name">${name}</span>
+                    <span class="order-price">${cost.toFixed(2)}</span>
+                </div>
+                <div class="order-actions-row">
                     <div class="order-actions">
-                        <button onclick="increaseQuantity('${item}')">+</button>
-                        <button onclick="decreaseQuantity('${item}')">-</button>
-                        <button onclick="removeItem('${item}')">X</button>
-                        <button onclick="openCommentCard('${item}')">💬</button>
+                        <button onclick="updateQty('${name}', -1)"><i class="fas fa-minus"></i></button>
+                        <span style="font-weight: 800; min-width: 20px; text-align: center;">${item.quantity}</span>
+                        <button onclick="updateQty('${name}', 1)"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="row-tools" style="display: flex; gap: 10px;">
+                        <button onclick="openCommentCard('${name}')" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-comment-medical"></i></button>
+                        <button onclick="updateQty('${name}', -${item.quantity})" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </div>
-                <div class="order-comment" style="display: ${comment.length > 0 ? 'block' : 'none'};">
-                    ${comment
-                        .map(({ text, price }) => {
-                            price = parseFloat(price) || 0;
-                            return `<div class="comment-item">
-                                <span>${text.trim()}</span>
-                                <span>${price.toFixed(2)}  </span>
-                            </div>`;
-                        }).join('')}
+                <div class="comments-container" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                    ${commentsHtml}
                 </div>
             `;
-
-            orderSummary.appendChild(orderRow);
-            setTimeout(() => orderRow.classList.remove('adding'), 10);
-        }
+            orderSummary.appendChild(row);
+        });
     }
 
-    // ✅ تحديث التوتال بعد كل تحديث للطلب
-    updateOrderTotal(); 
+    const delivery = parseFloat(deliveryPriceSelect.value) || 0;
+    const total = subtotal + delivery;
 
-    const existingRows = document.querySelectorAll('.order-row');
-    existingRows.forEach(row => {
-        const itemName = row.getAttribute('data-item');
-        if (!currentOrder[itemName]) {
-            row.classList.add('removing');
-            setTimeout(() => row.remove(), 300);
-        }
-    });
-
-    if (orderSummary.scrollHeight > 250) {
-        orderSummary.classList.add('collapsed');
-    } else {
-        orderSummary.classList.remove('collapsed');
-    }
+    document.getElementById('subtotal-val').textContent = `${subtotal.toFixed(2)} EGP`;
+    document.getElementById('delivery-val').textContent = `${delivery.toFixed(2)} EGP`;
+    document.getElementById('order-total').textContent = `${total.toFixed(2)} EGP`;
+    document.getElementById('cart-count').textContent = `${itemCount} ${t[currentLang].items}`;
 }
 
-function updateOrderTotal() {
-    let total = 0;
-
-    Object.values(currentOrder).forEach(details => {
-        total += details.price * details.quantity;
-    
-        // ✅ جمع قيمة التعليقات مع التوتال
-        if (details.comment && details.comment.length) {
-            details.comment.forEach(c => {
-                total += parseFloat(c.price) || 0; // ✅ يجمع سعر التعليق اليدوي
-            });
-        }
-    });
-
-    // ✅ إضافة الدليفري على التوتال
-    total += deliveryPrice;
-
-    // ✅ تحديث التوتال في الواجهة
-    document.getElementById('order-total').innerText = total.toFixed(2);
-}
-
+// --- 4. Comment & Add-ons System ---
 const overlay = document.createElement('div');
-overlay.classList.add('overlay');
-overlay.style.display = 'none';
-
+overlay.className = 'overlay';
 const commentCard = document.createElement('div');
-commentCard.classList.add('comment-card');
-commentCard.innerHTML = `
-    <div class="comment-header">
-        <button id="closeCommentCard">✖</button>
-    </div>
-    
-    <textarea id="customComment" placeholder="اكتب تعليقك هنا..."></textarea>
-    
-    <select id="commentPriceDropdown" class="price-dropdown">
-    <option value="0">بدون سعر إضافي</option>
-    <option value="5">5 EGP</option>
-    <option value="10">10 EGP</option>
-    <option value="15">15 EGP</option>
-    <option value="20">20 EGP</option>
-    <option value="25">25 EGP</option>
-    <option value="30">30 EGP</option>
-</select>
-    <!-- أشهر التعليقات -->
-    <div class="popular-comments" id="popularComments">
-        <!-- التعليقات المشهورة ستُضاف هنا تلقائيًا -->
-    </div>
-    
-    <button id="saveComment">حفظ</button>
-`;
-
-commentCard.style.display = 'none';
+commentCard.className = 'comment-card';
 
 document.body.appendChild(overlay);
 document.body.appendChild(commentCard);
 
-let selectedItem = null;
+function openCommentCard(itemName) {
+    selectedItem = itemName;
+    const lang = t[currentLang];
+    
+    commentCard.innerHTML = `
+        <div class="comment-header" style="margin-bottom:1.5rem; text-align: center;">
+            <h2 style="font-weight:800; color:#1e293b; font-size: 1.4rem;">${itemName}</h2>
+            <p style="color:#64748b; font-size:0.9rem;">${isAr ? 'أضف ملاحظات خاصة أو تكاليف إضافية' : 'Add special instructions or extra charges'}</p>
+        </div>
+        
+        <textarea id="customComment" placeholder="${isAr ? 'اكتب ملاحظة...' : 'Enter custom note...'}"></textarea>
+        
+        <div class="modal-input-wrapper" style="margin: 1rem 0;">
+            <div class="input-group" style="width: 100%; border-radius: 14px; background: #f8fafc;">
+                <input type="text" id="manualPriceInput" 
+                       placeholder="${isAr ? 'سعر إضافي' : 'Extra Price'}" 
+                       style="text-align: center; width: 100%; font-size: 1rem; padding: 0.8rem;"
+                       oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+            </div>
+        </div>
 
-function openCommentCard(item) {
-    if (!item) {
-        console.error('❌ العنصر غير صالح.');
-        return;
-    }
-
-    selectedItem = item; // ✅ تعيين العنصر المحدد
-
-    // ✅ تفريغ التعليق اليدوي عند الفتح
-    document.getElementById('customComment').value = '';
-
-    // ✅ إذا كان هناك تعليقات يدوية مخزنة، قم بعرضها
-    if (currentOrder[item]?.manualComments?.length > 0) {
-        document.getElementById('customComment').value = currentOrder[item].manualComments.join(' || ');
-    }
-
-    // ✅ استدعاء التعليقات الشائعة
+        <div class="popular-comments" id="popularComments" style="max-height: 150px; overflow-y: auto; padding: 5px;"></div>
+        
+        <div class="modal-footer" style="margin-top: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 1.25rem;">
+            <button class="save-comment-btn" onclick="saveCustomComment()" 
+                    style="width: 100%; padding: 1.1rem; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 128, 96, 0.2);">
+                ${isAr ? 'حفظ الملاحظة' : 'Save Note'}
+            </button>
+        </div>
+    `;
+    
     fetchPopularComments();
-
-    // ✅ عرض الكارد في منتصف الشاشة
     overlay.style.display = 'block';
-    commentCard.style.display = 'block';
-    commentCard.style.top = '50%';
-    commentCard.style.left = '50%';
-    commentCard.style.transform = 'translate(-50%, -50%)';
-
-    console.log(`✅ تم فتح الكارد للعنصر: ${item}`);
+    commentCard.classList.add('active');
 }
 
 function closeCommentCard() {
     overlay.style.display = 'none';
-    commentCard.style.display = 'none';
+    commentCard.classList.remove('active');
+}
+
+function removeComment(itemName, commentIdx) {
+    if (!currentOrder[itemName]) return;
+    currentOrder[itemName].comment.splice(commentIdx, 1);
+    renderOrderSummary();
 }
 
 async function fetchPopularComments() {
-    const popularCommentsContainer = document.getElementById('popularComments');
-    popularCommentsContainer.innerHTML = '';
-
+    const container = document.getElementById('popularComments');
+    if (!container) return;
     try {
-        const response = await fetch('/comments/popular');
-        const comments = await response.json();
-
-        comments.forEach(comment => {
-            // ✅ إنشاء زر لكل تعليق مثبت
-            const commentButton = document.createElement('button');
-            commentButton.classList.add('comment-btn');
-            commentButton.style.backgroundColor = comment.color;
-
-            // ✅ تنسيق النص على سطرين
-            commentButton.innerHTML = `
-                <div class="comment-text">${comment.commentText}</div>
-                <div class="comment-price">${comment.price}</div>
-            `;
-
-            // ✅ عند الضغط على الزر، يضيف التعليق للطلب
-            commentButton.onclick = () => {
-                console.log(comment); // ✅ تأكد إن فيه قيمة
-                if (comment && comment.commentText && comment.price !== undefined) {
-                    addComment(comment.commentText, comment.price);
-                } else {
-                    console.error('❌ التعليق غير موجود أو القيم ناقصة.');
-                }
+        const res = await fetch('/comments/popular');
+        const comments = await res.json();
+        container.innerHTML = '';
+        comments.slice(0, 6).forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'comment-btn';
+            btn.innerHTML = `<div>${c.commentText}</div><div style="color:var(--primary)">+${c.price}</div>`;
+            btn.onclick = () => {
+                addCommentToItem(selectedItem, c.commentText, c.price);
+                closeCommentCard();
             };
-            popularCommentsContainer.appendChild(commentButton);
+            container.appendChild(btn);
         });
-    } catch (error) {
-        console.error('❌ Failed to load popular comments:', error);
-    }
+    } catch (e) { console.error(e); }
 }
 
-function addComment(comment, price = 0, isManual = false) {
-    if (!selectedItem) {
-        console.error('❌ لم يتم تحديد عنصر لإضافة التعليق عليه.');
-        return;
-    }
-
-    if (!comment?.trim()) {
-        console.error('❌ لا يمكن إضافة تعليق فارغ.');
-        return;
-    }
-
-    price = parseFloat(price) || 0;
-
-    // ✅ إنشاء الطلب لو مش موجود
-    if (!currentOrder[selectedItem]) {
-        currentOrder[selectedItem] = { price: 0, quantity: 0, comment: [] };
-    }
-
-    if (!Array.isArray(currentOrder[selectedItem].comment)) {
-        currentOrder[selectedItem].comment = [];
-    }
-
-    // ✅ التأكد من عدم تكرار التعليق بنفس النص والسعر
-    const alreadyExists = currentOrder[selectedItem].comment.some(
-        c => c.text === comment && c.price === price
-    );
-
-    if (!alreadyExists) {
-        currentOrder[selectedItem].comment.push({ text: comment, price, isManual });
-    }
-
-    console.log(`✅ بعد الإضافة:`, currentOrder[selectedItem]);
-
-    // ✅ تحديث التوتال بعد الإضافة
-    updateOrderTotal();
-    updateOrderCommentsDisplay(selectedItem);
-
-    // ✅ غلق الكارد بعد الإضافة لو مش تعليق يدوي
-    if (!isManual) closeCommentCard(); 
-}
-
-document.querySelectorAll('.product-item').forEach(item => {
-    item.addEventListener('click', () => {
-        selectedItem = item.getAttribute('data-id');
-        console.log(`✅ المنتج المحدد: ${selectedItem}`);
-    });
-});
-
-function setComment(comment, price) {
-    console.log(`🚀 محاولة إضافة تعليق: ${comment} بسعر: ${price}`);
-
-    if (!selectedItem) {
-        console.error('❌ لم يتم تحديد عنصر.');
-        return;
-    }
-
-    if (!currentOrder[selectedItem]) {
-        currentOrder[selectedItem] = { price: 0, quantity: 0, comment: [] };
-    }
-
-    if (!Array.isArray(currentOrder[selectedItem].comment)) {
-        currentOrder[selectedItem].comment = [];
-    }
-
-    // ✅ إضافة التعليق
-    currentOrder[selectedItem].comment.push({ text: comment, price });
-
-    console.log(`✅ بعد الإضافة:`, currentOrder[selectedItem]);
-
-    // ✅ تحديث العرض والتوتال
-    updateOrderCommentsDisplay(selectedItem);
-    updateOrderTotal();
-}
-
-function addManualComment(item) {
-    const commentInput = document.getElementById('commentInput').value.trim();
-    const priceInput = parseFloat(document.getElementById('priceInput').value) || 0;
-
-    if (!commentInput) {
-        console.error('❌ لا يمكن إضافة تعليق فارغ.');
-        return;
-    }
-
-    // ✅ تعيين العنصر المختار
-    selectedItem = item;
-
-    // ✅ استخدم `addComment()` بدلاً من التعديل المباشر
-    addComment(commentInput, priceInput, true); 
-
-    // ✅ تحديث التوتال بعد الإضافة
-    updateOrderTotal();
-    updateOrderCommentsDisplay(item);
-
-    // ✅ تفريغ الحقول بعد الإضافة
-    document.getElementById('commentInput').value = '';
-    document.getElementById('priceInput').value = '';
-}
-
-function updateQuantity(itemIndex, newQuantity) {
-    if (!currentOrder[itemIndex]) return;
-
-    const existingComments = [...(currentOrder[itemIndex].comment || [])];
-    currentOrder[itemIndex].quantity = newQuantity;
-    currentOrder[itemIndex].comment = existingComments;
-
-    updateOrderCommentsDisplay(itemIndex);
-    updateOrderTotal();
-}
-
-function updateOrderCommentsDisplay(item) {
-    const orderRow = document.querySelector(`.order-row[data-item="${item}"]`);
-    if (!orderRow) return;
-
-    const commentContainer = orderRow.querySelector('.order-comment');
-    commentContainer.innerHTML = ''; // ✅ مسح التعليقات القديمة قبل التحديث
-
-    const comments = currentOrder[item].comment || [];
-    comments.forEach(({ text, price }) => {
-        price = parseFloat(price) || 0;
-
-        const commentElement = document.createElement('div');
-        commentElement.classList.add('comment-item');
-
-        const textElement = document.createElement('span');
-        textElement.textContent = text;
-
-        const priceElement = document.createElement('span');
-        priceElement.textContent = `${price.toFixed(2)} `;
-
-        const removeButton = document.createElement('button');
-        removeButton.textContent = '❌';
-        removeButton.setAttribute('data-text', text);
-        removeButton.setAttribute('data-price', price);
-        removeButton.onclick = () => removeComment(item, text, price, removeButton);
-
-        commentElement.appendChild(textElement);
-        commentElement.appendChild(priceElement);
-        commentElement.appendChild(removeButton);
-
-        commentContainer.appendChild(commentElement);
-    });
-
-    commentContainer.style.display = comments.length > 0 ? 'block' : 'none';
-
-    renderOrderSummary(); // ✅ تحديث واجهة الطلب بالكامل
-}
-
-function updateCommentCount(item, text, price, change) {
-    const order = currentOrder[item];
-    if (!order || !order.comment) return;
-
-    order.comment = order.comment.map(c => {
-        if (c.text === text && c.price === price) {
-            const newCount = Math.max(1, (c.count || 1) + change);
-            return { ...c, count: newCount };
-        }
-        return c;
-    });
-
+function addCommentToItem(itemName, text, price) {
+    if (!currentOrder[itemName]) return;
+    currentOrder[itemName].comment.push({ text, price: parseFloat(price) || 0 });
     renderOrderSummary();
 }
 
-function removeComment(item, text, price, element) {
-    if (!item || !currentOrder[item]) return;
-
-    currentOrder[item].comment = currentOrder[item].comment.filter(
-        c => !(c.text === text && parseFloat(c.price).toFixed(2) === parseFloat(price).toFixed(2))
-    );
-
-    updateOrderCommentsDisplay(item);
-    renderOrderSummary();
+function saveCustomComment() {
+    const text = document.getElementById('customComment').value.trim();
+    const price = document.getElementById('manualPriceInput').value;
+    if (text) {
+        addCommentToItem(selectedItem, text, price);
+    }
+    closeCommentCard();
 }
 
-document.getElementById('saveComment').addEventListener('click', () => {
-    const comment = document.getElementById('customComment').value.trim();
-    const selectedPrice = parseFloat(document.getElementById('commentPriceDropdown').value);
+overlay.onclick = closeCommentCard;
 
-    if (!comment) {
-        console.error('❌ لا يمكن إضافة تعليق فارغ.');
-        return;
-    }
-
-    if (isNaN(selectedPrice)) {
-        console.error('❌ سعر التعليق غير صحيح.');
-        return;
-    }
-
-    setComment(comment, selectedPrice);
-
-    // ✅ إغلاق الكارد بعد الحفظ
-    if (overlay) overlay.style.display = 'none';
-    if (commentCard) commentCard.style.display = 'none';
-});
-
-document.getElementById('closeCommentCard').addEventListener('click', closeCommentCard);
-
-overlay.addEventListener('click', closeCommentCard);
-
-
-
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    for (let i = 1; i <= 35; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.textContent = `${i} EGP`;
-        deliveryPriceSelect.appendChild(option);
-    }
-    fetchProducts(); // تحميل المنتجات من قاعدة البيانات
-    deliveryPriceSelect.addEventListener('change', renderOrderSummary);
-    submitButton.addEventListener('click', submitOrder);
-});
-
+// --- 5. Order Submission ---
 async function getBestDiscountCode(orderDetails) {
     try {
         const productNames = orderDetails.map(item => item.name);
-        console.log("🔍 البحث عن أكواد خصم للمنتجات:", productNames);
-
         const response = await fetch(`/api/discounts/check`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ products: productNames })
         });
-
-        if (!response.ok) {
-            throw new Error("❌ فشل في جلب كود الخصم");
-        }
-
+        if (!response.ok) return null;
         const data = await response.json();
-        console.log("🔹 بيانات كود الخصم المستلمة من السيرفر:", data);
-        
         return data.bestDiscountCode || null;
     } catch (error) {
-        console.error("❌ خطأ أثناء جلب كود الخصم:", error);
+        console.error("❌ Error fetching discount:", error);
         return null;
     }
 }
 
 async function submitOrder() {
-    if (!nameInput.value.trim() || !phoneInput.value.trim() || !addressInput.value.trim()) {
-        alert("❌ يرجى إدخال بيانات العميل كاملة");
+    const items = Object.keys(currentOrder);
+    if (items.length === 0) {
+        Swal.fire({ icon: 'warning', title: t[currentLang].msgEmptyCart });
         return;
     }
 
-    if (Object.keys(currentOrder).length === 0) {
-        alert("❌ لا يمكن إرسال طلب فارغ");
-        return;
+    const paymentMethod = document.getElementById('payment-method').value;
+    const total = parseFloat(document.getElementById('order-total').textContent);
+
+    if (paymentMethod !== 'cash') {
+        const confirmed = await Swal.fire({
+            title: t[currentLang].confirmPayment,
+            text: `${t[currentLang].total}: ${total.toFixed(2)} EGP via ${paymentMethod.toUpperCase()}`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: t[currentLang].confirmReceipt,
+            cancelButtonText: t[currentLang].cancel
+        });
+        if (!confirmed.isConfirmed) return;
     }
 
-    const orderDetails = Object.entries(currentOrder).map(([name, details]) => ({
+    const orderDetails = items.map(name => ({
         name,
-        price: details.price,
-        quantity: details.quantity,
-        comments: (details.comment || []).map(c => ({ // ✅ إصلاح مشكلة undefined
-            text: c.text,
-            price: c.price
-        }))
+        price: currentOrder[name].price,
+        quantity: currentOrder[name].quantity,
+        comments: currentOrder[name].comment
     }));
 
-    // ✅ جلب أفضل كود خصم متاح
-    let discountCode = null;
-    try {
-        discountCode = await getBestDiscountCode(orderDetails);
-        console.log("🔹 أفضل كود خصم متاح:", discountCode);
-    } catch (error) {
-        console.error("⚠️ خطأ أثناء جلب كود الخصم:", error);
-    }
+    // Auto-fetch best discount
+    const discountCode = await getBestDiscountCode(orderDetails);
 
     const orderData = {
         customer: {
-            name: nameInput.value.trim(),
-            address: addressInput.value.trim(),
-            phone: phoneInput.value.trim(),
+            name: nameInput.value || (isAr ? 'عميل تيك أواي' : 'Walk-in'),
+            phone: phoneInput.value || '0000000000',
+            address: 'Store'
         },
+        orderDetails,
         deliveryPrice: parseFloat(deliveryPriceSelect.value) || 0,
-        orderTotal: parseFloat(orderTotal.textContent) || 0,
-        orderDetails, 
-        payment_method: document.getElementById('payment-method').value,
-        discountCode,
+        orderTotal: total,
+        payment_method: paymentMethod,
+        discountCode
     };
 
-    console.log("📤 الطلب قبل الإرسال:", orderData);
+    try {
+        submitButton.disabled = true;
+        submitButton.style.opacity = '0.5';
+        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${isAr ? 'جاري الحفظ...' : 'Saving...'}`;
 
-    fetch('/api/order', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(orderData),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.order) {
-            console.log("✅ الطلب تم بنجاح:", data);
+        const res = await fetch('/api/order', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (res.ok) {
+            Swal.fire({ icon: 'success', title: isAr ? 'تم بنجاح' : 'Success', timer: 1500, showConfirmButton: false });
             resetForm();
-            updateOrderTotal(); // ✅ تحديث التوتال بعد الإرسال
         } else {
-            throw new Error(data.message || "حدث خطأ غير معروف");
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || 'Server error');
         }
-    })
-    .catch(error => {
-        console.error("❌ خطأ أثناء إرسال الطلب:", error);
-        alert(`❌ خطأ: ${error.message}`);
-    });
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+    } finally {
+        submitButton.disabled = false;
+        submitButton.style.opacity = '1';
+        submitButton.innerHTML = `<i class="fas fa-check-circle"></i> ${t[currentLang].checkout}`;
+    }
 }
 
 function resetForm() {
+    currentOrder = {};
     nameInput.value = '';
-    addressInput.value = '';
     phoneInput.value = '';
     deliveryPriceSelect.value = '0';
-    orderTotal.textContent = '0.00';
-    orderSummary.innerHTML = '';
-    currentOrder = {};
+    renderOrderSummary();
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const phoneInput = document.getElementById("customer-phone"); // ✅ إدخال رقم الهاتف
-    const suggestionsBox = document.getElementById("suggestions"); // ✅ صندوق الاقتراحات
+function setPaymentMethod(method) {
+    document.getElementById('payment-method').value = method;
+    document.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.payment-btn[data-method="${method}"]`).classList.add('active');
+}
 
-    if (!phoneInput) {
-        console.warn("⚠️ لم يتم العثور على عنصر إدخال رقم الهاتف!");
+// --- 5. Customer Search ---
+phoneInput.addEventListener('input', async () => {
+    const phone = phoneInput.value.trim();
+    if (phone.length < 3) {
+        suggestionsBox.style.display = 'none';
         return;
     }
 
-    // 🛠️ دالة لتحويل الأرقام العربية إلى إنجليزية لتجنب الأخطاء
-    function convertArabicNumbersToEnglish(str) {
-        return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
-    }
-
-    phoneInput.addEventListener("input", async function () {
-        let phone = phoneInput.value.trim();
-        phone = convertArabicNumbersToEnglish(phone); // ✅ تحويل الرقم قبل الإرسال
-
-        if (phone.length === 0) {
-            suggestionsBox.style.display = "none";
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/customers/${phone}`);
-            if (!response.ok) throw new Error("❌ فشل في جلب البيانات من السيرفر");
-
-            const customers = await response.json();
-            suggestionsBox.innerHTML = ""; // ✅ مسح القائمة السابقة
-
-            if (customers.length === 0) {
-                suggestionsBox.style.display = "none";
-                return;
-            }
-
-            customers.forEach(customer => {
-                const suggestion = document.createElement("div");
-                suggestion.classList.add("suggestion-item"); // ✅ تحسين المظهر
-                suggestion.textContent = customer.phone;
-                suggestion.addEventListener("click", function () {
-                    phoneInput.value = customer.phone;
-                    suggestionsBox.style.display = "none";
-                    fetchCustomerData(customer.phone);
-                });
-                suggestionsBox.appendChild(suggestion);
+    try {
+        const res = await fetch(`/api/customers/${phone}`);
+        const data = await res.json();
+        suggestionsBox.innerHTML = '';
+        
+        if (data.length > 0) {
+            data.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = `${c.name} (${c.phone})`;
+                div.onclick = () => {
+                    nameInput.value = c.name;
+                    phoneInput.value = c.phone;
+                    suggestionsBox.style.display = 'none';
+                };
+                suggestionsBox.appendChild(div);
             });
-
-            suggestionsBox.style.display = "block";
-        } catch (error) {
-            console.error("❌ خطأ أثناء تحميل الأرقام:", error);
+            suggestionsBox.style.display = 'block';
         }
-    });
-
-    // ✅ إخفاء قائمة الاقتراحات عند النقر خارجها
-    document.addEventListener("click", function (e) {
-        if (!phoneInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
-            suggestionsBox.style.display = "none";
-        }
-    });
+    } catch (e) { console.error(e); }
 });
+
+function setupEventListeners() {
+    if (submitButton) submitButton.addEventListener('click', submitOrder);
+    
+    // Close suggestions on outside click
+    document.addEventListener('click', (e) => {
+        if (!phoneInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+}
