@@ -40,7 +40,18 @@ const t = {
         todayTotal: 'إجمالي الطلبات اليوم:',
         sidebarPrice: 'السعر:',
         sidebarVat: 'القيمة المضافة (14%):',
-        sidebarTotal: 'الإجمالي النهائي:'
+        sidebarTotal: 'الإجمالي النهائي:',
+        prev: 'السابق',
+        next: 'التالي',
+        pageOf: 'صفحة {current} من {total}',
+        exportExcel: 'تصدير الطلبات (Excel)',
+        home: 'الرئيسية',
+        card: 'فيزا / محفظة',
+        cash: 'نقدي',
+        shiftTotal: 'إجمالي طلبات وردية العمل:',
+        onlineTotal: 'إجمالي الطلبات الأونلاين:',
+        cashTotal: 'إجمالي الطلبات النقدي:',
+        cancelledTotal: 'إجمالي الطلبات الملغاة:'
     },
     en: {
         pageTitle: 'Orders',
@@ -80,7 +91,18 @@ const t = {
         todayTotal: "Today's Total Orders:",
         sidebarPrice: 'Price:',
         sidebarVat: 'VAT (14%):',
-        sidebarTotal: 'Grand Total:'
+        sidebarTotal: 'Grand Total:',
+        prev: 'Previous',
+        next: 'Next',
+        pageOf: 'Page {current} of {total}',
+        exportExcel: 'Export Orders (Excel)',
+        home: 'Home',
+        card: 'Card / Wallet',
+        cash: 'Cash',
+        shiftTotal: 'Business Shift Total:',
+        onlineTotal: 'Online Orders Total:',
+        cashTotal: 'Cash Orders Total:',
+        cancelledTotal: 'Cancelled Orders Total:'
     }
 }[currentLang];
 
@@ -88,17 +110,33 @@ let activeFilter = 'all';
 let currentOrders = [];
 let appSettings = {};
 let vatRate = 0.14; // Default fallback
-let selectedDate = new Date().toISOString().split('T')[0]; // Default to today
+let selectedDate = ""; // Will be fetched from settings
+let currentPage = 1;
+const ordersPerPage = 10;
+let totalPages = 1;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     applyTranslations();
     
-    // Set default date in picker
     const dateInput = document.getElementById('date-filter');
-    dateInput.value = selectedDate;
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    
+    // Initial Fallback
+    selectedDate = todayStr;
+    if (dateInput) dateInput.value = todayStr;
 
-    fetchSettings();
-    fetchOrders();
+    await fetchSettings(); // This will populate appSettings including active_business_date
+    
+    if (appSettings.active_business_date) {
+        selectedDate = appSettings.active_business_date;
+        if (dateInput) dateInput.value = selectedDate;
+    }
+
+    // Update Label to "Business Day Total"
+    const label = document.getElementById('today-total-label');
+    if (label) label.textContent = isAr ? 'إجمالي طلبات وردية العمل:' : 'Business Shift Total:';
+
+    fetchOrders(1);
 
     // Tab Filtering
     document.querySelectorAll('.tab-item').forEach(tab => {
@@ -106,35 +144,62 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             activeFilter = tab.dataset.filter;
-            filterAndRender();
+            fetchOrders(1);
         });
     });
 
     // Search Filtering
-    document.getElementById('order-search').addEventListener('input', (e) => {
-        filterAndRender(e.target.value);
-    });
+    const searchInput = document.getElementById('order-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            // 🌍 Auto-convert Arabic numerals to English in real-time
+            const arabicMap = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+            const originalValue = e.target.value;
+            const normalizedValue = originalValue.replace(/[٠-٩]/g, d => arabicMap[d]);
+            
+            if (originalValue !== normalizedValue) {
+                e.target.value = normalizedValue;
+            }
+
+            const searchIcon = document.querySelector('.search-container i');
+            if (searchIcon) searchIcon.className = 'fas fa-spinner fa-spin';
+            fetchOrders(1);
+        });
+    }
 
     // Date Filtering
     dateInput.addEventListener('change', (e) => {
-        selectedDate = e.target.value;
+        if (!e.target.value) {
+            selectedDate = appSettings.active_business_date || new Date().toLocaleDateString('en-CA');
+            dateInput.value = selectedDate;
+        } else {
+            selectedDate = e.target.value;
+        }
+        
         const clearBtn = document.getElementById('clear-date-btn');
-        if (selectedDate) {
+        if (selectedDate && selectedDate !== appSettings.active_business_date) {
             clearBtn.style.display = 'block';
         } else {
             clearBtn.style.display = 'none';
         }
-        updateCounts(); // 🔢 Sync tab counts
-        filterAndRender();
+        fetchOrders(1);
     });
 
-    // Clear Date Filter (Back to Today)
+    // Clear Date Filter (Back to Current Shift)
     document.getElementById('clear-date-btn').addEventListener('click', () => {
-        selectedDate = new Date().toISOString().split('T')[0];
+        selectedDate = appSettings.active_business_date || new Date().toLocaleDateString('en-CA');
         dateInput.value = selectedDate;
         document.getElementById('clear-date-btn').style.display = 'none';
-        updateCounts(); // 🔢 Sync tab counts
-        filterAndRender();
+        fetchOrders(1);
+    });
+
+    // Pagination Buttons
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (currentPage > 1) fetchOrders(currentPage - 1);
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+        if (currentPage < totalPages) fetchOrders(currentPage + 1);
     });
 
     // Close sidebar on overlay click
@@ -206,16 +271,19 @@ function applyTranslations() {
     const cancelBtn = document.getElementById('cancel-order-btn');
     if (cancelBtn) cancelBtn.innerHTML = `<i class="fas fa-ban"></i> ${t.cancelBtn}`;
 
+    const excelBtn = document.querySelector('.btn-export-excel');
+    if (excelBtn) excelBtn.innerHTML = `<i class="fas fa-file-excel"></i> ${t.exportExcel}`;
+
     // Update document and page titles
     document.title = `${t.pageTitle} - Vortex POS`;
     const pillTextEl = document.getElementById('pill-text');
     if (pillTextEl) pillTextEl.textContent = t.pageTitle;
     
     const homeBtnTextEl = document.getElementById('home-btn-text');
-    if (homeBtnTextEl) homeBtnTextEl.textContent = isAr ? 'الرئيسية' : 'Home';
+    if (homeBtnTextEl) homeBtnTextEl.textContent = t.home;
 
     const todayLabel = document.getElementById('today-total-label');
-    if (todayLabel) todayLabel.textContent = t.todayTotal;
+    if (todayLabel) todayLabel.textContent = t.shiftTotal;
 
     const vatLabel = document.querySelector('span[data-i18n="sidebarVat"]');
     if (vatLabel) {
@@ -271,30 +339,100 @@ async function fetchSettings() {
     }
 }
 
-async function fetchOrders() {
+async function fetchOrders(page = 1) {
+    console.log("🚀 fetchOrders called for page:", page);
     const tbody = document.getElementById('orders-table-body');
+    const searchInput = document.getElementById('order-search');
     const refreshIcon = document.querySelector('.btn-refresh-inline i');
     
+    if (!tbody) return console.error("❌ tbody not found");
+    
+    currentPage = page;
+    const query = searchInput ? searchInput.value.trim() : "";
+
+    // 🏷️ Dynamic Label Update
+    const label = document.getElementById('today-total-label');
+    if (query !== "") {
+        if (label) label.textContent = isAr ? 'نتائج البحث:' : 'Search Results:';
+    } else {
+        if (label) label.textContent = isAr ? 'إجمالي طلبات وردية العمل:' : 'Business Shift Total:';
+    }
+
+    // Reset counts to dash while loading
+    const countIds = ['count-all', 'count-paid', 'count-pending', 'count-cancelled', 'today-count'];
+    countIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '-';
+    });
+
     // Show Skeleton Loader
-    tbody.innerHTML = Array(6).fill(0).map(() => `
-        <tr class="skeleton-row">
-            <td><div class="skeleton-box" style="width: 40px"></div></td>
-            <td><div class="skeleton-box" style="width: 100px"></div></td>
-            <td><div class="skeleton-box" style="width: 150px"></div></td>
-            <td><div class="skeleton-box" style="width: 80px"></div></td>
-            <td><div class="skeleton-pill"></div></td>
-            <td><div class="skeleton-pill"></div></td>
-            <td><div class="skeleton-pill"></div></td>
+    tbody.innerHTML = Array(4).fill(0).map(() => `
+        <tr class="fade-in">
+            <td><div class="skeleton" style="width: 40px; height: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 100px; height: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 150px; height: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 80px; height: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 70px; height: 20px; border-radius: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 70px; height: 20px; border-radius: 20px;"></div></td>
+            <td><div class="skeleton" style="width: 70px; height: 20px; border-radius: 20px;"></div></td>
         </tr>
     `).join('');
 
     if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
     try {
-        const response = await fetch('/api/orders');
-        currentOrders = await response.json();
-        updateCounts(); // 🔢 Update tab counts
-        filterAndRender();
+        const url = `/api/orders?page=${page}&limit=${ordersPerPage}&date=${selectedDate}&status=${activeFilter}&search=${encodeURIComponent(query)}`;
+        console.log("📡 Fetching from:", url);
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        // 🔄 Hybrid Compatibility (Handle both old Array and new Object formats)
+        let orders = [];
+        let total = 0;
+        let tPages = 1;
+        let cPage = page;
+        let statusCounts = {};
+
+        if (Array.isArray(data)) {
+            orders = data;
+            // 📊 Local Filter Fallback
+            let filtered = data;
+            if (selectedDate) {
+                filtered = data.filter(o => {
+                    const d = o.createdAt ? new Date(o.createdAt) : new Date();
+                    return d.toLocaleDateString('en-CA') === selectedDate;
+                });
+            }
+            
+            orders = filtered;
+            total = filtered.length;
+            tPages = 1;
+            
+            // Calculate status counts from the filtered set
+            statusCounts = {
+                all: filtered.length,
+                paid: filtered.filter(o => o.payment_status === 'Paid' && o.isCancelled !== 'Yes').length,
+                pending: filtered.filter(o => o.payment_status === 'Pending' && o.isCancelled !== 'Yes').length,
+                cancelled: filtered.filter(o => o.isCancelled === 'Yes').length
+            };
+        } else if (data && data.orders) {
+            orders = data.orders;
+            total = data.total || 0;
+            tPages = data.totalPages || 1;
+            cPage = data.currentPage || page;
+            statusCounts = data.counts || {};
+        } else {
+            throw new Error('Invalid data format from server');
+        }
+
+        currentOrders = orders;
+        totalPages = tPages;
+        
+        renderOrders(orders);
+        renderPagination(cPage, tPages);
+        updateCounts(total, statusCounts);
     } catch (error) {
         console.error('❌ Error fetching orders:', error);
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:4rem; color:var(--error)">${t.errorLoading}</td></tr>`;
@@ -305,48 +443,153 @@ async function fetchOrders() {
     }
 }
 
-function filterAndRender(searchQuery = '') {
-    let filtered = [...currentOrders];
+function renderPagination(current, total) {
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const pageInfo = document.getElementById('page-info');
 
-    // Date Filter
-    if (selectedDate) {
-        filtered = filtered.filter(o => {
-            const d = o.createdAt ? new Date(o.createdAt) : new Date();
-            if (isNaN(d.getTime())) return false; // Skip truly invalid dates
-            const orderDateStr = d.toISOString().split('T')[0];
-            return orderDateStr === selectedDate;
-        });
+    if (!prevBtn || !nextBtn || !pageInfo) return;
+
+    prevBtn.disabled = current <= 1;
+    nextBtn.disabled = current >= (total || 1);
+    
+    // 🌍 Translate & Flip Icons
+    if (isAr) {
+        prevBtn.innerHTML = `<i class="fas fa-chevron-right"></i> ${t.prev}`;
+        nextBtn.innerHTML = `${t.next} <i class="fas fa-chevron-left"></i>`;
+        pageInfo.textContent = t.pageOf.replace('{current}', current).replace('{total}', total || 1);
+    } else {
+        prevBtn.innerHTML = `<i class="fas fa-chevron-left"></i> ${t.prev}`;
+        nextBtn.innerHTML = `${t.next} <i class="fas fa-chevron-right"></i>`;
+        pageInfo.textContent = t.pageOf.replace('{current}', current).replace('{total}', total || 1);
     }
-
-    // Status Filter
-    if (activeFilter === 'cancelled') {
-        filtered = filtered.filter(o => o.isCancelled === 'Yes');
-    } else if (activeFilter !== 'all') {
-        filtered = filtered.filter(o => o.payment_status === activeFilter && o.isCancelled !== 'Yes');
-    }
-
-    // Search Filter
-    if (!searchQuery) {
-        searchQuery = document.getElementById('order-search').value;
-    }
-
-    if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        filtered = filtered.filter(o => 
-            o.id.toString().includes(q) || 
-            (o.customerName && o.customerName.toLowerCase().includes(q)) ||
-            (o.customerPhone && o.customerPhone.includes(q))
-        );
-    }
-
-    renderOrders(filtered);
 }
 
-function renderOrders(orders) {
+function updateCounts(totalCount, counts = {}) {
+    const todayCountEl = document.getElementById('today-count');
+    const todayLabelEl = document.getElementById('today-total-label');
+    
+    if (todayCountEl && todayLabelEl) {
+        // 🚀 Dynamic Label & Value based on Filter
+        let displayCount = totalCount;
+        let labelText = t.shiftTotal;
+
+        const f = activeFilter.toLowerCase();
+        if (f === 'paid') {
+            displayCount = counts.paid || 0;
+            labelText = t.onlineTotal;
+        } else if (f === 'pending') {
+            displayCount = counts.pending || 0;
+            labelText = t.cashTotal;
+        } else if (f === 'cancelled') {
+            displayCount = counts.cancelled || 0;
+            labelText = t.cancelledTotal;
+        }
+
+        todayCountEl.textContent = displayCount;
+        todayLabelEl.textContent = labelText;
+    }
+
+    if (counts.all !== undefined) {
+        document.getElementById('count-all').textContent = counts.all;
+        document.getElementById('count-paid').textContent = counts.paid;
+        document.getElementById('count-pending').textContent = counts.pending;
+        document.getElementById('count-cancelled').textContent = counts.cancelled;
+    }
+}
+
+async function exportOrdersToExcel() {
+    try {
+        Swal.fire({
+            title: isAr ? 'جاري تجهيز تقرير الطلبات...' : 'Preparing Orders Report...',
+            didOpen: () => { Swal.showLoading(); },
+            allowOutsideClick: false,
+            showConfirmButton: false
+        });
+
+        // Fetch orders matching current filters
+        const query = document.getElementById('order-search').value;
+        const url = `/api/orders?nopaging=true&date=${selectedDate}&status=${activeFilter}&search=${query}`;
+        
+        const response = await fetch(url);
+        let orders = await response.json();
+
+        // 🔄 Hybrid Local Filter (Fallback if backend doesn't filter yet)
+        if (Array.isArray(orders)) {
+            if (selectedDate) {
+                orders = orders.filter(o => {
+                    const d = o.createdAt ? new Date(o.createdAt) : new Date();
+                    return d.toLocaleDateString('en-CA') === selectedDate;
+                });
+            }
+            if (activeFilter !== 'all') {
+                if (activeFilter === 'cancelled') {
+                    orders = orders.filter(o => o.isCancelled === 'Yes');
+                } else {
+                    orders = orders.filter(o => o.payment_status === activeFilter && o.isCancelled !== 'Yes');
+                }
+            }
+            if (query) {
+                const q = query.toLowerCase();
+                orders = orders.filter(o => 
+                    o.id.toString().includes(q) || 
+                    (o.customerName && o.customerName.toLowerCase().includes(q))
+                );
+            }
+        }
+
+        if (!orders || orders.length === 0) {
+            Swal.fire({ icon: 'warning', title: isAr ? 'لا توجد بيانات لتصديرها' : 'No data to export' });
+            return;
+        }
+
+        const excelData = orders.map(o => {
+            const date = new Date(o.createdAt || Date.now());
+            const serial = o.dailySerial || o.id;
+            return {
+                [isAr ? 'رقم الطلب' : 'Order #']: serial,
+                [isAr ? 'كود النظام' : 'System ID']: o.id,
+                [isAr ? 'التاريخ' : 'Date']: date.toLocaleDateString('en-CA'),
+                [isAr ? 'الوقت' : 'Time']: date.toLocaleTimeString('en-US', { hour12: false }),
+                [isAr ? 'العميل' : 'Customer']: o.customerName || (isAr ? 'عميل نقدي' : 'Cash Customer'),
+                [isAr ? 'الهاتف' : 'Phone']: o.customerPhone || '-',
+                [isAr ? 'الإجمالي' : 'Total']: parseFloat(o.orderTotal).toFixed(2),
+                [isAr ? 'حالة الدفع' : 'Payment Status']: o.payment_status,
+                [isAr ? 'طريقة الدفع' : 'Payment Method']: o.payment_method || '-',
+                [isAr ? 'الحالة' : 'Status']: o.isCancelled === 'Yes' ? (isAr ? 'ملغي' : 'Cancelled') : (isAr ? 'نشط' : 'Active')
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        ws['!cols'] = [{wch: 12}, {wch: 15}, {wch: 12}, {wch: 25}, {wch: 15}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 12}];
+
+        const wb = XLSX.utils.book_new();
+        if (!wb.Workbook) wb.Workbook = {};
+        if (!wb.Workbook.Views) wb.Workbook.Views = [];
+        wb.Workbook.Views[0] = { RTL: isAr };
+
+        XLSX.utils.book_append_sheet(wb, ws, isAr ? "الطلبات" : "Orders");
+        XLSX.writeFile(wb, `vortex_orders_${selectedDate || 'all'}.xlsx`);
+        
+        Swal.close();
+    } catch (err) {
+        console.error("Excel Error:", err);
+        Swal.fire({ icon: 'error', title: 'Excel Error', text: err.message });
+    }
+}
+
+
+function renderOrders(orders = []) {
     const tbody = document.getElementById('orders-table-body');
+    const refreshIcon = document.querySelector('.btn-refresh-inline i');
+    const searchIcon = document.querySelector('.search-container i');
+    
+    if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+    if (searchIcon) searchIcon.className = 'fas fa-search';
+
     tbody.innerHTML = '';
 
-    if (orders.length === 0) {
+    if (!orders || orders.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" style="text-align: center; padding: 4rem; color: var(--text-muted);">
@@ -358,26 +601,18 @@ function renderOrders(orders) {
         return;
     }
 
-    // 🏆 Calculate Daily Serials: Rank orders of the same day by ID/Time ASC
-    const sortedAll = [...currentOrders].sort((a, b) => (a.id || 0) - (b.id || 0));
-    const dailyCounts = {};
-    const orderSerials = {};
+    // 🚀 Only sort by ID if we are NOT searching. If searching, preserve server's rank.
+    const searchVal = document.getElementById('order-search')?.value.trim();
+    const ordersToRender = (searchVal && searchVal !== "") ? [...orders] : [...orders].sort((a, b) => (b.id || 0) - (a.id || 0));
 
-    sortedAll.forEach(o => {
-        const d = new Date(o.createdAt || Date.now());
-        const dateKey = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-        dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
-        orderSerials[o.id] = dailyCounts[dateKey];
-    });
-
-    // 🚀 Render latest orders first (DESC)
-    orders.sort((a, b) => (b.id || 0) - (a.id || 0));
-
-    orders.forEach(order => {
+    ordersToRender.forEach((order, index) => {
         const tr = document.createElement('tr');
-        const dailySerial = orderSerials[order.id] || order.id;
+        tr.className = 'fade-in';
+        tr.style.animationDelay = `${index * 0.05}s`;
         
-        tr.onclick = () => openSidebar(order, dailySerial);
+        const displaySerial = order.dailySerial || order.id;
+        
+        tr.onclick = () => openSidebar(order, displaySerial);
 
         const createdAt = new Date(order.createdAt || Date.now());
         const dateMain = createdAt.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -385,11 +620,10 @@ function renderOrders(orders) {
 
         const isCancelled = order.isCancelled === 'Yes';
         const isPaid = order.payment_status === 'Paid';
-        const isCash = order.payment_status === 'Pending'; // We treat Cash as Pending in DB but want it green
         const isDelivery = parseFloat(order.deliveryPrice) > 0;
 
         tr.innerHTML = `
-            <td><span class="order-id">#${dailySerial}</span></td>
+            <td><span class="order-id">#${displaySerial}</span></td>
             <td>
                 <div class="order-date-cell">
                     <span class="date-main">${dateMain}</span>
@@ -437,14 +671,14 @@ function openSidebar(order, dailySerial = null) {
     document.getElementById('side-customer-address').textContent = order.customerAddress || t.noAddress;
     
     const isPaid = order.payment_status === 'Paid';
-    const rawMethod = order.payment_method || (isPaid ? 'Card/Wallet' : 'Cash');
+    const rawMethod = (order.payment_method || (isPaid ? 'Card' : 'Cash')).toLowerCase();
     
     // Friendly display for payment methods
-    let displayMethod = rawMethod;
-    if (rawMethod.toLowerCase() === 'vcash') displayMethod = isAr ? 'فودافون كاش' : 'Vodafone Cash';
-    if (rawMethod.toLowerCase() === 'instapay') displayMethod = isAr ? 'إنستا باي' : 'Instapay';
-    if (rawMethod.toLowerCase() === 'card') displayMethod = isAr ? 'فيزا / بطاقة' : 'Card / Wallet';
-    if (rawMethod.toLowerCase() === 'cash') displayMethod = isAr ? 'نقدي' : 'Cash';
+    let displayMethod = order.payment_method || (isPaid ? t.card : t.cash);
+    if (rawMethod.includes('vcash') || rawMethod.includes('vodafone')) displayMethod = isAr ? 'فودافون كاش' : 'Vodafone Cash';
+    else if (rawMethod.includes('instapay')) displayMethod = isAr ? 'إنستا باي' : 'Instapay';
+    else if (rawMethod.includes('card') || rawMethod.includes('wallet') || rawMethod.includes('visa')) displayMethod = t.card;
+    else if (rawMethod.includes('cash')) displayMethod = t.cash;
 
     const statusBadge = `
         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
@@ -496,6 +730,7 @@ function openSidebar(order, dailySerial = null) {
     document.getElementById('print-receipt-btn').onclick = () => printReceipt(order.id);
 
     const sidebar = document.getElementById('details-sidebar');
+    sidebar.style.display = 'flex';
     
     setTimeout(() => {
         sidebar.classList.add('open');
@@ -511,6 +746,7 @@ function closeSidebar() {
     sidebar.style.transform = isAr ? 'translateX(-100%)' : 'translateX(100%)';
     setTimeout(() => {
         sidebar.classList.remove('open');
+        sidebar.style.display = 'none';
         document.getElementById('modal-overlay').style.display = 'none';
     }, 300);
 }
@@ -575,7 +811,7 @@ async function cancelOrder(orderId) {
                     isAr ? 'تم إلغاء الطلب بنجاح.' : 'Your order has been cancelled.',
                     'success'
                 );
-                fetchOrders();
+                fetchOrders(currentPage);
                 closeSidebar();
             }
         } catch (error) {

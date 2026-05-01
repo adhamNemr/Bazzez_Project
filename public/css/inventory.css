@@ -9,6 +9,7 @@
     --luxury-slate: #1e293b;
     --luxury-border: #e2e8f0;
     --luxury-bg: #f8fafc;
+    --luxury-shadow: 0 10px 40px rgba(0,0,0,0.04);
 }
 
 body {
@@ -64,8 +65,6 @@ body {
     border: 1px solid rgba(0, 128, 96, 0.1);
     white-space: nowrap;
 }
-
-
 
 .brand-logo-container {
     display: flex;
@@ -124,229 +123,264 @@ body {
     mix-blend-mode: multiply;
 }
 
-
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem; /* Reduced top padding */
+    padding: 0.5rem 2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem; /* Tighter gap between components */
+    gap: 1.5rem;
 }
 
-/* 🔹 Toolbar (Search & Form) */
-.toolbar {
+/* 📊 Luxury Stats Overview */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-card {
     background: white;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    padding: 1.5rem 2rem; /* More compact */
+    padding: 1.5rem;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: var(--luxury-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+}
+
+.stat-icon-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-content span {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     margin-bottom: 0.25rem;
 }
 
+.stat-content h3 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--luxury-slate);
+}
 
-.search-bar-container {
+/* ✨ Luxury Toolbar */
+.luxury-toolbar {
+    background: white;
+    padding: 1.25rem 1.5rem;
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--luxury-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    gap: 2rem;
+}
+
+.toolbar-left {
     display: flex;
     gap: 1rem;
-    align-items: center;
+    flex: 1;
 }
 
-.search-bar {
+.search-box {
+    position: relative;
+    flex: 2;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+html[dir="rtl"] .search-icon { right: 1.25rem; }
+html[dir="ltr"] .search-icon { left: 1.25rem; }
+
+.search-box input {
+    width: 100%;
+    padding: 0.9rem 3rem;
     background: #f1f5f9;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-}
-
-.search-bar:focus {
-    background: white;
-    border-color: var(--luxury-emerald);
-    box-shadow: 0 0 0 4px rgba(0, 128, 96, 0.1);
-    outline: none;
-}
-
-.filter-dropdown {
-    background: #f1f5f9;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    cursor: pointer;
-}
-
-/* 🔹 Input Styles */
-input[type="text"], 
-input[type="number"], 
-input[type="date"], 
-select {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 16px;
     font-family: inherit;
-    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s;
 }
 
-input:focus {
-    border-color: var(--luxury-emerald);
+.search-box input:focus {
     background: white;
+    border-color: var(--luxury-emerald);
+    box-shadow: 0 0 0 5px rgba(0, 128, 96, 0.08);
     outline: none;
 }
 
-/* 🔹 Table Refinement */
+.filter-box select {
+    padding: 0.9rem 1.5rem;
+    background: #f1f5f9;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--luxury-slate);
+}
+
+.filter-box select:focus {
+    border-color: var(--luxury-emerald);
+    outline: none;
+}
+
+.btn-add-item {
+    background: var(--luxury-emerald);
+    color: white;
+    padding: 0.9rem 1.75rem;
+    border-radius: 16px;
+    border: none;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+    box-shadow: 0 10px 25px rgba(0, 128, 96, 0.2);
+}
+
+.btn-add-item:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+    box-shadow: 0 15px 35px rgba(0, 128, 96, 0.3);
+}
+
+/* 📦 Products Table Card */
 .products-card {
     background: white;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border-radius: 28px;
+    box-shadow: var(--luxury-shadow);
     border: 1px solid var(--luxury-border);
     overflow: hidden;
 }
 
 .table-container {
-    height: 585px; /* Exact height for header + 8 rows */
+    max-height: 600px;
     overflow-y: auto;
 }
 
 .orders-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
-}
-
-.orders-table th, .orders-table td {
-    padding: 1.25rem 0.5rem;
-    text-align: center !important;
-    vertical-align: middle;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .orders-table th {
     background: #f8fafc;
-    font-size: 0.85rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-size: 0.8rem;
     font-weight: 800;
-    color: #475569;
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     border-bottom: 2px solid var(--luxury-border);
     position: sticky;
     top: 0;
-    z-index: 5;
-    height: 65px;
+    z-index: 10;
 }
 
 .orders-table td {
-    border-bottom: 1px solid var(--luxury-border);
-    font-size: 0.95rem;
+    padding: 1.25rem 1rem;
+    text-align: center;
     font-weight: 600;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--luxury-slate);
 }
 
-.orders-table tbody tr {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    height: 65px;
-}
-
-.orders-table tbody tr:hover td {
+.orders-table tr:hover td {
     background: var(--luxury-emerald-light);
     color: var(--luxury-emerald);
 }
 
-.empty-row td {
-    background: rgba(248, 250, 252, 0.4) !important;
-    border-bottom: 1px dashed rgba(0,0,0,0.05);
+/* 🏷️ Status Badges */
+.badge-low {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
 }
 
-/* 🚀 Action Buttons */
-.main-button {
-    background: var(--luxury-emerald);
-    color: white;
-    padding: 0.85rem 1.75rem;
-    border-radius: 14px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 15px rgba(0, 128, 96, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.main-button:hover {
-    transform: translateY(-3px);
-    filter: brightness(1.1);
-}
-
-.cancel-button {
-    background: #ef4444;
-    color: white;
-    padding: 0.85rem 1.75rem;
-    border-radius: 14px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 15px rgba(239, 68, 68, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cancel-button:hover {
-    transform: translateY(-3px);
+.badge-ok {
+    background: var(--luxury-emerald-light);
+    color: var(--luxury-emerald);
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
 }
 
 /* 📊 Footer Actions */
 .footer {
     display: flex;
     gap: 1.5rem;
-    width: 100%;
-    margin-top: 1.5rem;
 }
 
 .footer button {
     flex: 1;
+    padding: 1.25rem;
+    border-radius: 20px;
+    border: none;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    padding: 1.25rem;
-    font-size: 1rem;
-    font-weight: 800;
-    background: var(--luxury-emerald);
+    gap: 0.75rem;
+    transition: all 0.3s;
     color: white;
-    border-radius: 16px;
-    border: none;
-    transition: all 0.4s ease;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
+    background: #008060; /* Luxury Emerald */
 }
 
 .footer button:hover {
-    transform: scale(1.02);
+    transform: translateY(-4px);
     filter: brightness(1.1);
+    box-shadow: 0 8px 25px rgba(0, 128, 96, 0.25);
 }
 
-/* 📏 Balanced Column Widths (%) */
-.orders-table th:nth-child(1), .orders-table td:nth-child(1) { width: 6%; }   /* ID */
-.orders-table th:nth-child(2), .orders-table td:nth-child(2) { width: 22%; }  /* Name */
-.orders-table th:nth-child(3), .orders-table td:nth-child(3) { width: 14%; }  /* Qty */
-.orders-table th:nth-child(4), .orders-table td:nth-child(4) { width: 10%; }  /* Min */
-.orders-table th:nth-child(5), .orders-table td:nth-child(5) { width: 12%; }  /* Cost */
-.orders-table th:nth-child(6), .orders-table td:nth-child(6) { width: 12%; }  /* Total */
-.orders-table th:nth-child(7), .orders-table td:nth-child(7) { width: 12%; }  /* Added */
-.orders-table th:nth-child(8), .orders-table td:nth-child(8) { width: 12%; }  /* Expiry */
-
-/* 🌍 LTR Overrides */
-html[dir="ltr"] .search-container i {
-    right: auto !important;
-    left: 1rem !important;
-}
-
-html[dir="ltr"] .search-bar {
-    padding-right: 1.25rem !important;
-    padding-left: 2.5rem !important;
+/* 🛰️ Media Queries */
+@media (max-width: 768px) {
+    .luxury-toolbar {
+        flex-direction: column;
+    }
+    .toolbar-left {
+        width: 100%;
+        flex-direction: column;
+    }
+    .btn-add-item {
+        width: 100%;
+        justify-content: center;
+    }
 }

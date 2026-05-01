@@ -1,9 +1,104 @@
-const { Order} = require("../models");
+const { Order, sequelize } = require("../models");
 
 exports.fetchOrders = async (req, res) => {
     try {
-        const orders = await Order.findAll({ order: [["id", "DESC"]] });
-        res.json(orders);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        const nopaging = req.query.nopaging === 'true';
+        const { date, status, search } = req.query;
+        const { Op } = require("sequelize");
+
+        const { Setting } = require('../models');
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        const activeBusinessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+
+        const where = {};
+
+        // 🗓️ Strict Date Filter (Always filter by businessDate)
+        const filterDate = (date && date.trim() !== "" && date !== 'undefined') ? date : activeBusinessDate;
+        console.log("🔍 Filtering by business date:", filterDate);
+        where.businessDate = filterDate;
+
+        // 🏷️ Status Filter
+        if (status && status !== 'all' && status !== 'undefined') {
+            if (status === 'cancelled') {
+                where.isCancelled = 'Yes';
+            } else {
+                where.payment_status = status;
+                where.isCancelled = { [Op.ne]: 'Yes' };
+            }
+        }
+
+        let cleanSearch = (search && search !== 'undefined') ? search.trim() : "";
+        
+        // 🌍 Normalize Arabic/Hindi Numerals to English
+        const arabicMap = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
+        cleanSearch = cleanSearch.replace(/[٠-٩]/g, d => arabicMap[d]);
+
+        const isNumericSearch = !isNaN(cleanSearch) && cleanSearch !== "";
+
+        if (cleanSearch !== "") {
+            where[Op.or] = [
+                { dailySerial: isNumericSearch ? parseInt(cleanSearch) : 0 },
+                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'CHAR'), { [Op.like]: `%${cleanSearch}%` }),
+                { customerName: { [Op.like]: `%${cleanSearch}%` } },
+                { customerPhone: { [Op.like]: `%${cleanSearch}%` } }
+            ];
+            console.log("🔍 Searching for:", cleanSearch, "within", filterDate);
+        }
+
+        console.log("🛠️ Sequelize Where Clause:", JSON.stringify(where));
+
+        if (nopaging) {
+            const orders = await Order.findAll({ where, order: [["id", "DESC"]] });
+            return res.json(orders);
+        }
+
+        const { count, rows } = await Order.findAndCountAll({
+            attributes: {
+                include: [
+                    [
+                        sequelize.literal(`(CASE 
+                            WHEN dailySerial = ${isNumericSearch ? parseInt(cleanSearch) : -1} THEN 1
+                            WHEN CAST(dailySerial AS CHAR) LIKE '%${cleanSearch}%' THEN 2
+                            ELSE 100 END)`),
+                        'relevance'
+                    ]
+                ]
+            },
+            where,
+            order: (isNumericSearch && cleanSearch !== "") ? [
+                [sequelize.literal('relevance'), 'ASC'],
+                ["dailySerial", "ASC"]
+            ] : [["id", "DESC"]],
+            limit: limit,
+            offset: offset
+        });
+
+        // 📊 Unified Count Calculation (Scoped ONLY to Business Date)
+        const countsWhere = { businessDate: filterDate };
+        const counts = {
+            all: await Order.count({ where: countsWhere }),
+            paid: await Order.count({ where: { ...countsWhere, payment_status: 'Paid', isCancelled: { [Op.ne]: 'Yes' } } }),
+            pending: await Order.count({ where: { ...countsWhere, payment_status: 'Pending', isCancelled: { [Op.ne]: 'Yes' } } }),
+            cancelled: await Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } })
+        };
+
+        const rankedRows = rows.map(r => {
+            const data = r.get({ plain: true });
+            // Remove relevance from the final object if you want it super clean, 
+            // but keeping it is fine as it doesn't affect the UI.
+            return data;
+        });
+
+        res.json({
+            orders: rankedRows,
+            total: count,
+            currentPage: page,
+            totalPages: Math.ceil(count / limit),
+            counts
+        });
     } catch (error) {
         console.error("❌ خطأ في جلب الطلبات:", error);
         res.status(500).json({ message: "❌ خطأ في جلب الطلبات" });

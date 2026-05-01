@@ -98,8 +98,10 @@ function applyTranslations() {
     document.getElementById('loc-btn-add').textContent = t.btnAdd;
     document.getElementById('edit-btn').textContent = t.btnEdit;
     document.getElementById('delete-btn').textContent = t.btnDelete;
-    document.getElementById('loc-btn-pdf').textContent = t.btnPdf;
-    document.getElementById('loc-btn-excel').textContent = t.btnExcel;
+    const pdfBtn = document.getElementById('loc-btn-pdf');
+    const excelBtn = document.getElementById('loc-btn-excel');
+    if (pdfBtn) pdfBtn.textContent = t.btnPdf;
+    if (excelBtn) excelBtn.textContent = t.btnExcel;
 
     document.getElementById('loc-id').textContent = t.tableId;
     document.getElementById('loc-name').textContent = t.tableName;

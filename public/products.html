@@ -46,7 +46,7 @@
         }
 
         .container {
-            padding: 2rem; /* Moved padding here to keep content centered */
+            padding: 1rem 2rem; /* Moved padding here to keep content centered */
         }
 
         /* Luxury Card Styles */
@@ -101,6 +101,21 @@
             height: 4px;
             background: var(--luxury-emerald);
             opacity: 0.1;
+        }
+
+        #loc-btn-excel {
+            background: var(--luxury-emerald);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
+            width: 100%;
+        }
+
+        #loc-btn-excel:hover {
+            background: var(--luxury-emerald);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 128, 96, 0.25);
+            filter: brightness(1.1);
         }
 
         .stat-card:hover {
@@ -271,8 +286,7 @@
 
             <!-- أزرار التصدير والطباعة -->
             <div class="footer">
-                <button onclick="exportProductsToPDF()" class="main-button" id="loc-btn-pdf">Export PDF</button>
-                <button onclick="exportProductsToExcel()" class="main-button" id="loc-btn-excel">Export Excel</button>
+                <button onclick="exportProductsToExcel()" class="main-button btn-excel-full" id="loc-btn-excel">Export Excel</button>
             </div>
         </main>
     </div>

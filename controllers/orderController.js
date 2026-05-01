@@ -128,6 +128,18 @@ exports.createOrder = async (req, res) => {
             });
         }
 
+        // ✅ الحصول على تاريخ العمل الحالي من الإعدادات أو التاريخ الحالي
+        const { Setting } = require('../models');
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+
+        // ✅ حساب الرقم التسلسلي اليومي (Daily Serial)
+        const lastOrderOfDay = await Order.findOne({
+            where: { businessDate: businessDate },
+            order: [['dailySerial', 'DESC']]
+        });
+        const nextSerial = lastOrderOfDay ? (Number(lastOrderOfDay.dailySerial) || 0) + 1 : 1;
+
         // ✅ إنشاء الطلب
         const order = await Order.create({
             customerId: existingCustomer.id,
@@ -139,7 +151,9 @@ exports.createOrder = async (req, res) => {
             orderDetails: JSON.stringify(orderDetails),
             discountAmount: discountValue,
             payment_status: payment_method === 'cash' ? "Pending" : "Paid",
-            payment_method: payment_method
+            payment_method: payment_method,
+            businessDate: businessDate,
+            dailySerial: nextSerial
         });
 
         // ✅ تسجيل الدفع إذا المبلغ النهائي أكبر من الصفر

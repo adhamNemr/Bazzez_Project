@@ -7,6 +7,18 @@
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // 🚀 Blocking Script to prevent Layout Shift (FOUC/FOWD)
+        (function() {
+            const savedLang = localStorage.getItem('lang') || 'ar';
+            document.documentElement.lang = savedLang;
+            document.documentElement.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
+            // Also apply to body if needed early
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
+            });
+        })();
+    </script>
     <style>
         /* Layout specifics - inherits background and fonts from common.css */
         body[dir="rtl"], html[dir="rtl"] body {
@@ -51,6 +63,27 @@
 
         .orders-page {
             padding:1rem 2rem;
+        }
+
+        /* 🧪 Skeleton Loading Animation */
+        @keyframes skeleton-loading {
+            0% { background-color: #f1f5f9; }
+            100% { background-color: #e2e8f0; }
+        }
+
+        .skeleton {
+            animation: skeleton-loading 1s linear infinite alternate;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .page-header {
@@ -413,7 +446,7 @@
             transform: translateX(100%);
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 2001;
-            display: flex;
+            display: none; /* 🚫 Hidden by default to prevent flickering */
             flex-direction: column;
             border-left: 1px solid rgba(255,255,255,0.2);
         }
@@ -593,6 +626,75 @@
         .btn-print { background: var(--primary); color: white; border: none; }
         .btn-print:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 128, 96, 0.2); }
 
+        /* 📄 Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: white;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .pagination-btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            border: 1px solid var(--luxury-border, rgba(0,0,0,0.1));
+            background: white;
+            color: var(--luxury-slate, #1e293b);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--luxury-emerald-light, #f0fdf4);
+            color: var(--luxury-emerald, #008060);
+            border-color: var(--luxury-emerald, #008060);
+            transform: translateY(-2px);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #64748b;
+        }
+
+        /* 📊 Excel Full Width Button */
+        .btn-excel-full {
+            width: 100%;
+            padding: 1.25rem;
+            border-radius: 20px;
+            border: none;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+            color: white;
+            background: var(--luxury-emerald, #008060);
+            font-size: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
+        }
+
+        .btn-excel-full:hover {
+            transform: translateY(-4px);
+            filter: brightness(1.1);
+            box-shadow: 0 12px 25px rgba(0, 128, 96, 0.25);
+        }
+
         /* Ensure SweetAlert is always above our sidebar */
         .swal2-container { z-index: 9999 !important; }
     </style>
@@ -611,19 +713,19 @@
                     <div class="tabs-list">
                         <div class="tab-item active" data-filter="all">
                             <span class="tab-text">الكل</span>
-                            <span class="tab-count" id="count-all">0</span>
+                            <span class="tab-count" id="count-all">-</span>
                         </div>
                         <div class="tab-item" data-filter="Paid">
                             <span class="tab-text">أونلاين</span>
-                            <span class="tab-count" id="count-paid">0</span>
+                            <span class="tab-count" id="count-paid">-</span>
                         </div>
                         <div class="tab-item" data-filter="Pending">
                             <span class="tab-text">نقدي</span>
-                            <span class="tab-count" id="count-pending">0</span>
+                            <span class="tab-count" id="count-pending">-</span>
                         </div>
                         <div class="tab-item" data-filter="cancelled">
                             <span class="tab-text">ملغي</span>
-                            <span class="tab-count" id="count-cancelled">0</span>
+                            <span class="tab-count" id="count-cancelled">-</span>
                         </div>
                     </div>
                 </div>
@@ -645,7 +747,7 @@
                     <div class="filter-stats">
                         <div class="stat-item">
                             <i class="fas fa-info-circle"></i>
-                            <span id="today-total-label">إجمالي الطلبات اليوم:</span> <span id="today-count" style="font-weight: 800; color: var(--primary);">0</span>
+                            <span id="today-total-label">إجمالي طلبات وردية العمل:</span> <span id="today-count" style="font-weight: 800; color: var(--primary);">-</span>
                         </div>
                         <button class="btn-refresh-inline" onclick="fetchOrders()" id="refresh-btn-text" style="margin-right: 1rem; border-left: 1px solid #e2e8f0; padding-right: 1rem;">
                             <i class="fas fa-sync-alt"></i> تحديث
@@ -667,10 +769,32 @@
                             </tr>
                         </thead>
                         <tbody id="orders-table-body">
-                            <!-- Orders will be loaded here -->
+                            <!-- 🧪 Initial Skeleton State -->
+                            <tr><td><div class="skeleton" style="width:50px; height:20px;"></div></td><td><div class="skeleton" style="width:100px; height:20px;"></div></td><td><div class="skeleton" style="width:150px; height:20px;"></div></td><td><div class="skeleton" style="width:80px; height:20px;"></div></td><td><div class="skeleton" style="width:70px; height:20px;"></div></td><td><div class="skeleton" style="width:90px; height:20px;"></div></td><td><div class="skeleton" style="width:60px; height:20px;"></div></td></tr>
+                            <tr><td><div class="skeleton" style="width:50px; height:20px;"></div></td><td><div class="skeleton" style="width:100px; height:20px;"></div></td><td><div class="skeleton" style="width:150px; height:20px;"></div></td><td><div class="skeleton" style="width:80px; height:20px;"></div></td><td><div class="skeleton" style="width:70px; height:20px;"></div></td><td><div class="skeleton" style="width:90px; height:20px;"></div></td><td><div class="skeleton" style="width:60px; height:20px;"></div></td></tr>
+                            <tr><td><div class="skeleton" style="width:50px; height:20px;"></div></td><td><div class="skeleton" style="width:100px; height:20px;"></div></td><td><div class="skeleton" style="width:150px; height:20px;"></div></td><td><div class="skeleton" style="width:80px; height:20px;"></div></td><td><div class="skeleton" style="width:70px; height:20px;"></div></td><td><div class="skeleton" style="width:90px; height:20px;"></div></td><td><div class="skeleton" style="width:60px; height:20px;"></div></td></tr>
                         </tbody>
                     </table>
                 </div>
+
+                <!-- 📄 Pagination Controls -->
+                <div class="pagination-container">
+                    <button class="pagination-btn" id="prev-page" disabled>
+                        <i class="fas fa-chevron-right"></i> السابق
+                    </button>
+                    <span class="pagination-info" id="page-info">صفحة 1 من 1</span>
+                    <button class="pagination-btn" id="next-page" disabled>
+                        التالي <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📊 Footer Actions -->
+            <div class="footer" style="margin-top: 1.5rem;">
+                <button onclick="exportOrdersToExcel()" class="btn-excel-full" id="loc-btn-excel">
+                    <i class="fas fa-file-excel"></i>
+                    <span>تصدير الطلبات (Excel)</span>
+                </button>
             </div>
         </div>
     </div>
@@ -739,9 +863,11 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="./js/header-loader.js"></script>
     <script src="./js/sidebar-loader.js"></script>
     <script src="./js/auth.js"></script>
-    <script src="./js/manage_orders.js"></script>
+    <script src="./js/manage_orders.js?v=2.0"></script>
 </body>
 </html>

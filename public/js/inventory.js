@@ -32,9 +32,13 @@ const t = {
         filterLow: 'النواقص',
         filterExpiry: 'قرب الانتهاء',
         btnAdd: 'إضافة صنف جديد',
+        editTitle: 'تعديل الصنف',
+        addTitle: 'إضافة صنف جديد للمخزن',
+        saveChanges: 'حفظ التعديلات',
+        deleteItem: 'حذف الصنف',
+        cancelBtn: 'إلغاء',
         exportPdf: 'تصدير PDF',
-        exportExcel: 'تصدير Excel',
-        home: 'الرئيسية'
+        exportExcel: 'تصدير Excel'
     },
     en: {
         pageTitle: 'Inventory Management',
@@ -60,9 +64,13 @@ const t = {
         filterLow: 'Low Stock',
         filterExpiry: 'Near Expiry',
         btnAdd: 'Add New Item',
+        editTitle: 'Edit Item',
+        addTitle: 'Add New Inventory Item',
+        saveChanges: 'Save Changes',
+        deleteItem: 'Delete Item',
+        cancelBtn: 'Cancel',
         exportPdf: 'Export PDF',
-        exportExcel: 'Export Excel',
-        home: 'Home'
+        exportExcel: 'Export Excel'
     }
 };
 
@@ -75,18 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
 function applyTranslations() {
     const langT = t[currentLang];
     document.title = langT.pageTitle;
-    
-    // 🌍 Dynamic Layout Direction
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = currentLang;
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
 
-    document.getElementById('loc-header-pill').textContent = langT.pageTitle;
     document.getElementById('search-input').placeholder = langT.searchPlaceholder;
     document.getElementById('loc-stat-total').textContent = langT.totalItems;
     document.getElementById('loc-stat-low').textContent = langT.lowStock;
     document.getElementById('loc-stat-expiry').textContent = langT.nearExpiry;
     
-    // Table Headers
     document.getElementById('loc-id').textContent = langT.tableId;
     document.getElementById('loc-name').textContent = langT.tableName;
     document.getElementById('loc-qty').textContent = langT.tableQty;
@@ -96,47 +99,40 @@ function applyTranslations() {
     document.getElementById('loc-added').textContent = langT.tableAdded;
     document.getElementById('loc-expiry').textContent = langT.tableExpiry;
 
-    // Filter Options
     document.getElementById('loc-filter-all').textContent = langT.filterAll;
     document.getElementById('loc-filter-low').textContent = langT.filterLow;
     document.getElementById('loc-filter-expiry').textContent = langT.filterExpiry;
 
-    // Form Button & Export
     document.getElementById('loc-btn-add').textContent = langT.btnAdd;
-    document.getElementById('loc-pdf-text').textContent = langT.exportPdf;
-    document.getElementById('loc-excel-text').textContent = langT.exportExcel;
-    document.getElementById('loc-home').textContent = langT.home;
-
-    // Placeholders
-    document.getElementById('product-name').placeholder = langT.tableName;
-    document.getElementById('product-quantity').placeholder = langT.tableQty;
-    document.getElementById('product-min').placeholder = langT.tableMin;
-    document.getElementById('product-cost').placeholder = langT.tableCost;
+    const pdfText = document.getElementById('loc-pdf-text');
+    const excelText = document.getElementById('loc-excel-text');
+    if (pdfText) pdfText.textContent = langT.exportPdf;
+    if (excelText) excelText.textContent = langT.exportExcel;
 }
 
 function setupEventListeners() {
-    // Mode Switching
-    const modeSelect = document.getElementById('system-mode');
-    const savedMode = localStorage.getItem('systemMode') || 'restaurant';
-    if (modeSelect) {
-        modeSelect.value = savedMode;
-        applySystemMode(savedMode);
+    setInterval(fetchInventory, 30000);
+}
 
-        modeSelect.addEventListener('change', (e) => {
-            localStorage.setItem('systemMode', e.target.value);
-            applySystemMode(e.target.value);
-        });
-    }
-
-    // Reset Form
-    document.getElementById('reset-btn').addEventListener('click', resetForm);
-    
-    // Add/Edit Form
-    document.getElementById('add-product-form').addEventListener('submit', handleFormSubmit);
+function showLoading() {
+    const tableBody = document.getElementById('product-table');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" style="padding: 10rem 0; text-align: center;">
+                <div class="loader-container">
+                    <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--luxury-emerald); opacity: 0.8;"></i>
+                    <p style="margin-top: 1rem; font-weight: 700; color: #64748b; letter-spacing: 0.1em;">${isAr ? 'جاري تحميل البيانات...' : 'LOADING INVENTORY...'}</p>
+                </div>
+            </td>
+        </tr>
+    `;
 }
 
 function fetchInventory() {
     const token = localStorage.getItem("token");
+    const tableBody = document.getElementById('product-table');
+    if (tableBody.innerHTML === '') showLoading();
+
     fetch('/api/inventory', {
         headers: { "Authorization": `Bearer ${token}` }
     })
@@ -145,57 +141,10 @@ function fetchInventory() {
         allInventory = data;
         renderInventory(data);
     })
-    .catch(err => console.error("❌ Error fetching inventory:", err));
-}
-
-function applySystemMode(mode) {
-    const isRetail = mode === 'retail';
-    const expiryInput = document.getElementById('product-expiry');
-    const expiryTh = document.getElementById('loc-expiry');
-    const table = document.querySelector('.orders-table');
-    
-    // Hide/Show Expiry Input
-    if (expiryInput) {
-        expiryInput.style.display = isRetail ? 'none' : 'block';
-        expiryInput.required = !isRetail;
-    }
-    
-    // Hide/Show Expiry Table Column
-    if (expiryTh) expiryTh.style.display = isRetail ? 'none' : 'table-cell';
-    
-    // Adjust Table Layout Widths for Retail Mode
-    if (table) {
-        const ths = table.querySelectorAll('th');
-        if (isRetail) {
-            ths[0].style.width = '8%';
-            ths[1].style.width = '32%';
-            ths[2].style.width = '15%';
-            ths[3].style.width = '15%';
-            ths[4].style.width = '15%';
-            ths[5].style.width = '15%';
-        } else {
-            ths[0].style.width = '6%';
-            ths[1].style.width = '22%';
-            ths[2].style.width = '14%';
-            ths[3].style.width = '10%';
-            ths[4].style.width = '12%';
-            ths[5].style.width = '12%';
-            ths[6].style.width = '12%';
-            ths[7].style.width = '12%';
-        }
-    }
-
-    // Adjust Form Grid
-    const formRow = document.querySelector('.form-inputs-row');
-    if (formRow) {
-        formRow.style.gridTemplateColumns = isRetail ? '2fr 1fr 1fr 1fr' : '2fr 1fr 1fr 1fr 1fr';
-        // Enforce step on inputs
-        document.getElementById('product-quantity').step = isRetail ? '1' : '0.01';
-        document.getElementById('product-min').step = isRetail ? '1' : '0.01';
-    }
-    
-    // Re-render table to hide/show cells
-    renderInventory(allInventory);
+    .catch(err => {
+        console.error("❌ Error fetching inventory:", err);
+        tableBody.innerHTML = `<tr><td colspan="8" style="padding: 4rem; color: #ef4444;">${t[currentLang].msgError}</td></tr>`;
+    });
 }
 
 function renderInventory(items) {
@@ -203,22 +152,22 @@ function renderInventory(items) {
     tableBody.innerHTML = '';
     const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
 
-    // Update Stats
+    const expiryHeader = document.getElementById('loc-expiry');
+    if (expiryHeader) {
+        expiryHeader.style.display = isRetail ? 'none' : 'table-cell';
+    }
+
     updateStats(items);
 
     if (items.length === 0) {
-        const noResultRow = document.createElement('tr');
-        noResultRow.innerHTML = `
-            <td colspan="${isRetail ? 7 : 8}" style="padding: 5rem 2rem; text-align: center;">
-                <div style="opacity: 0.3; margin-bottom: 1.5rem;">
-                    <i class="fas fa-box-open" style="font-size: 4rem;"></i>
-                </div>
-                <h3 style="color: #64748b; font-weight: 700; margin-bottom: 0.5rem;">${t[currentLang].noResults}</h3>
-                <p style="color: #94a3b8; font-size: 0.9rem;">${currentLang === 'ar' ? 'ابدأ بإضافة أصناف جديدة للمخزن لتظهر هنا' : 'Start adding new items to see them here'}</p>
-            </td>
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="${isRetail ? 7 : 8}" style="padding: 5rem 2rem; text-align: center;">
+                    <i class="fas fa-box-open" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem;"></i>
+                    <h3 style="color: #64748b;">${t[currentLang].noResults}</h3>
+                </td>
+            </tr>
         `;
-        tableBody.appendChild(noResultRow);
-        fillEmptyRows(tableBody, 5, isRetail);
         return;
     }
 
@@ -227,32 +176,22 @@ function renderInventory(items) {
         const isLow = parseFloat(item.quantity) <= parseFloat(item.min || 0);
         const isNearExpiry = !isRetail && checkIfNearExpiry(item.expiryDate);
         
-        // Dynamic Formatting based on Mode
         const formattedQty = isRetail ? Math.round(item.quantity) : parseFloat(item.quantity).toFixed(2);
-        const formattedMin = isRetail ? Math.round(item.min || 0) : parseFloat(item.min || 0).toFixed(2);
-
-        let statusBadge = '';
-        if (isLow) {
-            statusBadge = `<span class="badge" style="padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 700;">${currentLang === 'ar' ? 'نقص مخزون' : 'Low Stock'}</span>`;
-        } else if (isNearExpiry) {
-            statusBadge = `<span class="badge" style="padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); font-weight: 700;">${currentLang === 'ar' ? 'قرب الانتهاء' : 'Expiring'}</span>`;
-        }
-
+        
         row.innerHTML = `
-            <td style="color: #94a3b8;">#${item.id}</td>
+            <td style="opacity: 0.5;">#${item.id}</td>
+            <td style="font-weight: 700;">${item.name}</td>
             <td>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                    ${statusBadge}
-                    <span style="font-weight: 700;">${item.name}</span>
-                </div>
+                <span class="${isLow ? 'badge-low' : 'badge-ok'}">
+                    ${formattedQty}
+                </span>
             </td>
-            <td style="font-weight: 800; color: ${isLow ? '#ef4444' : 'var(--luxury-slate)'}">${formattedQty}</td>
-            <td style="color: #64748b;">${formattedMin}</td>
+            <td style="opacity: 0.6;">${parseFloat(item.min || 0).toFixed(2)}</td>
             <td>${parseFloat(item.cost).toFixed(2)} <small>EGP</small></td>
             <td style="font-weight: 800; color: var(--luxury-emerald);">${(item.quantity * item.cost).toFixed(2)} <small>EGP</small></td>
-            <td style="font-size: 0.85rem; color: #64748b;">${formatDate(item.createdAt)}</td>
+            <td style="font-size: 0.85rem; opacity: 0.6;">${formatDate(item.createdAt)}</td>
             ${!isRetail ? `
-            <td style="font-size: 0.85rem; font-weight: 700; color: ${isNearExpiry ? '#ef4444' : '#64748b'};">
+            <td style="font-size: 0.85rem; font-weight: 700; color: ${isNearExpiry ? '#ef4444' : 'inherit'};">
                 ${formatDate(item.expiryDate)}
             </td>` : ''}
         `;
@@ -260,27 +199,13 @@ function renderInventory(items) {
         row.addEventListener('click', () => selectItem(item));
         tableBody.appendChild(row);
     });
-
-    fillEmptyRows(tableBody, 8 - items.length, isRetail);
-}
-
-function fillEmptyRows(parent, count, isRetail) {
-    if (count <= 0) return;
-    const cols = isRetail ? 7 : 8;
-    for (let i = 0; i < count; i++) {
-        const row = document.createElement('tr');
-        row.className = 'empty-row';
-        row.innerHTML = Array(cols).fill('<td>&nbsp;</td>').join('');
-        parent.appendChild(row);
-    }
 }
 
 function updateStats(items) {
-    const total = items.length;
     const lowStock = items.filter(i => i.quantity <= (i.min || 5)).length;
     const expiring = items.filter(i => checkIfNearExpiry(i.expiryDate)).length;
 
-    document.getElementById('stat-total-items').textContent = total;
+    document.getElementById('stat-total-items').textContent = items.length;
     document.getElementById('stat-low-stock').textContent = lowStock;
     document.getElementById('stat-near-expiry').textContent = expiring;
 }
@@ -289,48 +214,99 @@ function checkIfNearExpiry(dateStr) {
     if (!dateStr) return false;
     const expiry = new Date(dateStr);
     const today = new Date();
-    const diffTime = expiry - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
     return diffDays >= 0 && diffDays <= 7;
 }
 
 function formatDate(dateStr) {
     if (!dateStr) return '---';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(currentLang === 'ar' ? 'ar-EG' : 'en-US', {
-        day: '2-digit',
-        month: 'short'
+    return new Date(dateStr).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { day: '2-digit', month: 'short' });
+}
+
+async function openAddModal() {
+    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
+    const langT = t[currentLang];
+
+    const { value: formValues } = await Swal.fire({
+        title: langT.addTitle,
+        html: `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
+                <div style="grid-column: span 2;">
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableName}</label>
+                    <input id="swal-name" class="swal2-input" style="width:100%; margin:0;" placeholder="${langT.tableName}">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
+                    <input id="swal-qty" type="number" step="0.01" min="0" class="swal2-input" style="width:100%; margin:0;">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
+                    <input id="swal-min" type="number" step="0.01" min="0" class="swal2-input" style="width:100%; margin:0;">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
+                    <input id="swal-cost" type="number" step="0.01" min="0" class="swal2-input" style="width:100%; margin:0;">
+                </div>
+                ${!isRetail ? `
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableExpiry}</label>
+                    <input id="swal-expiry" type="date" class="swal2-input" style="width:100%; margin:0;">
+                </div>` : ''}
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: isAr ? 'إضافة' : 'Add',
+        cancelButtonText: langT.cancelBtn,
+        confirmButtonColor: 'var(--luxury-emerald)',
+        preConfirm: () => {
+            const name = document.getElementById('swal-name').value;
+            const quantity = parseFloat(document.getElementById('swal-qty').value);
+            const min = parseFloat(document.getElementById('swal-min').value);
+            const cost = parseFloat(document.getElementById('swal-cost').value);
+            
+            if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال اسم الصنف' : 'Name is required');
+            if (isNaN(quantity) || quantity < 0) return Swal.showValidationMessage(isAr ? 'الكمية يجب أن تكون 0 أو أكثر' : 'Quantity must be 0 or more');
+            if (isNaN(cost) || cost < 0) return Swal.showValidationMessage(isAr ? 'التكلفة يجب أن تكون 0 أو أكثر' : 'Cost must be 0 or more');
+
+            return {
+                name, quantity, min: isNaN(min) ? 0 : min, cost,
+                expiryDate: !isRetail ? document.getElementById('swal-expiry').value : null
+            }
+        }
     });
+
+    if (formValues) handleFormSubmit(formValues);
 }
 
 async function selectItem(item) {
-    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
     const langT = t[currentLang];
+    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
     
-    const result = await Swal.fire({
+    const { value: result, isConfirmed, isDenied } = await Swal.fire({
         title: `${langT.editTitle}: ${item.name}`,
         html: `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; padding: 1rem 0; text-align: ${currentLang === 'ar' ? 'right' : 'left'};">
-                <div class="swal-field" style="grid-column: span 2;">
-                    <label>${langT.tableName}</label>
-                    <input id="swal-name" class="swal2-input" value="${item.name}" placeholder="${langT.tableName}">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
+                <div style="grid-column: span 2;">
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableName}</label>
+                    <input id="swal-edit-name" class="swal2-input" value="${item.name}" style="width:100%; margin:0;">
                 </div>
-                <div class="swal-field">
-                    <label>${langT.tableQty}</label>
-                    <input id="swal-quantity" type="number" step="${isRetail ? '1' : '0.01'}" class="swal2-input" value="${item.quantity}">
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
+                    <input id="swal-edit-qty" type="number" step="0.01" min="0" class="swal2-input" value="${item.quantity}" style="width:100%; margin:0;">
                 </div>
-                <div class="swal-field">
-                    <label>${langT.tableMin}</label>
-                    <input id="swal-min" type="number" step="${isRetail ? '1' : '0.01'}" class="swal2-input" value="${item.min || 0}">
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
+                    <input id="swal-edit-min" type="number" step="0.01" min="0" class="swal2-input" value="${item.min || 0}" style="width:100%; margin:0;">
                 </div>
-                <div class="swal-field">
-                    <label>${langT.tableCost}</label>
-                    <input id="swal-cost" type="number" step="0.01" class="swal2-input" value="${item.cost}">
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
+                    <input id="swal-edit-cost" type="number" step="0.01" min="0" class="swal2-input" value="${item.cost}" style="width:100%; margin:0;">
                 </div>
                 ${!isRetail ? `
-                <div class="swal-field">
-                    <label>${langT.tableExpiry}</label>
-                    <input id="swal-expiry" type="date" class="swal2-input" value="${item.expiryDate ? item.expiryDate.split('T')[0] : ''}">
+                <div>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableExpiry}</label>
+                    <input id="swal-edit-expiry" type="date" class="swal2-input" value="${item.expiryDate ? item.expiryDate.split('T')[0] : ''}" style="width:100%; margin:0;">
                 </div>` : ''}
             </div>
         `,
@@ -339,52 +315,35 @@ async function selectItem(item) {
         confirmButtonText: langT.saveChanges,
         denyButtonText: langT.deleteItem,
         cancelButtonText: langT.cancelBtn,
-        confirmButtonColor: 'var(--primary)',
+        confirmButtonColor: 'var(--luxury-emerald)',
         denyButtonColor: '#ef4444',
-        focusConfirm: false,
         preConfirm: () => {
-            const name = document.getElementById('swal-name').value;
-            const quantity = parseFloat(document.getElementById('swal-quantity').value);
-            const min = parseFloat(document.getElementById('swal-min').value);
-            const cost = parseFloat(document.getElementById('swal-cost').value);
-            const expiryDate = !isRetail ? document.getElementById('swal-expiry').value : null;
+            const name = document.getElementById('swal-edit-name').value;
+            const quantity = parseFloat(document.getElementById('swal-edit-qty').value);
+            const cost = parseFloat(document.getElementById('swal-edit-cost').value);
 
-            if (!name) {
-                Swal.showValidationMessage(langT.msgEnterName);
-                return false;
+            if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال اسم الصنف' : 'Name is required');
+            if (isNaN(quantity) || quantity < 0) return Swal.showValidationMessage(isAr ? 'الكمية يجب أن تكون 0 أو أكثر' : 'Quantity must be 0 or more');
+            if (isNaN(cost) || cost < 0) return Swal.showValidationMessage(isAr ? 'التكلفة يجب أن تكون 0 أو أكثر' : 'Cost must be 0 or more');
+
+            return {
+                name, quantity, cost,
+                min: parseFloat(document.getElementById('swal-edit-min').value) || 0,
+                expiryDate: !isRetail ? document.getElementById('swal-edit-expiry').value : null
             }
-            return { name, quantity, min, cost, expiryDate };
         }
     });
 
-    if (result.isConfirmed) {
-        handleEdit(item.id, result.value);
-    } else if (result.isDenied) {
+    if (isConfirmed) {
+        handleEdit(item.id, result);
+    } else if (isDenied) {
         handleDelete(item.id);
     }
 }
 
-function resetForm() {
-    document.getElementById('add-product-form').reset();
-    document.getElementById('product-id').value = '';
-    
-    // Switch to Add Mode
-    document.getElementById('loc-btn-add').style.display = 'block';
-    document.getElementById('edit-btn').style.display = 'none';
-    document.getElementById('delete-btn').style.display = 'none';
-    document.getElementById('reset-btn').style.display = 'none';
-}
-
-async function handleFormSubmit(e) {
-    e.preventDefault();
+async function handleFormSubmit(data) {
     const token = localStorage.getItem("token");
-    const data = {
-        name: document.getElementById('product-name').value,
-        quantity: parseFloat(document.getElementById('product-quantity').value),
-        min: parseFloat(document.getElementById('product-min').value),
-        cost: parseFloat(document.getElementById('product-cost').value),
-        expiryDate: document.getElementById('product-expiry').value
-    };
+    Swal.fire({ title: isAr ? 'جاري الحفظ...' : 'Saving...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
         const res = await fetch("/api/inventory/add", {
@@ -392,11 +351,9 @@ async function handleFormSubmit(e) {
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
             body: JSON.stringify(data)
         });
-
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgAdded, timer: 1500, showConfirmButton: false });
             fetchInventory();
-            resetForm();
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: t[currentLang].msgError });
@@ -405,18 +362,14 @@ async function handleFormSubmit(e) {
 
 async function handleEdit(id, data) {
     const token = localStorage.getItem("token");
-    const updatedData = {
-        ...data,
-        total: data.quantity * data.cost
-    };
+    Swal.fire({ title: isAr ? 'جاري التحديث...' : 'Updating...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
         const res = await fetch(`/api/inventory/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify(updatedData)
+            body: JSON.stringify(data)
         });
-
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgEdited, timer: 1500, showConfirmButton: false });
             fetchInventory();
@@ -427,8 +380,18 @@ async function handleEdit(id, data) {
 }
 
 async function handleDelete(id) {
-    const token = localStorage.getItem("token");
+    const result = await Swal.fire({
+        title: t[currentLang].confirmDelete,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: isAr ? 'نعم، احذف' : 'Yes, Delete',
+        cancelButtonText: t[currentLang].cancelBtn
+    });
 
+    if (!result.isConfirmed) return;
+
+    const token = localStorage.getItem("token");
     try {
         const res = await fetch(`/api/inventory/${id}`, {
             method: "DELETE",
@@ -443,82 +406,134 @@ async function handleDelete(id) {
     }
 }
 
+let filterTimeout;
 function applyFilter() {
-    const query = document.getElementById('search-input').value.toLowerCase();
-    const filter = document.getElementById('filter-option').value;
-    
-    let filtered = allInventory.filter(item => item.name.toLowerCase().includes(query));
-    
-    if (filter === 'low-stock') {
-        filtered = filtered.filter(item => item.quantity <= (item.min || 5));
-    } else if (filter === 'near-expiry') {
-        filtered = filtered.filter(item => checkIfNearExpiry(item.expiryDate));
-    }
-    
-    renderInventory(filtered);
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(() => {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const filter = document.getElementById('filter-option').value;
+        
+        let filtered = allInventory.filter(item => item.name.toLowerCase().includes(query));
+        
+        if (filter === 'low-stock') {
+            filtered = filtered.filter(item => item.quantity <= (item.min || 5));
+        } else if (filter === 'near-expiry') {
+            filtered = filtered.filter(item => checkIfNearExpiry(item.expiryDate));
+        }
+        
+        renderInventory(filtered);
+    }, 300);
 }
 
 function exportToPDF() {
-    const element = document.querySelector(".products-card");
-    const langSuffix = currentLang === 'ar' ? 'ar' : 'en';
-    const opt = {
-        margin:       0.5,
-        filename:     `inventory_${langSuffix}_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
-    
-    // Check if library exists
-    if (typeof html2pdf !== 'undefined') {
-        html2pdf().set(opt).from(element).save();
-    } else {
-        Swal.fire({ icon: 'error', title: 'Library Error', text: 'PDF library not loaded' });
+    try {
+        const element = document.getElementById("printable-content");
+        if (!element) throw new Error("Printable content not found");
+
+        // 1. Prepare for capture: Hide interactive elements and fix Arabic direction
+        const noPrintElements = document.querySelectorAll('.no-print');
+        noPrintElements.forEach(el => el.style.display = 'none');
+        element.classList.add('pdf-capture-mode');
+        
+        const reportDateElem = document.getElementById("pdf-report-date");
+        if (reportDateElem) {
+            reportDateElem.textContent = `${isAr ? 'بتاريخ' : 'Date'}: ${new Date().toLocaleString(isAr ? 'ar-EG' : 'en-US')}`;
+        }
+
+        // 2. Export Options
+        const opt = {
+            margin: [0.3, 0.3], // Minimal margins
+            filename: `vortex_inventory_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: { 
+                scale: 3, 
+                useCORS: true,
+                letterRendering: false,
+                allowTaint: true,
+                backgroundColor: "#ffffff"
+            },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape', compress: true }
+        };
+        
+        Swal.fire({
+            title: isAr ? 'جاري تحضير التقرير...' : 'Preparing Report...',
+            didOpen: () => { Swal.showLoading(); },
+            allowOutsideClick: false,
+            showConfirmButton: false
+        });
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            // 3. Restore visibility and layout
+            noPrintElements.forEach(el => el.style.display = '');
+            element.classList.remove('pdf-capture-mode');
+            Swal.close();
+        }).catch(err => {
+            noPrintElements.forEach(el => el.style.display = '');
+            element.classList.remove('pdf-capture-mode');
+            console.error("PDF Error:", err);
+            Swal.fire({ icon: 'error', title: 'PDF Error', text: err.message });
+        });
+    } catch (err) {
+        console.error("Export Error:", err);
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message });
     }
 }
 
 function exportToExcel() {
-    const table = document.querySelector(".orders-table");
-    const wb = XLSX.utils.table_to_book(table);
-    XLSX.writeFile(wb, `inventory_${new Date().toLocaleDateString()}.xlsx`);
-}
+    try {
+        if (!allInventory || allInventory.length === 0) {
+            Swal.fire({ icon: 'warning', title: isAr ? 'لا توجد بيانات لتصديرها' : 'No data to export' });
+            return;
+        }
 
-function sortTable(n) {
-    // Standard sorting logic...
-    const table = document.querySelector(".orders-table");
-    let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    switching = true;
-    dir = "asc";
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            if (rows[i].classList.contains('empty-row')) continue;
-            shouldSwitch = false;
-            x = rows[i].getElementsByTagName("TD")[n];
-            y = rows[i + 1].getElementsByTagName("TD")[n];
-            if (rows[i + 1].classList.contains('empty-row')) break;
-            if (dir == "asc") {
-                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                    shouldSwitch = true;
-                    break;
-                }
-            } else if (dir == "desc") {
-                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                    shouldSwitch = true;
-                    break;
-                }
-            }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount++;
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
+        Swal.fire({
+            title: isAr ? 'جاري تجهيز ملف الأكسيل...' : 'Preparing Excel...',
+            didOpen: () => { Swal.showLoading(); },
+            allowOutsideClick: false,
+            showConfirmButton: false
+        });
+
+        // Prepare data with clean formatting
+        const excelData = allInventory.map(item => {
+            let addedDate = '-';
+            let expiryDate = '-';
+            try {
+                if (item.createdAt) addedDate = new Date(item.createdAt).toISOString().split('T')[0];
+                if (item.expiryDate) expiryDate = new Date(item.expiryDate).toISOString().split('T')[0];
+            } catch (e) { console.error(e); }
+
+            return {
+                [isAr ? 'كود' : 'ID']: item.id,
+                [isAr ? 'اسم الصنف' : 'Name']: item.name,
+                [isAr ? 'الكمية' : 'Quantity']: item.quantity,
+                [isAr ? 'الحد الأدنى' : 'Min Limit']: item.min || 0,
+                [isAr ? 'سعر الوحدة' : 'Unit Cost']: item.unitCost || 0,
+                [isAr ? 'إجمالي القيمة' : 'Total Value']: (item.quantity * (item.unitCost || 0)).toFixed(2),
+                [isAr ? 'تاريخ الإضافة' : 'Added Date']: addedDate,
+                [isAr ? 'تاريخ الانتهاء' : 'Expiry Date']: expiryDate
+            };
+        });
+
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wscols = [
+            {wch: 10}, {wch: 30}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
+        ];
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        
+        // 🛠️ Proper Workbook-level RTL setting
+        if (!wb.Workbook) wb.Workbook = {};
+        if (!wb.Workbook.Views) wb.Workbook.Views = [];
+        wb.Workbook.Views[0] = { RTL: isAr };
+
+        XLSX.utils.book_append_sheet(wb, ws, isAr ? "المخزن" : "Inventory");
+
+        XLSX.writeFile(wb, `vortex_inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        Swal.close();
+    } catch (err) {
+        console.error("Excel Error:", err);
+        Swal.fire({ icon: 'error', title: 'Excel Error', text: err.message });
     }
 }

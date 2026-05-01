@@ -59,6 +59,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DECIMAL(10,2),
             allowNull: false,
             defaultValue: 0
+        },
+        businessDate: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
+        dailySerial: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         }
     }, {
         timestamps: false  // ✅ تعطيل `createdAt` و `updatedAt` لأن `updatedAt` غير موجود

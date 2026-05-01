@@ -48,7 +48,7 @@ const t = {
         subtotal: 'Subtotal',
         delivery: 'Delivery',
         total: 'Total',
-        checkout: 'Complete & Print',
+        checkout: 'Complete',
         selectDelivery: 'Select Delivery Area',
         items: 'items',
         msgEmptyCart: '⚠️ Cannot submit an empty order',

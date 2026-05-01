@@ -121,6 +121,40 @@
             border-color: var(--luxury-emerald) !important;
             background: white !important;
         }
+        /* 🖨️ Export Styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .only-print {
+                display: block !important;
+            }
+        }
+        .only-print {
+            display: none;
+        }
+        
+        /* 🎨 Force correct rendering for PDF capture */
+        .pdf-capture-mode {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+
+        .pdf-report-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--luxury-emerald);
+        }
+        .pdf-report-header h1 {
+            color: var(--luxury-emerald);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .pdf-report-header p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -129,106 +163,100 @@
 
 
     <div class="container">
-        <!-- 📊 Quick Stats Row -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: var(--luxury-emerald-light); color: var(--luxury-emerald);">
-                    <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="stat-info">
-                    <span id="loc-stat-total">Total Items</span>
-                    <h3 id="stat-total-items">0</h3>
-                </div>
+        <div id="printable-content">
+            <!-- 📄 Professional PDF Header (Visible only in PDF) -->
+            <div class="pdf-report-header only-print">
+                <h1>Vortex Systems</h1>
+                <p id="pdf-report-title">تقرير جرد المخزن التفصيلي</p>
+                <p id="pdf-report-date"></p>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-info">
-                    <span id="loc-stat-low">Low Stock</span>
-                    <h3 id="stat-low-stock">0</h3>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stat-info">
-                    <span id="loc-stat-expiry">Expiring Soon</span>
-                    <h3 id="stat-near-expiry">0</h3>
-                </div>
-            </div>
-        </div>
 
-        <!-- ✨ Optimized Toolbar -->
-        <div class="toolbar">
-            <form id="add-product-form">
-                <!-- 🔍 Row 1: Search & Filter -->
-                <div class="search-bar-container">
-                    <div class="search-container" style="position:relative; flex:1;">
-                        <i class="fas fa-search" id="search-icon" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            <!-- 📊 Luxury Stats Overview -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper" style="background: var(--luxury-emerald-light);">
+                        <i class="fas fa-layer-group" style="color: var(--luxury-emerald);"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span id="loc-stat-total">Total Items</span>
+                        <h3 id="stat-total-items">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.08);">
+                        <i class="fas fa-arrow-trend-down" style="color: #ef4444;"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span id="loc-stat-low">Low Stock</span>
+                        <h3 id="stat-low-stock">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.08);">
+                        <i class="fas fa-clock-rotate-left" style="color: #f59e0b;"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span id="loc-stat-expiry">Expiring Soon</span>
+                        <h3 id="stat-near-expiry">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✨ Luxury Toolbar (Hidden in PDF) -->
+            <div class="luxury-toolbar no-print">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
                         <input 
                             type="text" 
                             id="search-input" 
-                            class="search-bar" 
-                            placeholder="Search..." 
-                            onkeyup="applyFilter()" 
-                            style="padding-right: 2.5rem; width: 100%;"
+                            placeholder="Search items..." 
+                            onkeyup="applyFilter()"
                         />
                     </div>
-                    <select id="filter-option" class="filter-dropdown" onchange="applyFilter()" style="max-width: 250px;">
-                        <option value="all" id="loc-filter-all">All Items</option>
-                        <option value="low-stock" id="loc-filter-low">Low Stock</option>
-                        <option value="near-expiry" id="loc-filter-expiry">Near Expiry</option>
-                    </select>
+                    <div class="filter-box">
+                        <select id="filter-option" onchange="applyFilter()">
+                            <option value="all" id="loc-filter-all">All Items</option>
+                            <option value="low-stock" id="loc-filter-low">Low Stock</option>
+                            <option value="near-expiry" id="loc-filter-expiry">Near Expiry</option>
+                        </select>
+                    </div>
                 </div>
-        
-                <!-- 📝 Row 2: Inputs -->
-                <div class="form-inputs-row" style="margin-top: 1.25rem; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 1rem;">
-                    <input type="text" id="product-name" placeholder="Item Name" required />
-                    <input type="number" id="product-quantity" placeholder="Quantity" required />
-                    <input type="number" id="product-min" placeholder="Min Limit" required />
-                    <input type="number" id="product-cost" placeholder="Unit Cost" required />
-                    <input type="date" id="product-expiry" required />
+                <div class="toolbar-right">
+                    <button class="btn-add-item" onclick="openAddModal()">
+                        <i class="fas fa-plus-circle"></i>
+                        <span id="loc-btn-add">Add New Item</span>
+                    </button>
                 </div>
+            </div>
 
-                <!-- 🚀 Row 3: Add Action Only -->
-                <div class="form-actions-row" id="form-actions-container" style="margin-top: 1rem; display: flex; gap: 1rem; width: 100%;">
-                    <button type="submit" class="main-button" id="loc-btn-add" style="flex: 1; background: var(--luxury-emerald);">Add Item</button>
+            <!-- 📦 Inventory Table Card -->
+            <div class="products-card">
+                <div class="table-container">
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)" id="loc-id">ID</th>
+                                <th onclick="sortTable(1)" id="loc-name">Name</th>
+                                <th onclick="sortTable(2)" id="loc-qty">Qty (KG/Unit)</th>
+                                <th onclick="sortTable(3)" id="loc-min">Min</th>
+                                <th onclick="sortTable(4)" id="loc-cost">Unit Cost</th>
+                                <th onclick="sortTable(5)" id="loc-total">Total Value</th>
+                                <th onclick="sortTable(6)" id="loc-added">Added</th>
+                                <th onclick="sortTable(7)" id="loc-expiry">Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table">
+                            <!-- Data populated via JS -->
+                        </tbody>
+                    </table>
                 </div>
-            </form>
-        </div>
-
-        <!-- 📦 Inventory Table Card -->
-        <div class="products-card">
-            <div class="table-container">
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)" id="loc-id">ID</th>
-                            <th onclick="sortTable(1)" id="loc-name">Name</th>
-                            <th onclick="sortTable(2)" id="loc-qty">Qty (KG/Unit)</th>
-                            <th onclick="sortTable(3)" id="loc-min">Min</th>
-                            <th onclick="sortTable(4)" id="loc-cost">Unit Cost</th>
-                            <th onclick="sortTable(5)" id="loc-total">Total Value</th>
-                            <th onclick="sortTable(6)" id="loc-added">Added</th>
-                            <th onclick="sortTable(7)" id="loc-expiry">Expiry</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-table">
-                        <!-- Data populated via JS -->
-                    </tbody>
-                </table>
             </div>
         </div>
 
         <!-- 📊 Footer Actions -->
         <div class="footer">
-            <button onclick="exportToPDF()" id="loc-btn-pdf">
-                <i class="fas fa-file-pdf"></i>
-                <span id="loc-pdf-text">Export PDF</span>
-            </button>
-            <button onclick="exportToExcel()" id="loc-btn-excel">
+            <button onclick="exportToExcel()" id="loc-btn-excel" class="btn-excel-full">
                 <i class="fas fa-file-excel"></i>
                 <span id="loc-excel-text">Export Excel</span>
             </button>

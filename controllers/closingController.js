@@ -4,15 +4,17 @@ const { Op } = require('sequelize');
 
 exports.getDailySummary = async (req, res) => {
     try {
-        const today = new Date().toISOString().split("T")[0];
+        const { Setting } = require('../models');
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 
         // 🟢 حساب إجمالي الطلبات
         const totalOrders = await Order.count({
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" }
+            where: { businessDate: businessDate, isCancelled: "No" }
         });
 
         const orders = await Order.findAll({
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" },
+            where: { businessDate: businessDate, isCancelled: "No" },
             attributes: ['orderDetails']
         });
 
@@ -56,7 +58,7 @@ exports.getDailySummary = async (req, res) => {
 
         // ✅ حساب إجمالي الإيرادات بعد الخصم
         const totalRevenue = await Order.sum('orderTotal', {
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" }
+            where: { businessDate: businessDate, isCancelled: "No" }
         }) || 0;
 
         // ✅ إجمالي الأرباح
@@ -102,35 +104,37 @@ exports.getDailySummary = async (req, res) => {
 
 exports.closeDay = async (req, res) => {
     try {
-        const today = new Date().toISOString().split("T")[0];
+        const { Setting } = require('../models');
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 
         // 🔍 التحقق من إغلاق اليوم مسبقًا
-        const existingClosing = await DailyClosing.findOne({ where: { closingDate: today } });
+        const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) {
             return res.status(400).json({ error: '⚠️ اليوم قد تم إغلاقه بالفعل!' });
         }
 
         // 🟢 حساب إجمالي الطلبات
         const totalOrders = await Order.count({
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" }
+            where: { businessDate: businessDate, isCancelled: "No" }
         });
 
         // 🟢 حساب إجمالي الإيرادات
         const totalRevenue = await Order.sum("orderTotal", {
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" }
+            where: { businessDate: businessDate, isCancelled: "No" }
         }) || 0;
 
         // 🟢 حساب التكلفة الإجمالية للمواد الخام
-        const totalCost = await calculateTotalCost(today);
+        const totalCost = await calculateTotalCost(businessDate);
 
         // 🏷️ حساب إجمالي الخصومات
         const totalDiscount = await Order.sum("discountAmount", {
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" }
+            where: { businessDate: businessDate, isCancelled: "No" }
         }) || 0;
 
         // 🥪 حساب إجمالي السندويشات المباعة
         const orders = await Order.findAll({
-            where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" },
+            where: { businessDate: businessDate, isCancelled: "No" },
             attributes: ['orderDetails']
         });
 
@@ -148,7 +152,7 @@ exports.closeDay = async (req, res) => {
                 payment_method: { 
                     [Op.in]: ["electronic", "Paymob", "InstaPay", "Visa", "MasterCard"] 
                 },
-                payment_date: { [Op.startsWith]: today }
+                payment_date: { [Op.startsWith]: businessDate } // Note: Payment table might need businessDate too, but for now we use businessDate prefix
             }
         }) || 0;
 
@@ -157,7 +161,7 @@ exports.closeDay = async (req, res) => {
 
         // 📝 تخزين البيانات في جدول التقفيل اليومي
         await DailyClosing.create({
-            closingDate: today,
+            closingDate: businessDate,
             totalOrders,
             totalSandwiches,
             totalRevenue: parseFloat(totalRevenue.toFixed(2)),
@@ -167,14 +171,21 @@ exports.closeDay = async (req, res) => {
             onlinePaymentsTotal: parseFloat(onlinePaymentsTotal.toFixed(2))
         });
 
-        // 🚮 حذف الطلبات والمدفوعات اليومية بعد التقفيل
-        await Order.destroy({ where: {} });
-        await sequelize.query("ALTER TABLE orders AUTO_INCREMENT = 1;");
+        // 🚮 أرشفة الطلبات بدلاً من الحذف
+        await Order.update({ archived: true }, { where: { businessDate: businessDate } });
+        
+        // 📅 تحديث تاريخ العمل لليوم التالي
+        const nextDate = new Date(businessDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDateStr = nextDate.toLocaleDateString('en-CA');
+        
+        await Setting.upsert({
+            key: 'active_business_date',
+            value: nextDateStr,
+            group: 'system'
+        });
 
-        await Payment.destroy({ where: {} });
-        await sequelize.query("ALTER TABLE payments AUTO_INCREMENT = 1;"); // ✅ إعادة تعيين عدّاد `payments`
-
-        res.json({ success: true, message: '✅ تم إغلاق اليوم بنجاح!' });
+        res.json({ success: true, message: '✅ تم إغلاق اليوم بنجاح!', nextDate: nextDateStr });
 
     } catch (error) {
         console.error('❌ خطأ أثناء إغلاق اليوم:', error);
@@ -182,12 +193,12 @@ exports.closeDay = async (req, res) => {
     }
 };
 
-async function calculateTotalCost(today) {
+async function calculateTotalCost(businessDate) {
     let totalCost = 0;
     const ingredientMap = {};
 
     const orders = await Order.findAll({
-        where: { createdAt: { [Op.startsWith]: today }, isCancelled: "No" },
+        where: { businessDate: businessDate, isCancelled: "No" },
         attributes: ['orderDetails']
     });
 
