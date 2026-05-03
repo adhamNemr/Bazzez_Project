@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +58,6 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             border: 1px solid rgba(255, 255, 255, 0.6);
             padding: 2rem;
-            margin-bottom: 2rem;
         }
 
         .products-card {
@@ -123,6 +122,283 @@
             box-shadow: 0 15px 30px rgba(0,0,0,0.05);
             border-color: var(--luxury-emerald);
         }
+
+        /* 📊 Product Sales Stats in Drawer */
+        .drawer-sales-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed rgba(0,0,0,0.08);
+            display: none; /* Hidden in Add Mode */
+        }
+
+        .drawer-stat-card {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 16px;
+            padding: 1.25rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-stat-card:hover {
+            transform: translateY(-3px);
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+        }
+
+        .drawer-stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .drawer-stat-retail .drawer-stat-icon {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .drawer-stat-wholesale .drawer-stat-icon {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .drawer-stat-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .drawer-stat-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--luxury-slate);
+        }
+
+
+        /* 🎭 Side Drawer Modern Styles - Luxury Edition */
+        .side-drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            height: 100%;
+            width: 480px;
+            background: white;
+            z-index: 1001;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), visibility 0.5s;
+            visibility: hidden;
+            overflow: hidden;
+        }
+
+        html[dir="rtl"] .side-drawer {
+            right: 0;
+            transform: translateX(100%);
+            border-top-left-radius: 24px;
+            border-bottom-left-radius: 24px;
+        }
+        html[dir="ltr"] .side-drawer {
+            left: 0;
+            transform: translateX(-100%);
+            border-top-right-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+
+        .side-drawer.open {
+            transform: translateX(0) !important;
+            visibility: visible !important;
+        }
+
+        .side-drawer-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 🎯 Centered Title */
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            position: relative;
+        }
+
+        .side-drawer-header h2 {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--luxury-slate);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .close-drawer {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f1f5f9;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+
+        html[dir="rtl"] .close-drawer { left: 1.5rem; }
+        html[dir="ltr"] .close-drawer { right: 1.5rem; }
+
+
+        .close-drawer:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .side-drawer-content {
+            flex: 1;
+            padding: 2.5rem 2rem;
+            overflow-y: auto;
+        }
+
+        .side-drawer-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            display: flex;
+            gap: 1.25rem;
+            background: white;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.02);
+        }
+
+        /* 💎 Premium Form Inputs */
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #475569;
+            letter-spacing: 0.02em;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        html[dir="rtl"] .input-with-icon i { right: 1.5rem; }
+        html[dir="ltr"] .input-with-icon i { left: 1.5rem; }
+
+        .input-with-icon input {
+            width: 100%;
+            padding: 1.1rem 1.5rem;
+            background: #f8fafc;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--luxury-slate);
+        }
+
+        html[dir="rtl"] .input-with-icon input { padding-right: 3.5rem; }
+        html[dir="ltr"] .input-with-icon input { padding-left: 3.5rem; }
+
+        .input-with-icon input:focus {
+            background: white;
+            border-color: var(--luxury-emerald);
+            box-shadow: 0 10px 25px var(--luxury-emerald-light);
+            outline: none;
+        }
+
+        .input-with-icon input:focus + i {
+            color: var(--luxury-emerald);
+        }
+
+        /* 🚀 Drawer Buttons */
+        .drawer-btn {
+            flex: 1; /* Equal width buttons */
+            padding: 1.1rem;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-save {
+            background: var(--luxury-emerald);
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 128, 96, 0.2);
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .drawer-btn:hover {
+            transform: translateY(-4px);
+            filter: brightness(1.05);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        }
+
+        .btn-save:hover {
+            box-shadow: 0 12px 30px rgba(0, 128, 96, 0.3);
+        }
+
+        .btn-delete:hover {
+            background: #e11d48;
+            color: white;
+            box-shadow: 0 12px 30px rgba(225, 29, 72, 0.25);
+        }
+
+
 
         .orders-table th, .orders-table td {
             padding: 1.25rem 0.5rem;
@@ -214,81 +490,156 @@
             </div>
 
             <!-- ✨ Optimized Toolbar -->
-        <div class="toolbar">
-            <form id="add-product-form">
-                <!-- 🔍 Row 1: Search & Filter -->
-                <div class="search-bar-container">
-                    <div class="search-container" style="position:relative; flex:1;">
-                        <i class="fas fa-search" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
-                        <input 
-                            type="text" 
-                            id="search-bar" 
-                            class="search-bar" 
-                            placeholder="Search..." 
-                            oninput="searchProducts()" 
-                            style="padding-right: 2.5rem; width: 100%;"
-                        />
+            <div class="toolbar">
+                <form id="add-product-form">
+                    <!-- 🔍 Row 1: Search & Advanced Filtering -->
+                    <div class="search-bar-container" style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div class="search-container" style="position:relative; flex:2;">
+                            <i class="fas fa-search" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+                            <input 
+                                type="text" 
+                                id="search-bar" 
+                                class="search-bar" 
+                                placeholder="ابحث بالاسم، الفئة أو الكود..." 
+                                oninput="searchProducts()" 
+                                style="padding-right: 2.5rem; width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; height: 45px; font-weight: 500;"
+                            />
+                        </div>
+                        
+                        <div class="filter-group" style="display: flex; gap: 0.5rem; flex: 1.5;">
+                            <!-- Sort Options -->
+                            <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; height: 45px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; padding: 0 1rem; cursor: pointer; font-weight: 600; color: var(--luxury-slate);">
+                                <option value="" id="loc-filter-by">تصفية حسب...</option>
+                                <option value="most-sold" id="loc-best-seller">الأكثر مبيعاً</option>
+                                <option value="highest-price" id="loc-expensive">الأعلى سعراً</option>
+                                <option value="lowest-price" id="loc-cheapest">الأقل سعراً</option>
+                            </select>
+
+                            <!-- Category Filter -->
+                            <select id="category-filter" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; height: 45px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; padding: 0 1rem; cursor: pointer; font-weight: 600; color: var(--primary);">
+                                <option value="all" id="loc-all-cats">كل الفئات</option>
+                                <!-- Dynamic categories will be injected here -->
+                            </select>
+                        </div>
+
+                        <!-- ➕ Add Product Button -->
+                        <button type="button" id="open-add-drawer" class="main-button" style="height: 45px; min-width: 160px; background: var(--luxury-emerald); border-radius: 8px;">
+                            <i class="fas fa-plus"></i>
+                            <span id="loc-btn-add-new">إضافة منتج</span>
+                        </button>
                     </div>
-                    <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="max-width: 250px;">
-                        <option value="" id="loc-filter-by">Filter by...</option>
-                        <option value="most-sold" id="loc-best-seller">Best Seller</option>
-                        <option value="highest-price" id="loc-expensive">Most Expensive</option>
-                        <option value="lowest-price" id="loc-cheapest">Cheapest</option>
-                        <option value="category" id="loc-by-type">By Type</option>
-                    </select>
-                </div>
-        
-                <!-- 📝 Row 2: All Inputs in One Line -->
-                <div class="form-inputs-row" style="margin-top: 1.5rem; display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr; gap: 1rem;">
-                    <input type="text" id="product-name" placeholder="Name" required />
-                    <input type="text" id="product-category" placeholder="Category" list="category-list" required />
-                    <datalist id="category-list">
-                        <!-- Dynamic Categories will be loaded here -->
-                    </datalist>
-                    <input type="number" id="product-price" placeholder="Retail Price" required />
-                    <input type="number" id="product-wholesale-price" placeholder="Wholesale" required />
-                </div>
+                </form>
+            </div>
 
-                <!-- 🚀 Row 3: All Actions in One Line -->
-                <div class="form-actions-row" id="form-actions-container" style="margin-top: 1rem; display: flex; gap: 1rem; width: 100%;">
-                    <button type="submit" class="main-button" id="loc-btn-add" style="flex: 1;">Add</button>
-                    <button type="button" id="edit-btn" class="main-button" style="display:none; flex: 1; background: var(--luxury-emerald);">Edit</button>
-                    <button type="button" id="delete-btn" class="cancel-button" style="display:none; flex: 1;">Delete</button>
-                    <button type="button" id="reset-btn" class="main-button" style="display:none; flex: 0.3; background: #64748b;" title="Cancel Edit">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <input type="hidden" id="product-id" />
-            </form>
-        </div>
-
-        <!-- جدول المنتجات وأزرار التصدير والطباعة -->
-        <main>
+            <!-- 📦 Products Table Card -->
             <div class="products-card">
                 <div class="table-container">
                     <table class="orders-table">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)" id="loc-id">ID</th>
-                                <th onclick="sortTable(1)" id="loc-name">Name</th>
-                                <th onclick="sortTable(2)" id="loc-category">Category</th>
-                                <th onclick="sortTable(3)" id="loc-price">Retail</th>
-                                <th onclick="sortTable(4)" id="loc-wholesale">Wholesale</th>
-                                <th onclick="sortTable(5)" id="loc-sold">Sold</th>
+                                <th id="loc-id">ID</th>
+                                <th id="loc-name">الاسم</th>
+                                <th id="loc-category">الفئة</th>
+                                <th id="loc-price">قطاعي</th>
+                                <th id="loc-wholesale">جملة</th>
+                                <th id="loc-sold">المبيعات</th>
                             </tr>
                         </thead>
                         <tbody id="product-table">
-                            <!-- Data populated here -->
+                            <!-- Data will be loaded here -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- أزرار التصدير والطباعة -->
+            <!-- 📥 Footer Actions -->
             <div class="footer">
-                <button onclick="exportProductsToExcel()" class="main-button btn-excel-full" id="loc-btn-excel">Export Excel</button>
+                <button onclick="exportProductsToPDF()" id="loc-btn-pdf">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button onclick="exportProductsToExcel()" id="loc-btn-excel">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
             </div>
-        </main>
+        </div>
+    </div>
+
+    <!-- 🎭 Side Drawer for Add/Edit Product -->
+    <div class="side-drawer-overlay" id="drawer-overlay"></div>
+    <div class="side-drawer" id="product-drawer">
+        <div class="side-drawer-header">
+            <h2 id="drawer-title">
+                <span id="loc-drawer-title">تفاصيل المنتج</span>
+            </h2>
+            <button class="close-drawer" id="close-drawer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="side-drawer-content">
+            <form id="drawer-product-form">
+                <input type="hidden" id="product-id">
+                
+                <div class="input-group">
+                    <label id="loc-label-name">اسم المنتج</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-tag"></i>
+                        <input type="text" id="product-name" required placeholder="مثلاً: كلاسيك بيف">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label id="loc-label-category">الفئة / التصنيف</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-layer-group"></i>
+                        <input type="text" id="product-category" list="category-list" required placeholder="مثلاً: بيف">
+                        <datalist id="category-list"></datalist>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label id="loc-label-price">سعر القطاعي</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <input type="number" id="product-price" required step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label id="loc-label-wholesale">سعر الجملة</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-store"></i>
+                            <input type="number" id="product-wholesale-price" required step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📊 Sales Details Section (Visible only in Edit Mode) -->
+                <div id="drawer-sales-section" class="drawer-sales-stats">
+                    <div class="drawer-stat-card drawer-stat-retail">
+                        <div class="drawer-stat-icon"><i class="fas fa-shopping-bag"></i></div>
+                        <div class="drawer-stat-title" id="loc-retail-sales">مبيعات القطاعي</div>
+                        <div class="drawer-stat-value" id="drawer-retail-sold">0</div>
+                    </div>
+                    <div class="drawer-stat-card drawer-stat-wholesale">
+                        <div class="drawer-stat-icon"><i class="fas fa-truck-loading"></i></div>
+                        <div class="drawer-stat-title" id="loc-wholesale-sales">مبيعات الجملة</div>
+                        <div class="drawer-stat-value" id="drawer-wholesale-sold">0</div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="side-drawer-footer">
+            <button type="button" class="drawer-btn btn-delete" id="delete-btn" style="display: none;">
+                <i class="fas fa-trash"></i>
+                <span id="loc-btn-delete">حذف</span>
+            </button>
+            <button type="submit" form="drawer-product-form" class="drawer-btn btn-save" id="save-product-btn">
+                <i class="fas fa-check"></i>
+                <span id="loc-btn-save">حفظ المنتج</span>
+            </button>
+        </div>
     </div>
 
     <script src="./js/header-loader.js"></script>

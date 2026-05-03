@@ -288,3 +288,180 @@ html[dir="ltr"] .search-bar {
     padding-right: 1.25rem !important;
     padding-left: 2.5rem !important;
 }
+
+/* 🔹 Side Drawer (Sidebar) Styles */
+.side-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.side-drawer {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    width: 450px;
+    background: white;
+    z-index: 1001;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* RTL: Side Drawer opens from the right (usually left in LTR) */
+html[dir="rtl"] .side-drawer {
+    right: 0;
+    transform: translateX(100%);
+}
+html[dir="ltr"] .side-drawer {
+    left: 0;
+    transform: translateX(-100%);
+}
+
+.side-drawer.open {
+    transform: translateX(0);
+}
+
+.side-drawer-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--luxury-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.side-drawer-header h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--luxury-slate);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.close-drawer {
+    background: white;
+    border: 1px solid var(--luxury-border);
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.close-drawer:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #fecaca;
+}
+
+.side-drawer-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.side-drawer-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--luxury-border);
+    display: flex;
+    gap: 1rem;
+    background: #f8fafc;
+}
+
+/* 🔹 Premium Form Styling inside Drawer */
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+html[dir="rtl"] .input-with-icon i { right: 1.25rem; }
+html[dir="ltr"] .input-with-icon i { left: 1.25rem; }
+
+.input-with-icon input {
+    width: 100%;
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.input-with-icon input:focus {
+    border-color: var(--luxury-emerald);
+    box-shadow: 0 0 0 4px var(--luxury-emerald-light);
+    outline: none;
+}
+
+.drawer-btn {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-save {
+    background: var(--luxury-emerald);
+    color: white;
+}
+
+.btn-delete {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.drawer-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+}

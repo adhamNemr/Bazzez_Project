@@ -34,11 +34,22 @@ const t = {
         confirmDeleteText: 'لن تتمكن من التراجع عن حذف هذا المنتج!',
         confirmDeleteBtn: 'نعم، احذف',
         cancelBtn: 'تراجع',
-        noExport: '⚠️ لا يوجد بيانات للتصدير'
+        noExport: '⚠️ لا يوجد بيانات للتصدير',
+        allCats: 'كل الفئات',
+        drawerTitle: 'تفاصيل المنتج',
+        labelName: 'اسم المنتج',
+        labelCategory: 'الفئة / التصنيف',
+        labelPrice: 'سعر القطاعي',
+        labelWholesale: 'سعر الجملة',
+        btnSave: 'حفظ المنتج',
+        btnCancel: 'إلغاء',
+        btnAddProduct: 'إضافة منتج',
+        retailSales: 'مبيعات القطاعي',
+        wholesaleSales: 'مبيعات الجملة'
     },
     en: {
         pageTitle: 'Products Management',
-        searchPlaceholder: 'Search by name or category...',
+        searchPlaceholder: 'Search by name, category or ID...',
         filterBy: 'Filter by...',
         bestSeller: 'Best Seller',
         expensive: 'Most Expensive',
@@ -67,7 +78,18 @@ const t = {
         confirmDeleteText: "You won't be able to revert this!",
         confirmDeleteBtn: 'Yes, delete it!',
         cancelBtn: 'Cancel',
-        noExport: '⚠️ Nothing to export'
+        noExport: '⚠️ Nothing to export',
+        allCats: 'All Categories',
+        drawerTitle: 'Product Details',
+        labelName: 'Product Name',
+        labelCategory: 'Category / Type',
+        labelPrice: 'Retail Price',
+        labelWholesale: 'Wholesale Price',
+        btnSave: 'Save Product',
+        btnCancel: 'Cancel',
+        btnAddProduct: 'Add Product',
+        retailSales: 'Retail Sales',
+        wholesaleSales: 'Wholesale Sales'
     }
 }[currentLang];
 
@@ -88,16 +110,37 @@ function applyTranslations() {
         document.getElementById('loc-best-seller').textContent = t.bestSeller;
         document.getElementById('loc-expensive').textContent = t.expensive;
         document.getElementById('loc-cheapest').textContent = t.cheapest;
-        document.getElementById('loc-by-type').textContent = t.byType;
     }
+    
+    const catFilter = document.getElementById('loc-all-cats');
+    if (catFilter) catFilter.textContent = t.allCats;
 
-    document.getElementById('product-name').placeholder = t.placeholderName;
-    document.getElementById('product-category').placeholder = t.placeholderCategory;
-    document.getElementById('product-price').placeholder = t.placeholderPrice;
+    // Drawer Labels
+    const drawerTitle = document.getElementById('loc-drawer-title');
+    if (drawerTitle) drawerTitle.textContent = t.drawerTitle;
+    const labelName = document.getElementById('loc-label-name');
+    if (labelName) labelName.textContent = t.labelName;
+    const labelCategory = document.getElementById('loc-label-category');
+    if (labelCategory) labelCategory.textContent = t.labelCategory;
+    const labelPrice = document.getElementById('loc-label-price');
+    if (labelPrice) labelPrice.textContent = t.labelPrice;
+    const labelWholesale = document.getElementById('loc-label-wholesale');
+    if (labelWholesale) labelWholesale.textContent = t.labelWholesale;
 
-    document.getElementById('loc-btn-add').textContent = t.btnAdd;
-    document.getElementById('edit-btn').textContent = t.btnEdit;
-    document.getElementById('delete-btn').textContent = t.btnDelete;
+    const btnSave = document.getElementById('loc-btn-save');
+    if (btnSave) btnSave.textContent = t.btnSave;
+    const btnCancel = document.getElementById('loc-btn-cancel');
+    if (btnCancel) btnCancel.textContent = t.btnCancel;
+    const btnDelete = document.getElementById('loc-btn-delete');
+    if (btnDelete) btnDelete.textContent = t.btnDelete;
+    const btnAddProduct = document.getElementById('loc-btn-add-new');
+    if (btnAddProduct) btnAddProduct.textContent = t.btnAddProduct;
+
+    const retailSales = document.getElementById('loc-retail-sales');
+    if (retailSales) retailSales.textContent = t.retailSales;
+    const wholesaleSales = document.getElementById('loc-wholesale-sales');
+    if (wholesaleSales) wholesaleSales.textContent = t.wholesaleSales;
+
     const pdfBtn = document.getElementById('loc-btn-pdf');
     const excelBtn = document.getElementById('loc-btn-excel');
     if (pdfBtn) pdfBtn.textContent = t.btnPdf;
@@ -158,17 +201,30 @@ async function fetchProducts() {
 
 function populateCategoryList(products) {
     const datalist = document.getElementById('category-list');
-    if (!datalist) return;
+    const catFilter = document.getElementById('category-filter');
+    if (!datalist || !catFilter) return;
     
     // Get unique categories
-    const categories = [...new Set(products.map(p => p.category))];
+    const categories = [...new Set(products.map(p => p.category))].sort();
     
+    // Fill datalist for form
     datalist.innerHTML = '';
     categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
         datalist.appendChild(option);
     });
+
+    // Fill filter dropdown
+    const currentVal = catFilter.value;
+    catFilter.innerHTML = `<option value="all" id="loc-all-cats">${t.allCats}</option>`;
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        catFilter.appendChild(option);
+    });
+    catFilter.value = currentVal || 'all';
 }
 
 function getCategoryClass(category) {
@@ -199,7 +255,7 @@ function renderProducts(products) {
     if (products.length === 0) {
         const noResultRow = document.createElement('tr');
         noResultRow.innerHTML = `
-            <td colspan="5" style="padding: 3rem; color: #94a3b8; font-weight: 700; font-size: 1.1rem;">
+            <td colspan="6" style="padding: 3rem; color: #94a3b8; font-weight: 700; font-size: 1.1rem; text-align:center;">
                 <i class="fas fa-search" style="display: block; font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
                 ${isAr ? 'لم يتم العثور على منتجات مطابقة' : 'No matching products found'}
             </td>
@@ -210,7 +266,7 @@ function renderProducts(products) {
         for (let i = 0; i < 7; i++) {
             const emptyRow = document.createElement('tr');
             emptyRow.className = 'empty-row';
-            emptyRow.innerHTML = `<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>`;
+            emptyRow.innerHTML = `<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>`;
             tableBody.appendChild(emptyRow);
         }
         return;
@@ -226,7 +282,7 @@ function renderProducts(products) {
             <td><span class="category-pill ${catClass}">${product.category}</span></td>
             <td style="font-weight: 800; color: var(--luxury-emerald);">${parseFloat(product.price).toFixed(2)} <small>EGP</small></td>
             <td style="font-weight: 800; color: #3b82f6;">${parseFloat(product.wholesalePrice || product.price).toFixed(2)} <small>EGP</small></td>
-            <td>${product.sold}</td>
+            <td>${product.sold || 0}</td>
         `;
 
         row.addEventListener('click', () => fillFormFields(product));
@@ -240,6 +296,7 @@ function renderProducts(products) {
             const emptyRow = document.createElement('tr');
             emptyRow.className = 'empty-row';
             emptyRow.innerHTML = `
+                <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
@@ -269,6 +326,36 @@ function updateStats(products) {
 }
 
 
+// 🎭 Drawer Controls
+function openDrawer(mode = 'add') {
+    const drawer = document.getElementById('product-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const deleteBtn = document.getElementById('delete-btn');
+    const salesSection = document.getElementById('drawer-sales-section');
+    
+    drawer.classList.add('open');
+    overlay.style.display = 'block';
+    setTimeout(() => overlay.style.opacity = '1', 10);
+
+    if (mode === 'add') {
+        resetProductForm();
+        deleteBtn.style.display = 'none';
+        if (salesSection) salesSection.style.display = 'none';
+    } else {
+        deleteBtn.style.display = 'flex';
+        if (salesSection) salesSection.style.display = 'flex';
+    }
+}
+
+function closeDrawer() {
+    const drawer = document.getElementById('product-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    
+    drawer.classList.remove('open');
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 300);
+}
+
 // تعبئة الحقول العلوية عند اختيار منتج من الجدول
 function fillFormFields(product) {
     document.getElementById('product-id').value = product.id;
@@ -277,20 +364,16 @@ function fillFormFields(product) {
     document.getElementById('product-price').value = product.price;
     document.getElementById('product-wholesale-price').value = product.wholesalePrice || product.price;
 
-    // Show Edit/Delete/Reset buttons, hide Add button
-    document.getElementById('loc-btn-add').style.display = 'none';
-    document.getElementById('edit-btn').style.display = 'inline-block';
-    document.getElementById('delete-btn').style.display = 'inline-block';
-    document.getElementById('reset-btn').style.display = 'inline-block';
+    // 📊 Populate Sales Stats
+    document.getElementById('drawer-retail-sold').textContent = product.retailSold || product.sold || 0;
+    document.getElementById('drawer-wholesale-sold').textContent = product.wholesaleSold || 0;
+
+    openDrawer('edit');
 }
 
 function resetProductForm() {
-    document.getElementById('add-product-form').reset();
+    document.getElementById('drawer-product-form').reset();
     document.getElementById('product-id').value = '';
-    document.getElementById('loc-btn-add').style.display = 'inline-block';
-    document.getElementById('edit-btn').style.display = 'none';
-    document.getElementById('delete-btn').style.display = 'none';
-    document.getElementById('reset-btn').style.display = 'none';
 }
 
 
@@ -326,47 +409,12 @@ const sortTable = (columnIndex) => {
     table.setAttribute(`data-sort-${columnIndex}`, ascending ? "asc" : "desc");
 };
 
-// إضافة منتج جديد
-document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+// التعامل مع الفورم (إضافة أو تعديل)
+document.getElementById('drawer-product-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const product = {
-        name: document.getElementById('product-name').value,
-        category: document.getElementById('product-category').value,
-        price: parseFloat(document.getElementById('product-price').value),
-        wholesalePrice: parseFloat(document.getElementById('product-wholesale-price').value)
-    };
-
-    try {
-        const response = await fetch("/api/products/add", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(product)
-        });
-
-        if (response.ok) {
-            Swal.fire({ icon: 'success', title: t.msgAdded, timer: 1500, showConfirmButton: false });
-            fetchProducts();
-            resetProductForm();
-        } else {
-            Swal.fire({ icon: 'error', title: t.msgError });
-        }
-    } catch (error) {
-        console.error('⚠️ خطأ أثناء الاتصال بالخادم:', error);
-        Swal.fire({ icon: 'error', title: t.msgError });
-    }
-});
-
-// تعديل منتج
-document.getElementById('edit-btn').addEventListener('click', async () => {
     const productId = document.getElementById('product-id').value;
-    if (!productId) {
-        showToast('⚠️ يرجى اختيار منتج للتعديل.', 'warning');
-        return;
-    }
-
+    const isEdit = productId !== '';
+    
     const product = {
         name: document.getElementById('product-name').value,
         category: document.getElementById('product-category').value,
@@ -374,9 +422,12 @@ document.getElementById('edit-btn').addEventListener('click', async () => {
         wholesalePrice: parseFloat(document.getElementById('product-wholesale-price').value)
     };
 
+    const url = isEdit ? `/api/products/${productId}` : "/api/products/add";
+    const method = isEdit ? "PUT" : "POST";
+
     try {
-        const response = await fetch(`/api/products/${productId}`, {
-            method: "PUT",
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem('token')}`
@@ -385,9 +436,9 @@ document.getElementById('edit-btn').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            Swal.fire({ icon: 'success', title: t.msgEdited, timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: isEdit ? t.msgEdited : t.msgAdded, timer: 1500, showConfirmButton: false });
             fetchProducts();
-            resetProductForm();
+            closeDrawer();
         } else {
             Swal.fire({ icon: 'error', title: t.msgError });
         }
@@ -397,7 +448,11 @@ document.getElementById('edit-btn').addEventListener('click', async () => {
     }
 });
 
+// حذف منتج
 document.getElementById('delete-btn').addEventListener('click', async () => {
+    const productId = document.getElementById('product-id').value;
+    if (!productId) return;
+
     const result = await Swal.fire({
         title: t.confirmDeleteTitle,
         text: t.confirmDeleteText,
@@ -422,7 +477,7 @@ document.getElementById('delete-btn').addEventListener('click', async () => {
         if (response.ok) {
             Swal.fire({ icon: 'success', title: t.msgDeleted, timer: 1500, showConfirmButton: false });
             fetchProducts();
-            resetProductForm();
+            closeDrawer();
         } else {
             Swal.fire({ icon: 'error', title: t.msgError });
         }
@@ -434,52 +489,81 @@ document.getElementById('delete-btn').addEventListener('click', async () => {
 
 // تصفية المنتجات بناءً على البحث
 function searchProducts() {
-    const searchTerm = document.getElementById('search-bar').value.toLowerCase();
-
-    if (!allProducts || allProducts.length === 0) {
-        console.warn("⚠️ لم يتم تحميل المنتجات بعد.");
-        return;
-    }
-
-    const filteredProducts = Object.values(allProducts).flat().filter(product =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.category.toLowerCase().includes(searchTerm)
-    );
-
-    renderProducts(filteredProducts);
+    applyFilter(); // Logic is merged in applyFilter for better coordination
 }
 
-// تطبيق الفلترة بناءً على الخيار المحدد في القائمة المنسدلة
+// تطبيق الفلترة بناءً على الخيار المحدد في القائمة المنسدلة والبحث
 function applyFilter() {
-    const filterOption = document.getElementById('filter-options').value;
-    const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+    const sortOption = document.getElementById('filter-options').value;
+    const catOption = document.getElementById('category-filter').value;
+    const searchTerm = document.getElementById('search-bar').value.trim().toLowerCase();
     
+    if (!allProducts || allProducts.length === 0) return;
+
     let filteredProducts = Object.values(allProducts).flat();
 
-    // 🔍 تطبيق البحث أولاً إذا كان هناك نص مكتوب في البحث
+    // 1️⃣ Filtering logic
     if (searchTerm) {
         filteredProducts = filteredProducts.filter(product =>
             product.name.toLowerCase().includes(searchTerm) ||
-            product.category.toLowerCase().includes(searchTerm)
+            product.category.toLowerCase().includes(searchTerm) ||
+            product.id.toString().includes(searchTerm)
         );
     }
 
-    // 📌 تطبيق الفلترة بعد البحث
-    switch (filterOption) {
-        case 'most-sold':
-            filteredProducts.sort((a, b) => b.sold - a.sold);
-            break;
-        case 'highest-price':
-            filteredProducts.sort((a, b) => b.price - a.price);
-            break;
-        case 'lowest-price':
-            filteredProducts.sort((a, b) => a.price - b.price);
-            break;
-        case 'category':
-            filteredProducts.sort((a, b) => a.category.localeCompare(b.category));
-            break;
-        default:
-            break;
+    if (catOption && catOption !== 'all') {
+        filteredProducts = filteredProducts.filter(product => product.category === catOption);
+    }
+
+    // 2️⃣ 🧠 Intelligent Search Ranking (if searching)
+    if (searchTerm) {
+        console.log(`--- 🔍 SEARCH DIAGNOSTICS [Query: ${searchTerm}] ---`);
+        filteredProducts.forEach(p => {
+            const name = p.name.toLowerCase();
+            const cat = p.category.toLowerCase();
+            const id = p.id.toString();
+            
+            // Assign Ranks (Lower is Better)
+            if (id === searchTerm) {
+                p._rank = 1;
+                p._reason = "Exact ID Match";
+            } else if (name.startsWith(searchTerm)) {
+                p._rank = 2;
+                p._reason = "Name Starts With";
+            } else if (cat.startsWith(searchTerm)) {
+                p._rank = 3;
+                p._reason = "Category Starts With";
+            } else if (name.includes(searchTerm)) {
+                p._rank = 4;
+                p._reason = "Name Contains";
+            } else {
+                p._rank = 100;
+                p._reason = "Partial Match";
+            }
+            console.log(`Product: ${p.name} | Rank: ${p._rank} | Reason: ${p._reason}`);
+        });
+
+        // Sort by Rank, then by ID descending
+        filteredProducts.sort((a, b) => {
+            if (a._rank !== b._rank) return a._rank - b._rank;
+            return b.id - a.id;
+        });
+    } else {
+        // 3️⃣ Standard Sorting (when not searching)
+        switch (sortOption) {
+            case 'most-sold':
+                filteredProducts.sort((a, b) => (b.sold || 0) - (a.sold || 0));
+                break;
+            case 'highest-price':
+                filteredProducts.sort((a, b) => b.price - a.price);
+                break;
+            case 'lowest-price':
+                filteredProducts.sort((a, b) => a.price - b.price);
+                break;
+            default:
+                filteredProducts.sort((a, b) => b.id - a.id);
+                break;
+        }
     }
 
     renderProducts(filteredProducts);
@@ -523,11 +607,18 @@ function exportProductsToExcel() {
 }
 
 // تحميل البيانات عند فتح الصفحة
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', () => {
     applyTranslations();
     fetchProducts();
     
-    // Initial reset listener
-    const resetBtn = document.getElementById('reset-btn');
-    if (resetBtn) resetBtn.onclick = resetProductForm;
-};
+    // 🎭 Drawer Event Listeners
+    const addBtn = document.getElementById('open-add-drawer');
+    const closeBtn = document.getElementById('close-drawer');
+    const cancelBtn = document.getElementById('cancel-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+
+    if (addBtn) addBtn.onclick = () => openDrawer('add');
+    if (closeBtn) closeBtn.onclick = closeDrawer;
+    if (cancelBtn) cancelBtn.onclick = closeDrawer;
+    if (overlay) overlay.onclick = closeDrawer;
+});
