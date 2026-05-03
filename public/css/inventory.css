@@ -194,6 +194,7 @@ body {
     box-shadow: var(--luxury-shadow);
     border: 1px solid rgba(255, 255, 255, 0.8);
     gap: 2rem;
+    margin-bottom: 1.25rem;
 }
 
 .toolbar-left {
@@ -236,8 +237,15 @@ html[dir="ltr"] .search-icon { left: 1.25rem; }
     outline: none;
 }
 
+.filter-box {
+    position: relative;
+    min-width: 180px;
+}
+
 .filter-box select {
-    padding: 0.9rem 1.5rem;
+    width: 100%;
+    appearance: none;
+    padding: 0.9rem 1.25rem;
     background: #f1f5f9;
     border: 2px solid transparent;
     border-radius: 16px;
@@ -245,10 +253,32 @@ html[dir="ltr"] .search-icon { left: 1.25rem; }
     font-weight: 700;
     cursor: pointer;
     color: var(--luxury-slate);
+    transition: all 0.3s;
 }
 
+/* Custom Arrow/Icon for Filter */
+.filter-box::after {
+    content: '\f0b0';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--luxury-emerald);
+    font-size: 0.9rem;
+}
+
+html[dir="rtl"] .filter-box select { padding-left: 3rem; }
+html[dir="ltr"] .filter-box select { padding-right: 3rem; }
+
+html[dir="rtl"] .filter-box::after { left: 1.25rem; }
+html[dir="ltr"] .filter-box::after { right: 1.25rem; }
+
 .filter-box select:focus {
+    background: white;
     border-color: var(--luxury-emerald);
+    box-shadow: 0 0 0 5px rgba(0, 128, 96, 0.08);
     outline: none;
 }
 
@@ -291,6 +321,7 @@ html[dir="ltr"] .search-icon { left: 1.25rem; }
 .orders-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed; /* 🛑 Prevents columns from resizing/shifting */
 }
 
 .orders-table th {
@@ -320,6 +351,75 @@ html[dir="ltr"] .search-icon { left: 1.25rem; }
 .orders-table tr:hover td {
     background: var(--luxury-emerald-light);
     color: var(--luxury-emerald);
+}
+
+/* 📐 Strict Column Widths to prevent shifting */
+.orders-table th:nth-child(1) { width: 12%; } /* ID */
+.orders-table th:nth-child(2) { width: 25%; } /* Name */
+.orders-table th:nth-child(3) { width: 12%; } /* Qty */
+.orders-table th:nth-child(4) { width: 12%; } /* Min Limit */
+.orders-table th:nth-child(5) { width: 13%; } /* Unit Cost */
+.orders-table th:nth-child(6) { width: 13%; } /* Total Value */
+.orders-table th:nth-child(7) { width: 13%; } /* Added Date */
+.orders-table th:nth-child(8) { width: 10%; } /* Expiry Date (if shown) */
+
+/* 🌳 Tree View Enhancements */
+@keyframes rowFadeIn {
+    0% { opacity: 0; transform: translateY(-8px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rowFadeOut {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-8px); }
+}
+
+.tree-node-expanded td {
+    background-color: var(--luxury-emerald-light) !important;
+}
+
+.tree-child-row td {
+    padding-top: 0.8rem !important;
+    padding-bottom: 0.8rem !important;
+    animation: rowFadeIn 0.2s ease-out forwards;
+}
+
+.tree-child-row.closing td {
+    animation: rowFadeOut 0.2s ease-out forwards !important;
+}
+
+.tree-level-2 td {
+    background-color: #f8fafc;
+}
+
+.tree-level-3 td {
+    background-color: #ffffff;
+}
+
+/* 🚨 Expiry Warning Row */
+.row-near-expiry {
+    background-color: rgba(239, 68, 68, 0.03) !important;
+}
+
+[dir="rtl"] .row-near-expiry td:first-child {
+    border-right: 4px solid #ef4444 !important;
+}
+
+[dir="ltr"] .row-near-expiry td:first-child {
+    border-left: 4px solid #ef4444 !important;
+}
+
+.expiry-pulse {
+    animation: pulseRed 2s infinite;
+    color: #ef4444;
+    margin: 0 8px;
+    font-size: 0.9rem;
+}
+
+@keyframes pulseRed {
+    0% { opacity: 0.6; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0.6; transform: scale(0.95); }
 }
 
 /* 🏷️ Status Badges */

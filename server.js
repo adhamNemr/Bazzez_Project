@@ -77,9 +77,17 @@ sequelize
     console.log("✅ Connected to the database successfully!");
     try {
       await Setting.sync();
+      
+      // ✅ Check and add 'variants' column to 'inventory' table if missing
+      const [results] = await sequelize.query("SHOW COLUMNS FROM inventory LIKE 'variants'");
+      if (results.length === 0) {
+        await sequelize.query("ALTER TABLE inventory ADD COLUMN variants JSON NULL AFTER min");
+        console.log("✅ Column 'variants' added to 'inventory' table.");
+      }
+
       console.log("✅ Settings table synced");
     } catch (err) {
-      console.error("⚠️ Error syncing Settings table:", err);
+      console.error("⚠️ Error during DB initialization:", err);
     }
   })
   .catch((err) => console.error("⚠️ Error connecting to the database:", err));

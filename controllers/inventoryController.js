@@ -16,20 +16,22 @@ const getAllInventory = async (req, res) => {
 // ✅ إضافة عنصر جديد إلى المخزون
 const addInventoryItem = async (req, res) => {
     try {
-        const { name, quantity, cost, expiryDate } = req.body;
+        const { name, quantity, cost, min, expiryDate, variants } = req.body;
 
         if (!name || isNaN(quantity) || isNaN(cost)) {
             return res.status(400).json({ error: "جميع الحقول مطلوبة" });
         }
 
-        const total = quantity * cost; // حساب الإجمالي تلقائيًا
+        const total = quantity * cost;
 
         const newItem = await Inventory.create({
             name,
             quantity,
             cost,
+            min: min || 0,
             total,
             expiryDate: expiryDate || null,
+            variants: variants || []
         });
 
         res.status(201).json(newItem);
@@ -43,19 +45,21 @@ const addInventoryItem = async (req, res) => {
 const updateInventoryItem = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, quantity, cost, expiryDate } = req.body;
+        const { name, quantity, cost, min, expiryDate, variants } = req.body;
 
         const item = await Inventory.findByPk(id);
         if (!item) return res.status(404).json({ error: "العنصر غير موجود" });
 
-        const total = quantity * cost; // تحديث الإجمالي أيضًا
+        const total = quantity * cost;
 
         await item.update({
             name,
             quantity,
             cost,
+            min: min || 0,
             total,
             expiryDate: expiryDate || null,
+            variants: variants || []
         });
 
         res.json({ message: "✅ تم تحديث المنتج بنجاح" });
