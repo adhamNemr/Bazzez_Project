@@ -484,3 +484,23 @@ html[dir="ltr"] .filter-box::after { right: 1.25rem; }
         justify-content: center;
     }
 }
+
+/* ➕ Add Action Row Styling */
+.tree-child-row.add-action-row td {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tree-child-row.add-action-row:hover td {
+    background: rgba(16, 185, 129, 0.08) !important;
+    color: #059669 !important;
+    padding-right: 4rem !important; /* Slight nudge for RTL */
+}
+
+html[dir="ltr"] .tree-child-row.add-action-row:hover td {
+    padding-left: 4rem !important;
+}
+
+.tree-child-row.add-action-row:active {
+    opacity: 0.7;
+    transform: scale(0.998);
+}

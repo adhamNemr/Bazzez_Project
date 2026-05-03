@@ -159,9 +159,9 @@ function showLoading() {
     `;
 }
 
-function fetchInventory() {
-    // 🛑 Prevent auto-refresh from collapsing the tree if user is interacting
-    if (document.querySelector('.expanded-row')) return;
+function fetchInventory(force = false) {
+    // 🛑 Prevent auto-refresh from collapsing the tree if user is interacting (unless forced)
+    if (document.querySelector('.expanded-row') && !force) return;
 
     const token = localStorage.getItem("token");
     const tableBody = document.getElementById('product-table');
@@ -172,56 +172,7 @@ function fetchInventory() {
     })
     .then(res => res.json())
     .then(data => {
-        // 🧪 Inject Mock Data for testing the Tree View alongside real DB data
-        const mockData = [
-            {
-                id: 1001,
-                name: 'تيشيرت بولو كلاسيك',
-                category: 'ملابس صيفية',
-                quantity: 0,
-                min: 10,
-                cost: 250,
-                createdAt: '2023-05-10',
-                variants: [
-                    { id: '1001-R-M', color: 'أحمر', size: 'M', quantity: 15, min: 5, cost: 250, createdAt: '2023-05-10' },
-                    { id: '1001-R-L', color: 'أحمر', size: 'L', quantity: 8, min: 5, cost: 250, createdAt: '2023-05-10' },
-                    { id: '1001-B-M', color: 'أسود', size: 'M', quantity: 2, min: 5, cost: 250, createdAt: '2023-05-10' },
-                    { id: '1001-B-XL', color: 'أسود', size: 'XL', quantity: 20, min: 5, cost: 250, createdAt: '2023-05-10' }
-                ]
-            },
-            {
-                id: 1002,
-                name: 'بنطلون جينز سليم فيت',
-                category: 'بناطيل',
-                quantity: 0,
-                min: 15,
-                cost: 450,
-                createdAt: '2023-06-15',
-                variants: [
-                    { id: '1002-BL-32', color: 'أزرق غامق', size: '32', quantity: 10, min: 5, cost: 450, createdAt: '2023-06-15' },
-                    { id: '1002-BL-34', color: 'أزرق غامق', size: '34', quantity: 12, min: 5, cost: 450, createdAt: '2023-06-15' },
-                    { id: '1002-LB-32', color: 'أزرق فاتح', size: '32', quantity: 0, min: 5, cost: 450, createdAt: '2023-06-15' }
-                ]
-            },
-            {
-                id: 1003,
-                name: 'حذاء رياضي رانينج',
-                category: 'أحذية',
-                quantity: 0,
-                min: 5,
-                cost: 800,
-                createdAt: '2023-08-01',
-                variants: [
-                    { id: '1003-W-42', color: 'أبيض', size: '42', quantity: 5, min: 2, cost: 800, createdAt: '2023-08-01' },
-                    { id: '1003-W-43', color: 'أبيض', size: '43', quantity: 3, min: 2, cost: 800, createdAt: '2023-08-01' },
-                    { id: '1003-W-44', color: 'أبيض', size: '44', quantity: 7, min: 2, cost: 800, createdAt: '2023-08-01' },
-                    { id: '1003-G-42', color: 'رمادي', size: '42', quantity: 1, min: 2, cost: 800, createdAt: '2023-08-01' }
-                ]
-            }
-        ];
-
-        // Merge real DB data with mock data so you can see newly added products
-        data = [...mockData, ...data];
+       
 
         allInventory = data;
         applyFilter();
@@ -345,9 +296,18 @@ function renderInventory(items) {
             const langT = t[currentLang];
             const groupedByColor = {};
             item.variants.forEach(v => {
-                const color = v.name || v.color || langT.other;
-                if (!groupedByColor[color]) groupedByColor[color] = [];
-                groupedByColor[color].push(v);
+                // 🎨 Robust Color Extraction: Prioritize 'color' field, then clean 'name'
+                let colorKey = v.color || v.name || langT.other;
+                
+                // If the name is something like "Red - S", we only want "Red" for grouping
+                if (!v.color && v.name && v.name.includes('-')) {
+                    colorKey = v.name.split('-')[0].trim();
+                } else if (!v.color && v.name && v.name.includes('(')) {
+                    colorKey = v.name.split('(')[0].trim();
+                }
+                
+                if (!groupedByColor[colorKey]) groupedByColor[colorKey] = [];
+                groupedByColor[colorKey].push(v);
             });
 
             const colorGroupBaseClass = `color-group-${item.id}`;
@@ -520,12 +480,11 @@ function renderInventory(items) {
                     const childFormattedMin = isRetail ? Math.round(variant.min || 0) : parseFloat(variant.min || 0).toFixed(2);
 
                     childRow.innerHTML = `
-                        <td style="padding-${isAr ? 'right' : 'left'}: 3.5rem; opacity: 0.5; font-size: 0.8rem;">
-                            ${branchIcon} #${variant.id || (item.id + '-' + (variant.color || index) + '-' + variant.size)}
+                        <td style="padding-${isAr ? 'right' : 'left'}: 3.5rem; opacity: 0.5; font-size: 0.85rem; font-family: monospace;">
+                            ${branchIcon} <bdi>#${variant.id || `${item.id}-${variant.size || index}`}</bdi>
                         </td>
                         <td style="font-weight: 600; color: #475569;">
-                            ${variant.size ? `<span style="background: var(--luxury-emerald-light); color: var(--luxury-emerald); padding: 3px 10px; border-radius: 12px; font-size: 0.75rem;">${langT.size} ${variant.size}</span>` : ''}
-                            <span style="font-size: 0.8rem; margin-${isAr ? 'right' : 'left'}: 5px; opacity: 0.7;">${variant.name || ''}</span>
+                            ${variant.size ? `<span style="background: var(--luxury-emerald-light); color: var(--luxury-emerald); padding: 3px 10px; border-radius: 12px; font-size: 0.75rem;">${langT.size} ${variant.size}</span>` : `<span style="opacity:0.5;">-</span>`}
                         </td>
                         <td><span class="${childLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.85);">${childQty}</span></td>
                         <td style="opacity: 0.6; font-size: 0.85rem;">${childFormattedMin}</td>
@@ -536,25 +495,51 @@ function renderInventory(items) {
                     `;
 
                     // Edit variant directly
-                    childRow.addEventListener('click', (e) => {
+                    childRow.addEventListener('click', async (e) => {
                         e.stopPropagation(); 
                         
-                        // Formatted for better RTL rendering: Product Name (Color - Size)
-                        let variantDetails = [];
-                        if (variant.color) variantDetails.push(variant.color);
-                        if (variant.size) variantDetails.push(variant.size);
+                        // Open the small, focused variant modal instead of the full item modal
+                        const updatedVariant = await openVariantEntryModal(isAr, langT, variant);
                         
-                        const variantName = variant.name || `${item.name} ${variantDetails.length > 0 ? `(${variantDetails.join(' - ')})` : ''}`.trim();
-                        
-                        selectItem({
-                            ...variant,
-                            name: variantName,
-                            cost: variant.cost || item.cost // fallback to parent cost if missing
-                        }); 
+                        if (updatedVariant) {
+                            // Find and update this specific variant in the parent's array
+                            const vIndex = item.variants.findIndex(v => v === variant);
+                            if (vIndex !== -1) {
+                                const updatedVariants = [...item.variants];
+                                updatedVariants[vIndex] = updatedVariant;
+                                // Save using the parent's valid DB ID
+                                handleEdit(item.id, { ...item, variants: updatedVariants });
+                            }
+                        }
                     });
                     
                     tableBody.appendChild(childRow);
                 });
+
+                // ➕ Add "Add Size" row for this color group
+                const addSizeRow = document.createElement('tr');
+                addSizeRow.className = `size-group-${item.id}-${colorId} child-row tree-child-row tree-level-3 add-action-row`;
+                addSizeRow.style.display = 'none';
+                addSizeRow.style.cursor = 'pointer';
+                addSizeRow.style.background = 'rgba(16, 185, 129, 0.03)';
+                
+                addSizeRow.innerHTML = `
+                    <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem; border: 1px dashed rgba(16, 185, 129, 0.2);">
+                        <i class="fas fa-plus-circle" style="margin-${isAr ? 'left' : 'right'}: 8px;"></i>
+                        ${isAr ? `إضافة مقاس جديد للون (${color})` : `Add new size for (${color})`}
+                    </td>
+                `;
+
+                addSizeRow.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const newVariant = await openVariantEntryModal(isAr, langT, { name: color, cost: item.cost });
+                    if (newVariant) {
+                        const updatedVariants = [...(item.variants || []), newVariant];
+                        handleEdit(item.id, { ...item, variants: updatedVariants });
+                    }
+                });
+
+                tableBody.appendChild(addSizeRow);
             });
         }
     });
@@ -589,7 +574,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
                 <div style="grid-column: span 2;">
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'الاسم / اللون' : 'Name / Color'}</label>
-                    <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ''}" placeholder="${isAr ? 'أحمر' : 'Red'}">
+                    <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ''}" placeholder="${isAr ? 'أحمر' : 'Red'}" ${initialData?.name ? 'disabled' : ''}>
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'المقاس' : 'Size'}</label>
@@ -618,6 +603,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
             if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال الاسم' : 'Name is required');
             return {
                 name,
+                color: name, // 🎨 Save explicitly as color for robust grouping
                 size: document.getElementById('v-size').value.trim(),
                 quantity: parseFloat(document.getElementById('v-qty').value) || 0,
                 min: parseFloat(document.getElementById('v-min').value) || 0,
@@ -875,7 +861,7 @@ async function handleFormSubmit(data) {
         });
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgAdded, timer: 1500, showConfirmButton: false });
-            fetchInventory();
+            fetchInventory(true);
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: t[currentLang].msgError });
@@ -899,7 +885,7 @@ async function handleEdit(id, data) {
         });
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgEdited, timer: 1500, showConfirmButton: false });
-            fetchInventory();
+            fetchInventory(true);
         } else {
             Swal.fire({ icon: 'error', title: t[currentLang].msgError, text: `Server returned ${res.status}` });
         }
@@ -933,7 +919,7 @@ async function handleDelete(id) {
         });
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgDeleted, timer: 1500, showConfirmButton: false });
-            fetchInventory();
+            fetchInventory(true);
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: t[currentLang].msgError });
