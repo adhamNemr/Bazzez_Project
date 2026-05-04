@@ -88,8 +88,11 @@
         const isCashier = window.location.pathname.includes('cashier.html');
         const isOrders = window.location.pathname.includes('manage_orders.html');
         const isProducts = window.location.pathname.includes('products.html');
+        const isExpenses = window.location.pathname.includes('expenses.html');
+        const isInventory = window.location.pathname.includes('inventory.html');
+        const isSettings = window.location.pathname.includes('settings.html');
 
-        if (!isLauncher && !isDashboard && !isCashier && !isOrders && !isProducts) {
+        if (!isLauncher && !isDashboard && !isCashier && !isOrders && !isProducts && !isExpenses && !isInventory && !isSettings) {
             const homeBtn = document.createElement('a');
             homeBtn.href = '/launcher.html';
             homeBtn.className = 'chic-home-btn';
