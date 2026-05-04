@@ -36,9 +36,11 @@ function getToken() {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Set current date in header
-    document.getElementById('current-date-display').textContent =
-        new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // Set current date in header (optional element)
+    const dateDisplay = document.getElementById('current-date-display');
+    if (dateDisplay) {
+        dateDisplay.textContent = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
 
     // Setup category filter pills
     document.querySelectorAll('#cat-filter .cat-pill').forEach(pill => {
