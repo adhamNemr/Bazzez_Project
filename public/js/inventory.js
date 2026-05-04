@@ -573,7 +573,7 @@ function renderInventory(items) {
     // 🏁 Add two empty spacer rows at the bottom for better visual breathing room
     for (let i = 0; i < 2; i++) {
         const spacerRow = document.createElement('tr');
-        spacerRow.style.height = '60px';
+        spacerRow.style.height = '30px';
         spacerRow.style.border = 'none';
         spacerRow.innerHTML = `<td colspan="${isRetail ? 7 : 8}" style="border:none;"></td>`;
         tableBody.appendChild(spacerRow);

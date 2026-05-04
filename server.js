@@ -5,6 +5,7 @@ const path = require("path");
 const helmet = require("helmet");
 const errorHandler = require("./middleware/errorHandler");
 const sequelize = require("./config/db");
+const { startAutoBackup } = require("./utils/backup");
 
 // ✅ Route Imports
 const userRoutes = require("./routes/users");
@@ -95,4 +96,7 @@ sequelize
 const PORT = process.env.PORT || 8083;
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
+  
+  // 💾 Start Auto Backup (Runs every 12 hours)
+  startAutoBackup(12);
 });
