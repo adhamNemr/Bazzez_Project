@@ -220,9 +220,18 @@ function renderInventory(items) {
         let hasLowStockVariant = false;
 
         if (hasVariants) {
-            totalQty = item.variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
+            const variantsSum = item.variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
+            // If parent has a defined quantity greater than the sum of variants, use it as the "Master Bulk Quantity"
+            totalQty = parseFloat(item.quantity || 0) > variantsSum ? parseFloat(item.quantity) : variantsSum;
+            
             totalMin = item.variants.reduce((sum, v) => sum + parseFloat(v.min || 0), 0);
-            totalValue = item.variants.reduce((sum, v) => sum + (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)), 0);
+            
+            // Calculate value based on which quantity we are using
+            if (totalQty > variantsSum) {
+                totalValue = totalQty * parseFloat(item.cost || 0);
+            } else {
+                totalValue = item.variants.reduce((sum, v) => sum + (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)), 0);
+            }
             
             // Find the most recent update across all variants and check for low stock
             item.variants.forEach(v => {
@@ -255,14 +264,22 @@ function renderInventory(items) {
 
         const expiryWarningHTML = isNearExpiry ? `<i class="fas fa-exclamation-circle expiry-pulse" title="${isAr ? 'قرب الانتهاء' : 'Expiring Soon'}"></i>` : '';
 
+        const editParentBtnHTML = hasVariants ? `
+            <button class="edit-parent-btn" style="background: rgba(16, 185, 129, 0.1); border: none; padding: 5px 10px; border-radius: 8px; color: var(--luxury-emerald); cursor: pointer; transition: 0.3s; margin-${isAr ? 'right' : 'left'}: 10px;" title="${isAr ? 'تعديل بيانات المنتج الأساسي' : 'Edit Main Product'}">
+                <i class="fas fa-edit"></i>
+            </button>
+        ` : '';
+
         row.innerHTML = `
             <td style="opacity: 0.5;">
                 ${toggleIconHTML}
                 #${item.id}
             </td>
             <td style="font-weight: 800; color: var(--luxury-emerald);">
-                ${item.name}
-                ${expiryWarningHTML}
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>${item.name} ${expiryWarningHTML}</span>
+                    ${editParentBtnHTML}
+                </div>
             </td>
             <td>
                 <span class="${isLow ? 'badge-low' : 'badge-ok'}">${formattedQty}</span>
@@ -281,6 +298,15 @@ function renderInventory(items) {
         if (hasVariants) {
             row.style.cursor = 'pointer';
             row.classList.add('parent-row');
+            
+            // Attach event to the edit button
+            const editBtn = row.querySelector('.edit-parent-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent row toggle
+                    selectItem(item);
+                });
+            }
         } else {
             row.addEventListener('click', () => selectItem(item));
         }
@@ -615,33 +641,17 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'المقاس' : 'Size'}</label>
                     <input list="size-options" id="v-size" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.size || ''}" placeholder="${isAr ? 'اختر أو اكتب مقاس...' : 'Select or type...'}">
                     <datalist id="size-options">
-                        <!-- التيشيرتات / Tops -->
-                        <option value="XS">
-                        <option value="S">
-                        <option value="M">
-                        <option value="L">
-                        <option value="XL">
-                        <option value="XXL">
-                        <option value="3XL">
-                        <!-- البناطيل / Pants -->
-                        <option value="28">
-                        <option value="30">
-                        <option value="32">
-                        <option value="34">
-                        <option value="36">
-                        <option value="38">
-                        <option value="40">
-                        <option value="42">
-                        <!-- الكوتشيات / Shoes -->
-                        <option value="37">
-                        <option value="38">
-                        <option value="39">
-                        <option value="40">
-                        <option value="41">
-                        <option value="42">
-                        <option value="43">
-                        <option value="44">
-                        <option value="45">
+                        <!-- جلاليب رجالي (56 إلى 64) -->
+                        <option value="56 S"><option value="56 M"><option value="56 L"><option value="56 XL"><option value="56 2XL"><option value="56 3XL">
+                        <option value="58 S"><option value="58 M"><option value="58 L"><option value="58 XL"><option value="58 2XL"><option value="58 3XL">
+                        <option value="60 S"><option value="60 M"><option value="60 L"><option value="60 XL"><option value="60 2XL"><option value="60 3XL">
+                        <option value="62 S"><option value="62 M"><option value="62 L"><option value="62 XL"><option value="62 2XL"><option value="62 3XL">
+                        <option value="64 S"><option value="64 M"><option value="64 L"><option value="64 XL"><option value="64 2XL"><option value="64 3XL">
+                        <!-- جلاليب أطفالي / شبابي (30 إلى 54) -->
+                        <option value="30"><option value="32"><option value="34"><option value="36">
+                        <option value="38"><option value="40"><option value="42"><option value="44">
+                        <option value="46"><option value="48"><option value="50"><option value="52"><option value="54">
+                        <!-- مقاسات أخرى -->
                         <option value="Free Size">
                     </datalist>
                 </div>
@@ -899,13 +909,25 @@ async function selectItem(item, preExistingData = null) {
         preConfirm: () => {
             const name = document.getElementById('swal-edit-name').value.trim();
             if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال اسم الصنف' : 'Name is required');
+            
+            const parentQty = parseFloat(document.getElementById('swal-edit-qty').value) || 0;
+            const variantsSum = state.variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
+            
+            let variantsToSave = [...state.variants];
+            
+            // 🧠 Rule: If parent quantity is explicitly set and different from the variants sum,
+            // we assume the user wants "Bulk Tracking". Zero out the children quantities.
+            if (parentQty > 0 && parentQty !== variantsSum) {
+                variantsToSave = variantsToSave.map(v => ({ ...v, quantity: 0 }));
+            }
+
             return {
                 name,
-                quantity: parseFloat(document.getElementById('swal-edit-qty').value) || 0,
+                quantity: parentQty,
                 min: parseFloat(document.getElementById('swal-edit-min').value) || 0,
                 cost: parseFloat(document.getElementById('swal-edit-cost').value) || 0,
                 expiryDate: !isRetail ? document.getElementById('swal-edit-expiry').value : null,
-                variants: state.variants
+                variants: variantsToSave
             };
         }
     });

@@ -52,7 +52,8 @@ const updateInventoryItem = async (req, res) => {
 
         const total = quantity * cost;
 
-        await item.update({
+        // Force Sequelize to recognize the JSON change
+        item.set({
             name,
             quantity,
             cost,
@@ -61,6 +62,8 @@ const updateInventoryItem = async (req, res) => {
             expiryDate: expiryDate || null,
             variants: variants || []
         });
+        item.changed('variants', true);
+        await item.save();
 
         res.json({ message: "✅ تم تحديث المنتج بنجاح" });
     } catch (error) {
