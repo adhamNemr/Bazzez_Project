@@ -4,233 +4,651 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة المصروفات - Vortex POS</title>
+    <meta name="description" content="تسجيل ومراقبة مصروفات وردية العمل اليومية">
     <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        .expenses-container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header-section {
+        /* ===== Page Layout ===== */
+        .expenses-page {
+            padding: 2rem 2.5rem;
+            max-width: 1300px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
+            flex-direction: column;
+            gap: 2rem;
+            flex: 1;
         }
 
+        /* ===== Page Header ===== */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .page-title i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .page-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .date-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-surface);
+            border: 1px solid #e1e3e5;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .date-badge i { color: var(--primary); }
+
+        .btn-add-expense {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,128,96,0.25);
+        }
+
+        .btn-add-expense:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(0,128,96,0.35);
+        }
+
+        /* ===== Stats Grid ===== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, min-minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
         }
 
         .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: var(--bg-surface);
+            border: 1px solid #e1e3e5;
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .stat-info h4 {
-            margin: 0;
-            color: #64748b;
-            font-size: 0.875rem;
-        }
-
-        .stat-info p {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .expense-form-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .input-group label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .input-group input, .input-group select {
-            padding: 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .submit-btn {
-            background: #0f172a;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: auto;
-        }
-
-        .submit-btn:hover {
-            background: #1e293b;
-        }
-
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+            position: relative;
             overflow: hidden;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
         }
+
+        .stat-card.today::before { background: var(--primary); }
+        .stat-card.month::before { background: #6366f1; }
+        .stat-card.cash-stat::before { background: #f59e0b; }
+        .stat-card.digital-stat::before { background: #3b82f6; }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon-wrap {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .today .stat-icon-wrap { background: #dcfce7; color: #166534; }
+        .month .stat-icon-wrap { background: #ede9fe; color: #5b21b6; }
+        .cash-stat .stat-icon-wrap { background: #fef3c7; color: #92400e; }
+        .digital-stat .stat-icon-wrap { background: #dbeafe; color: #1e40af; }
+
+        .stat-info { flex: 1; min-width: 0; }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-top: 0.15rem;
+        }
+
+        .stat-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+
+        /* ===== Toolbar ===== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .date-filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-surface);
+            border: 1px solid #e1e3e5;
+            border-radius: var(--radius-md);
+            padding: 0.4rem 0.75rem;
+        }
+
+        .date-filter-group i { color: var(--primary); font-size: 0.85rem; }
+
+        .date-filter-group input[type="date"] {
+            border: none;
+            background: transparent;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding: 0;
+            box-shadow: none;
+            outline: none;
+        }
+
+        .btn-today {
+            padding: 0.45rem 0.875rem;
+            border: 1px solid #e1e3e5;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-today:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .cat-pill {
+            padding: 0.35rem 0.875rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1.5px solid #e1e3e5;
+            background: var(--bg-surface);
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .cat-pill:hover, .cat-pill.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0,128,96,0.05);
+        }
+
+        /* ===== Table ===== */
+        .table-wrapper {
+            background: var(--bg-surface);
+            border: 1px solid #e1e3e5;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .table-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .table-count {
+            font-size: 0.75rem;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            padding: 0.2rem 0.6rem;
+            border-radius: 100px;
+            font-weight: 700;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
 
         th {
             background: #f8fafc;
-            padding: 1rem;
+            padding: 0.75rem 1.25rem;
             text-align: right;
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            border-bottom: 1px solid #e1e3e5;
         }
 
         td {
-            padding: 1rem;
+            padding: 0.9rem 1.25rem;
             border-bottom: 1px solid #f1f5f9;
-            color: #1e293b;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            vertical-align: middle;
         }
 
-        .category-tag {
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafbfc; }
+
+        .expense-desc { font-weight: 600; }
+        .expense-notes { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* ===== Category Badges ===== */
+        .cat-badge {
+            padding: 0.25rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cat-Supplies   { background: #fef3c7; color: #92400e; }
+        .cat-Rent       { background: #ffe4e6; color: #9f1239; }
+        .cat-Utilities  { background: #dcfce7; color: #166534; }
+        .cat-Salaries   { background: #ede9fe; color: #5b21b6; }
+        .cat-Maintenance{ background: #dbeafe; color: #1e40af; }
+        .cat-Marketing  { background: #fce7f3; color: #9d174d; }
+        .cat-Other      { background: #f1f5f9; color: #475569; }
+
+        /* ===== Payment Method Badge ===== */
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
             font-size: 0.75rem;
             font-weight: 600;
+            color: var(--text-muted);
         }
 
-        .cat-supplies { background: #e0f2fe; color: #0369a1; }
-        .cat-rent { background: #fef3c7; color: #92400e; }
-        .cat-utilities { background: #dcfce7; color: #166534; }
-        .cat-other { background: #f1f5f9; color: #475569; }
+        .method-badge i { font-size: 0.7rem; }
 
-        .delete-btn {
-            color: #ef4444;
-            background: none;
+        /* ===== Action Buttons ===== */
+        .action-group { display: flex; gap: 0.4rem; }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
-            font-size: 1.1rem;
-            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            transition: all 0.2s;
         }
 
-        .delete-btn:hover {
-            color: #dc2626;
+        .btn-edit { background: #f1f5f9; color: var(--text-muted); }
+        .btn-edit:hover { background: #dbeafe; color: #1e40af; }
+        .btn-delete { background: #fff1f2; color: #ef4444; }
+        .btn-delete:hover { background: #fee2e2; color: #dc2626; }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i { font-size: 3rem; opacity: 0.15; }
+        .empty-state p { font-size: 0.9rem; font-weight: 500; }
+
+        /* ===== Skeleton ===== */
+        .skeleton {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ===== Modal ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 540px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+            animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .modal-title i { color: var(--primary); }
+
+        .btn-close-modal {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-close-modal:hover { background: #fee2e2; color: #ef4444; }
+
+        .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-grid-full { grid-column: 1 / -1; }
+
+        .field-group { display: flex; flex-direction: column; gap: 0.4rem; }
+
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .field-input {
+            padding: 0.625rem 0.875rem;
+            border: 1.5px solid #e1e3e5;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: all 0.2s;
+            background: var(--bg-surface);
+            width: 100%;
+        }
+
+        .field-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,128,96,0.1);
+            outline: none;
+        }
+
+        .field-input.error { border-color: var(--error); }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #f1f5f9;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel-modal {
+            padding: 0.625rem 1.25rem;
+            border: 1.5px solid #e1e3e5;
+            background: var(--bg-surface);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel-modal:hover { background: #f1f5f9; }
+
+        .btn-submit-expense {
+            padding: 0.625rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit-expense:hover { background: var(--primary-hover); }
+        .btn-submit-expense:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* ===== Amount Cell ===== */
+        .amount-cell {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--error);
+            letter-spacing: -0.02em;
+        }
+
+        .added-by-cell {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .expenses-page { padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .form-grid-2 { grid-template-columns: 1fr; }
+            .page-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
     <div id="sidebar-container"></div>
-    
+
     <div class="main-content">
-        <div class="expenses-container">
-            <div class="header-section">
-                <h1>إدارة المصروفات</h1>
-                <div id="current-date" style="color: #64748b; font-weight: 500;"></div>
-            </div>
+        <div class="expenses-page">
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #dcfce7; color: #166534;">
-                        <i class="fas fa-wallet"></i>
+            <!-- ===== Page Header ===== -->
+            <div class="page-header">
+                <div class="page-header-left">
+                    <div class="page-title">
+                        <i class="fas fa-receipt"></i>
+                        إدارة المصروفات
                     </div>
-                    <div class="stat-info">
-                        <h4>مصروفات اليوم</h4>
-                        <p id="today-total">0.00 EGP</p>
-                    </div>
+                    <div class="page-subtitle" id="business-date-label">جاري تحميل وردية العمل...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;">
-                        <i class="fas fa-calendar-alt"></i>
+                <div class="page-header-right">
+                    <div class="date-badge">
+                        <i class="fas fa-calendar-day"></i>
+                        <span id="current-date-display">---</span>
                     </div>
-                    <div class="stat-info">
-                        <h4>مصروفات الشهر</h4>
-                        <p id="month-total">0.00 EGP</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="expense-form-card">
-                <h3>تسجيل مصروف جديد</h3>
-                <form id="expense-form" class="form-grid">
-                    <div class="input-group">
-                        <label>الوصف</label>
-                        <input type="text" id="description" placeholder="مثلاً: خضروات، فاتورة كهرباء..." required>
-                    </div>
-                    <div class="input-group">
-                        <label>المبلغ</label>
-                        <input type="number" id="amount" step="0.01" placeholder="0.00" required>
-                    </div>
-                    <div class="input-group">
-                        <label>الفئة</label>
-                        <select id="category" required>
-                            <option value="Supplies">خامات ومشتريات</option>
-                            <option value="Rent">إيجار</option>
-                            <option value="Utilities">مرافق (كهرباء/مياه)</option>
-                            <option value="Salaries">رواتب</option>
-                            <option value="Maintenance">صيانة</option>
-                            <option value="Other">أخرى</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>طريقة الدفع</label>
-                        <select id="payment_method">
-                            <option value="cash">كاش (من الدرج)</option>
-                            <option value="card">فيزا</option>
-                            <option value="vcash">فودافون كاش</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="submit-btn">
-                        <i class="fas fa-plus"></i> إضافة
+                    <button class="btn-add-expense" id="btn-open-modal" onclick="openModal()">
+                        <i class="fas fa-plus"></i>
+                        تسجيل مصروف
                     </button>
-                </form>
+                </div>
             </div>
 
-            <div class="table-container">
+            <!-- ===== Stats Cards ===== -->
+            <div class="stats-grid">
+                <div class="stat-card today">
+                    <div class="stat-icon-wrap"><i class="fas fa-wallet"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">مصروفات الوردية</div>
+                        <div class="stat-value" id="stat-today">---</div>
+                        <div class="stat-sub">إجمالي اليوم</div>
+                    </div>
+                </div>
+                <div class="stat-card month">
+                    <div class="stat-icon-wrap"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">مصروفات الشهر</div>
+                        <div class="stat-value" id="stat-month">---</div>
+                        <div class="stat-sub">إجمالي الشهر الحالي</div>
+                    </div>
+                </div>
+                <div class="stat-card cash-stat">
+                    <div class="stat-icon-wrap"><i class="fas fa-money-bill-wave"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">دفع كاش</div>
+                        <div class="stat-value" id="stat-cash">---</div>
+                        <div class="stat-sub">مدفوع من الدرج نقداً</div>
+                    </div>
+                </div>
+                <div class="stat-card digital-stat">
+                    <div class="stat-icon-wrap"><i class="fas fa-credit-card"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">دفع إلكتروني</div>
+                        <div class="stat-value" id="stat-digital">---</div>
+                        <div class="stat-sub">فيزا + محافظ رقمية</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Toolbar ===== -->
+            <div class="toolbar">
+                <div class="date-filter-group">
+                    <i class="fas fa-calendar"></i>
+                    <input type="date" id="date-filter">
+                </div>
+                <button class="btn-today" id="btn-today" onclick="resetToBusinessDate()">
+                    <i class="fas fa-sync-alt"></i> وردية اليوم
+                </button>
+                <div class="category-filter" id="cat-filter">
+                    <button class="cat-pill active" data-cat="all">الكل</button>
+                    <button class="cat-pill" data-cat="Supplies">خامات</button>
+                    <button class="cat-pill" data-cat="Rent">إيجار</button>
+                    <button class="cat-pill" data-cat="Utilities">مرافق</button>
+                    <button class="cat-pill" data-cat="Salaries">رواتب</button>
+                    <button class="cat-pill" data-cat="Maintenance">صيانة</button>
+                    <button class="cat-pill" data-cat="Marketing">تسويق</button>
+                    <button class="cat-pill" data-cat="Other">أخرى</button>
+                </div>
+            </div>
+
+            <!-- ===== Table ===== -->
+            <div class="table-wrapper">
+                <div class="table-header-row">
+                    <div class="table-title">
+                        <i class="fas fa-list-ul" style="color:var(--primary)"></i>
+                        سجل المصروفات
+                        <span class="table-count" id="expenses-count">0</span>
+                    </div>
+                </div>
                 <table>
                     <thead>
                         <tr>
@@ -238,26 +656,88 @@
                             <th>الوصف</th>
                             <th>الفئة</th>
                             <th>المبلغ</th>
+                            <th>طريقة الدفع</th>
                             <th>بواسطة</th>
-                            <th>الدفع</th>
                             <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="expenses-table-body">
-                        <!-- البيانات سيتم حقنها هنا -->
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fas fa-spinner fa-spin" style="opacity:0.3;font-size:2rem;"></i>
+                                    <p>جاري التحميل...</p>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+        </div><!-- end expenses-page -->
+    </div><!-- end main-content -->
+
+    <!-- ===== Add / Edit Modal ===== -->
+    <div class="modal-overlay" id="expense-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-receipt"></i>
+                    <span id="modal-title-text">تسجيل مصروف جديد</span>
+                </div>
+                <button class="btn-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="expense-form" novalidate>
+                <div class="modal-body">
+                    <div class="form-grid-2">
+                        <div class="field-group form-grid-full">
+                            <label class="field-label">الوصف <span style="color:var(--error)">*</span></label>
+                            <input type="text" id="field-description" class="field-input" placeholder="مثلاً: شراء خامات، فاتورة كهرباء..." required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">المبلغ (EGP) <span style="color:var(--error)">*</span></label>
+                            <input type="number" id="field-amount" class="field-input" placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">الفئة <span style="color:var(--error)">*</span></label>
+                            <select id="field-category" class="field-input">
+                                <option value="Supplies">خامات ومشتريات</option>
+                                <option value="Rent">إيجار</option>
+                                <option value="Utilities">مرافق (كهرباء/مياه)</option>
+                                <option value="Salaries">رواتب</option>
+                                <option value="Maintenance">صيانة</option>
+                                <option value="Marketing">تسويق وإعلان</option>
+                                <option value="Other">أخرى</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">طريقة الدفع</label>
+                            <select id="field-payment" class="field-input">
+                                <option value="cash">💵 كاش (من الدرج)</option>
+                                <option value="card">💳 فيزا / بطاقة</option>
+                                <option value="vcash">📱 فودافون كاش</option>
+                                <option value="instapay">⚡ إنستاباي</option>
+                            </select>
+                        </div>
+                        <div class="field-group form-grid-full">
+                            <label class="field-label">ملاحظات (اختياري)</label>
+                            <input type="text" id="field-notes" class="field-input" placeholder="مثلاً: رقم الفاتورة، اسم المورد...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel-modal" onclick="closeModal()">إلغاء</button>
+                    <button type="submit" class="btn-submit-expense" id="btn-submit">
+                        <i class="fas fa-check"></i>
+                        <span id="submit-btn-text">تسجيل المصروف</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script src="./js/sidebar-loader.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/expenses.js"></script>
-    <script>
-        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ar-EG', { 
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-        });
-    </script>
 </body>
 </html>

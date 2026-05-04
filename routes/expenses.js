@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const expenseController = require('../controllers/expenseController');
-// افترض وجود ميدلوير للتحقق من التوكن والـ Role
-// const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
-router.get('/', expenseController.getAllExpenses);
-router.post('/', expenseController.createExpense);
-router.delete('/:id', expenseController.deleteExpense);
+// ✅ All endpoints require authentication (manager only)
+router.get('/', authMiddleware(['manager', 'cashier']), expenseController.getAllExpenses);
+router.post('/', authMiddleware(['manager']), expenseController.createExpense);
+router.put('/:id', authMiddleware(['manager']), expenseController.updateExpense);
+router.delete('/:id', authMiddleware(['manager']), expenseController.deleteExpense);
 
 module.exports = router;
