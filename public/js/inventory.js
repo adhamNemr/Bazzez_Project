@@ -578,19 +578,49 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'المقاس' : 'Size'}</label>
-                    <input id="v-size" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.size || ''}" placeholder="${isAr ? 'مثال: XL' : 'e.g. XL'}">
+                    <input list="size-options" id="v-size" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.size || ''}" placeholder="${isAr ? 'اختر أو اكتب مقاس...' : 'Select or type...'}">
+                    <datalist id="size-options">
+                        <!-- التيشيرتات / Tops -->
+                        <option value="XS">
+                        <option value="S">
+                        <option value="M">
+                        <option value="L">
+                        <option value="XL">
+                        <option value="XXL">
+                        <option value="3XL">
+                        <!-- البناطيل / Pants -->
+                        <option value="28">
+                        <option value="30">
+                        <option value="32">
+                        <option value="34">
+                        <option value="36">
+                        <option value="38">
+                        <option value="40">
+                        <option value="42">
+                        <!-- الكوتشيات / Shoes -->
+                        <option value="37">
+                        <option value="38">
+                        <option value="39">
+                        <option value="40">
+                        <option value="41">
+                        <option value="42">
+                        <option value="43">
+                        <option value="44">
+                        <option value="45">
+                        <option value="Free Size">
+                    </datalist>
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                    <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.quantity || 0}">
+                    <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                    <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.min || 0}">
+                    <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                    <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.cost || 0}">
+                    <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.cost !== undefined ? initialData.cost : ''}" placeholder="0.00" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                 </div>
             </div>
         `,
@@ -750,15 +780,15 @@ async function selectItem(item, preExistingData = null) {
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="swal-edit-qty" type="text" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;">
+                        <input id="swal-edit-qty" type="text" inputmode="decimal" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="swal-edit-min" type="text" class="swal2-input" value="${state.min}" style="width:100%; margin:0;">
+                        <input id="swal-edit-min" type="text" inputmode="decimal" class="swal2-input" value="${state.min}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                        <input id="swal-edit-cost" type="text" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;">
+                        <input id="swal-edit-cost" type="text" inputmode="decimal" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                     </div>
                     ${!isRetail ? `
                     <div>

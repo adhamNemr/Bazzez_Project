@@ -1,4 +1,4 @@
-const { Product } = require('../models'); // ✅ تعديل الاسم إلى Product بدون S
+const { Product, Inventory } = require('../models'); 
 
 // إنشاء منتج جديد
 exports.addProduct = async (req, res) => {
@@ -15,6 +15,22 @@ exports.addProduct = async (req, res) => {
             wholesalePrice: wholesalePrice || price,
             category,
         });
+
+        // 🔄 Sync with Inventory: Auto-create an empty stock record
+        try {
+            await Inventory.findOrCreate({
+                where: { name: newProduct.name },
+                defaults: {
+                    quantity: 0,
+                    cost: wholesalePrice || price,
+                    min: 5,
+                    total: 0,
+                    variants: []
+                }
+            });
+        } catch (invError) {
+            console.error("⚠️ خطأ أثناء إضافة المنتج للمخزن تلقائياً:", invError);
+        }
 
         res.status(201).json({ 
             success: true, 
@@ -95,12 +111,24 @@ exports.updateProduct = async (req, res) => {
             return res.status(400).json({ error: "⚠️ جميع الحقول مطلوبة." });
         }
 
+        const oldName = product.name;
+
         await product.update({
             name,
             price,
             wholesalePrice: wholesalePrice || price,
             category,
         });
+
+        // 🔄 Sync with Inventory: Update name and cost if they exist
+        try {
+            await Inventory.update(
+                { name: name, cost: wholesalePrice || price },
+                { where: { name: oldName } }
+            );
+        } catch (invError) {
+            console.error("⚠️ خطأ أثناء تحديث بيانات المنتج في المخزن تلقائياً:", invError);
+        }
 
         res.json({ 
             success: true, 
@@ -122,7 +150,15 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ error: "⚠️ المنتج غير موجود." });
         }
 
+        const oldName = product.name;
         await product.destroy();
+
+        // 🔄 Sync with Inventory: Delete the linked stock record
+        try {
+            await Inventory.destroy({ where: { name: oldName } });
+        } catch (invError) {
+            console.error("⚠️ خطأ أثناء حذف المنتج من المخزن تلقائياً:", invError);
+        }
         res.json({ success: true, message: "✅ تم حذف المنتج بنجاح!" });
 
     } catch (error) {
