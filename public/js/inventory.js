@@ -541,8 +541,43 @@ function renderInventory(items) {
 
                 tableBody.appendChild(addSizeRow);
             });
+
+            // ➕ Level 2: Add "Add New Color/Variant" row for the entire product
+            const addColorRow = document.createElement('tr');
+            addColorRow.className = `${colorGroupBaseClass} child-row tree-child-row tree-level-2 add-action-row`;
+            addColorRow.style.display = 'none';
+            addColorRow.style.cursor = 'pointer';
+            addColorRow.style.background = 'rgba(0, 128, 96, 0.05)';
+            
+            addColorRow.innerHTML = `
+                <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 2rem; color: var(--luxury-emerald); font-weight: 800; font-size: 0.9rem; border: 1px solid rgba(0, 128, 96, 0.1);">
+                    <i class="fas fa-plus-circle" style="margin-${isAr ? 'left' : 'right'}: 8px;"></i>
+                    ${isAr ? 'إضافة لون أو تفريعة جديدة لهذا المنتج' : 'Add new color or variant for this product'}
+                </td>
+            `;
+
+            addColorRow.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                // Open modal with empty name to allow adding a new color
+                const newVariant = await openVariantEntryModal(isAr, langT, { cost: item.cost });
+                if (newVariant) {
+                    const updatedVariants = [...(item.variants || []), newVariant];
+                    handleEdit(item.id, { ...item, variants: updatedVariants });
+                }
+            });
+
+            tableBody.appendChild(addColorRow);
         }
     });
+
+    // 🏁 Add two empty spacer rows at the bottom for better visual breathing room
+    for (let i = 0; i < 2; i++) {
+        const spacerRow = document.createElement('tr');
+        spacerRow.style.height = '60px';
+        spacerRow.style.border = 'none';
+        spacerRow.innerHTML = `<td colspan="${isRetail ? 7 : 8}" style="border:none;"></td>`;
+        tableBody.appendChild(spacerRow);
+    }
 }
 
 function updateStats(items) {
