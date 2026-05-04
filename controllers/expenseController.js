@@ -51,10 +51,12 @@ exports.getAllExpenses = async (req, res) => {
         const vcashTotal = todayExpenses.filter(e => e.payment_method === 'vcash').reduce((s, e) => s + parseFloat(e.amount), 0);
         const instapayTotal = todayExpenses.filter(e => e.payment_method === 'instapay').reduce((s, e) => s + parseFloat(e.amount), 0);
 
-        // Month total
-        const monthStart = filterDate.slice(0, 7); // "YYYY-MM"
+        // Month total — use Op.between to avoid Moment.js DATEONLY warning
+        const [year, month] = filterDate.split('-');
+        const firstDay = `${year}-${month}-01`;
+        const lastDay = new Date(parseInt(year), parseInt(month), 0).toLocaleDateString('en-CA'); // last day of month
         const monthExpenses = await Expense.findAll({
-            where: { date: { [Op.like]: `${monthStart}%` } }
+            where: { date: { [Op.between]: [firstDay, lastDay] } }
         });
         const monthTotal = monthExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
 

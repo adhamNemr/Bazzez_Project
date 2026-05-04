@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", () => {
         'إدارة المخزن': isAr ? 'إدارة المخزن' : 'Inventory Management',
         'إدارة الطلبات': isAr ? 'إدارة الطلبات' : 'Manage Orders',
         'إعدادات النظام': isAr ? 'إعدادات النظام' : 'System Settings',
-        'إدارة المنتجات': isAr ? 'إدارة المنتجات' : 'Products Management'
+        'إدارة المنتجات': isAr ? 'إدارة المنتجات' : 'Products Management',
+        'إدارة المصروفات': isAr ? 'إدارة المصروفات' : 'Expense Management'
     };
 
     const finalTitle = translations[rawTitle] || rawTitle;

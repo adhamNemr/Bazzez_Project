@@ -8,15 +8,46 @@
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function() {
+            const savedLang = localStorage.getItem('lang') || 'ar';
+            document.documentElement.lang = savedLang;
+            document.documentElement.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
+        })();
+    </script>
     <style>
+        /* ===== Sidebar padding (matches other pages) ===== */
+        body[dir="rtl"], html[dir="rtl"] body { padding-right: 260px; }
+        body[dir="ltr"], html[dir="ltr"] body { padding-left: 260px; }
+        @media (max-width: 992px) {
+            body[dir="rtl"], html[dir="rtl"] body { padding-right: 0 !important; }
+            body[dir="ltr"], html[dir="ltr"] body { padding-left: 0 !important; }
+        }
+
+        /* ===== Header override ===== */
+        #header-container .main-brand-header {
+            background: white;
+            padding: 0.75rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+            border-radius: 0;
+        }
+        #header-container .context-pill {
+            background: #f0fdf4;
+            color: #008060;
+            border: 1px solid rgba(0,128,96,0.1);
+        }
+        #header-container .context-pill i { color: #008060; }
+
+        .main-content { width: 100%; min-height: 100vh; }
+
         /* ===== Page Layout ===== */
         .expenses-page {
-            padding: 2rem 2.5rem;
+            padding: 1.5rem 2rem;
             max-width: 1300px;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
-            flex: 1;
+            gap: 1.5rem;
         }
 
         /* ===== Page Header ===== */
@@ -560,6 +591,9 @@
     <div id="sidebar-container"></div>
 
     <div class="main-content">
+        <!-- 🏗️ Dynamic Premium Header -->
+        <div id="header-container" data-title="إدارة المصروفات" data-icon="fa-receipt"></div>
+
         <div class="expenses-page">
 
             <!-- ===== Page Header ===== -->
@@ -572,10 +606,6 @@
                     <div class="page-subtitle" id="business-date-label">جاري تحميل وردية العمل...</div>
                 </div>
                 <div class="page-header-right">
-                    <div class="date-badge">
-                        <i class="fas fa-calendar-day"></i>
-                        <span id="current-date-display">---</span>
-                    </div>
                     <button class="btn-add-expense" id="btn-open-modal" onclick="openModal()">
                         <i class="fas fa-plus"></i>
                         تسجيل مصروف
@@ -737,6 +767,7 @@
     </div>
 
     <script src="./js/sidebar-loader.js"></script>
+    <script src="./js/header-loader.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/expenses.js"></script>
 </body>
