@@ -239,7 +239,10 @@ function renderInventory(items) {
                 if (vDate && new Date(vDate) > new Date(latestUpdateDate)) {
                     latestUpdateDate = vDate;
                 }
-                if (parseFloat(v.quantity || 0) <= parseFloat(v.min || 0)) {
+                // ✅ Only flag low stock if the minimum threshold is explicitly set (> 0)
+                const vMin = parseFloat(v.min || 0);
+                const vQty = parseFloat(v.quantity || 0);
+                if (vMin > 0 && vQty <= vMin) {
                     hasLowStockVariant = true;
                 }
             });
