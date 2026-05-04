@@ -191,13 +191,11 @@ exports.createOrder = async (req, res) => {
                     where: { id: item.productId }
                 });
 
-                // ✅ تحديث المخزون بناءً على الوصفة
+                // ✅ تحديث المخزون بناءً على الوصفة (المواد الخام)
                 const recipeItems = await Recipe.findAll({ where: { sandwich: item.name } });
-
                 for (const recipe of recipeItems) {
                     const recipeQuantity = recipe.amount ?? 1;
                     const itemQuantity = item.quantity ?? 0;
-
                     const inventoryItem = await Inventory.findOne({
                         where: Sequelize.where(
                             Sequelize.fn('LOWER', Sequelize.col('name')),
@@ -205,11 +203,33 @@ exports.createOrder = async (req, res) => {
                             recipe.ingredient.toLowerCase()
                         )
                     });
-
                     if (inventoryItem) {
-                        const newQuantity = inventoryItem.quantity - (recipeQuantity * itemQuantity);
-                        if (newQuantity >= 0) {
-                            await inventoryItem.update({ quantity: newQuantity });
+                        const newQuantity = (inventoryItem.quantity || 0) - (recipeQuantity * itemQuantity);
+                        await inventoryItem.update({ quantity: newQuantity });
+                    }
+                }
+
+                // ✅ تحديث المخزون بناءً على التفريعات (الألوان والمقاسات)
+                if (item.variant) {
+                    const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
+                    if (inventoryItem && inventoryItem.variants) {
+                        let variants = typeof inventoryItem.variants === 'string' 
+                            ? JSON.parse(inventoryItem.variants) 
+                            : inventoryItem.variants;
+                        
+                        let variantUpdated = false;
+                        variants = variants.map(v => {
+                            const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
+                            if (vLabel === item.variant) {
+                                variantUpdated = true;
+                                return { ...v, quantity: (v.quantity || 0) - item.quantity };
+                            }
+                            return v;
+                        });
+
+                        if (variantUpdated) {
+                            await inventoryItem.update({ variants: variants });
+                            console.log(`✅ تم خصم الكمية من التفريعة: ${item.variant} للمنتج: ${item.name}`);
                         }
                     }
                 }

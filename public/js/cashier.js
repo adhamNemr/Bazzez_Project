@@ -62,6 +62,7 @@ const t = {
 let allCategorizedProducts = {};
 let currentOrder = {};
 let selectedItem = null;
+let currentProductForModal = null;
 
 // --- DOM Elements ---
 const orderSummary = document.getElementById('order-summary');
@@ -226,15 +227,157 @@ function showCategory(category) {
     }
 
     products.forEach(product => {
+        const hasVariants = product.variants && product.variants.length > 0;
         const card = document.createElement('div');
         card.className = 'menu-item animate-fade-in';
-        card.onclick = () => addToOrder(product.name, product.price);
+        card.onclick = () => {
+            if (hasVariants) {
+                showVariantModal(product);
+            } else {
+                addToOrder(product.name, product.price);
+            }
+        };
         card.innerHTML = `
             <h3>${product.name}</h3>
             <p>${parseFloat(product.price).toFixed(2)} <small>EGP</small></p>
         `;
         menuItemsContainer.appendChild(card);
     });
+}
+
+function showVariantModal(product) {
+    currentProductForModal = product;
+    const variants = product.variants;
+
+    // Get unique colors and unique sizes
+    const colors = [...new Set(variants.map(v => v.color).filter(c => c && c.trim() !== ""))];
+    const allUniqueSizes = [...new Set(variants.map(v => v.size).filter(s => s))];
+    
+    // If no colors are defined at all, jump straight to size selection
+    if (colors.length === 0) {
+        renderVariantSizes(null);
+        return;
+    }
+
+    let variantsHtml = `
+        <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+            <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${product.name}</h2>
+            <p style="color:#64748b; font-weight: 500;">${isAr ? 'تخصيص المنتج حسب طلب العميل' : 'Customize product for customer'}</p>
+        </div>
+        
+        <div class="variant-selection-container" style="padding: 0 1rem;">
+            <!-- 🎨 Colors Section -->
+            <div style="margin-bottom: 2.5rem; text-align: center;">
+                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-palette" style="color:var(--primary); font-size:0.9rem;"></i>
+                    </div>
+                    ${isAr ? 'اختر اللون' : 'Choose Color'}
+                </h4>
+                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
+                    ${colors.map(color => `
+                        <button class="variant-btn-select color-choice-btn" style="min-width: 140px;" data-color="${color}" onclick="renderVariantSizes('${color}')">
+                            <span style="font-weight:700; font-size:1rem; color:#1e293b;">${color}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <!-- 📏 Sizes Section -->
+            <div id="size-selection-area" style="text-align: center;">
+                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-ruler-combined" style="color:var(--primary); font-size:0.9rem;"></i>
+                    </div>
+                    ${isAr ? 'اختر المقاس' : 'Choose Size'}
+                </h4>
+                <div id="size-buttons-grid" style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
+                    ${allUniqueSizes.map(size => `
+                        <button class="variant-btn-select disabled size-btn" data-size="${size}">
+                            <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${size}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    commentCard.innerHTML = variantsHtml;
+    overlay.style.display = 'block';
+    commentCard.classList.add('active');
+}
+
+function renderVariantSizes(color) {
+    if (!currentProductForModal) return;
+    const variants = currentProductForModal.variants;
+    const sizeButtonsGrid = document.getElementById('size-buttons-grid');
+    
+    // UI Feedback: Highlight selected color button
+    document.querySelectorAll('.color-choice-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.color === color) btn.classList.add('active');
+    });
+
+    // Filter variants by chosen color
+    const colorVariants = variants.filter(v => (color ? v.color === color : !v.color || v.color.trim() === ""));
+    const availableSizesForColor = colorVariants.map(v => v.size);
+
+    if (sizeButtonsGrid) {
+        // Clear and Re-render only buttons to update click handlers with specific color
+        sizeButtonsGrid.style.display = 'flex';
+        sizeButtonsGrid.style.flexWrap = 'wrap';
+        sizeButtonsGrid.style.justifyContent = 'center';
+        
+        sizeButtonsGrid.innerHTML = colorVariants.map(v => `
+            <button class="variant-btn-select" style="min-width: 110px;" onclick="addVariantToOrder('${currentProductForModal.name}', ${currentProductForModal.price}, '${color || ''}', '${v.size}')">
+                <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${v.size}</span>
+            </button>
+        `).join('');
+    } else {
+        // Fallback for products with no color (show all sizes active from start)
+        const allSizesHtml = `
+            <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+                <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${currentProductForModal.name}</h2>
+                <p style="color:#64748b; font-weight: 500;">${isAr ? 'اختر المقاس المطلوب' : 'Select required size'}</p>
+            </div>
+            <div class="variant-selection-container" style="padding: 0 1rem; text-align: center;">
+                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-ruler-combined" style="color:var(--primary); font-size:0.9rem;"></i>
+                    </div>
+                    ${isAr ? 'المقاسات المتاحة' : 'Available Sizes'}
+                </h4>
+                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
+                    ${variants.map(v => `
+                        <button class="variant-btn-select" style="min-width: 110px;" onclick="addVariantToOrder('${currentProductForModal.name}', ${currentProductForModal.price}, '', '${v.size}')">
+                            <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${v.size}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        commentCard.innerHTML = allSizesHtml;
+    }
+}
+
+function addVariantToOrder(name, price, color, size) {
+    const variantLabel = `${color || ''} ${size || ''}`.trim();
+    const uniqueKey = `${name} (${variantLabel})`;
+    
+    if (!currentOrder[uniqueKey]) {
+        currentOrder[uniqueKey] = { 
+            baseName: name,
+            variant: variantLabel,
+            price: parseFloat(price), 
+            quantity: 1, 
+            comment: [] 
+        };
+    } else {
+        currentOrder[uniqueKey].quantity++;
+    }
+    
+    closeCommentCard();
+    renderOrderSummary();
 }
 
 // --- 3. Order Logic ---
@@ -337,29 +480,39 @@ function openCommentCard(itemName) {
     const lang = t[currentLang];
     
     commentCard.innerHTML = `
-        <div class="comment-header" style="margin-bottom:1.5rem; text-align: center;">
-            <h2 style="font-weight:800; color:#1e293b; font-size: 1.4rem;">${itemName}</h2>
-            <p style="color:#64748b; font-size:0.9rem;">${isAr ? 'أضف ملاحظات خاصة أو تكاليف إضافية' : 'Add special instructions or extra charges'}</p>
+        <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+            <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${itemName}</h2>
+            <p style="color:#64748b; font-weight: 500;">${isAr ? 'أضف ملاحظات خاصة أو تكاليف إضافية' : 'Add special instructions or extra charges'}</p>
         </div>
         
-        <textarea id="customComment" placeholder="${isAr ? 'اكتب ملاحظة...' : 'Enter custom note...'}"></textarea>
-        
-        <div class="modal-input-wrapper" style="margin: 1rem 0;">
-            <div class="input-group" style="width: 100%; border-radius: 14px; background: #f8fafc;">
+        <div class="variant-selection-container" style="padding: 0 1rem; text-align: center;">
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="margin-bottom:1rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <i class="fas fa-edit" style="color:var(--primary);"></i> ${isAr ? 'ملاحظة خاصة' : 'Special Note'}
+                </h4>
+                <textarea id="customComment" 
+                    style="width: 100%; height: 100px; padding: 15px; border-radius: 16px; border: 2px solid #f1f5f9; font-family: inherit; font-size: 1rem; transition: 0.3s;"
+                    placeholder="${isAr ? 'مثال: بدون بصل، زيادة صوص...' : 'Ex: No onions, extra sauce...'}"></textarea>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h4 style="margin-bottom:1rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <i class="fas fa-plus-circle" style="color:var(--primary);"></i> ${isAr ? 'تكلفة إضافية (اختياري)' : 'Extra Charge (Optional)'}
+                </h4>
                 <input type="text" id="manualPriceInput" 
-                       placeholder="${isAr ? 'سعر إضافي' : 'Extra Price'}" 
-                       style="text-align: center; width: 100%; font-size: 1rem; padding: 0.8rem;"
+                       placeholder="${isAr ? '0.00 EGP' : '0.00 EGP'}" 
+                       style="text-align: center; width: 200px; font-size: 1.25rem; padding: 12px; border-radius: 14px; border: 2px solid #f1f5f9; font-weight: 700; color: var(--primary);"
                        oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
             </div>
-        </div>
 
-        <div class="popular-comments" id="popularComments" style="max-height: 150px; overflow-y: auto; padding: 5px;"></div>
-        
-        <div class="modal-footer" style="margin-top: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 1.25rem;">
-            <button class="save-comment-btn" onclick="saveCustomComment()" 
-                    style="width: 100%; padding: 1.1rem; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 128, 96, 0.2);">
-                ${isAr ? 'حفظ الملاحظة' : 'Save Note'}
-            </button>
+            <div class="popular-comments" id="popularComments" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 2rem;"></div>
+            
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+                <button class="save-comment-btn" onclick="saveCustomComment()" 
+                        style="width: 100%; max-width: 400px; padding: 1.25rem; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 128, 96, 0.2); transition: 0.3s;">
+                    <i class="fas fa-save" style="margin-inline-end: 8px;"></i> ${isAr ? 'حفظ وإضافة للسلة' : 'Save & Update Cart'}
+                </button>
+            </div>
         </div>
     `;
     
@@ -464,11 +617,12 @@ async function submitOrder() {
         if (!confirmed.isConfirmed) return;
     }
 
-    const orderDetails = items.map(name => ({
-        name,
-        price: currentOrder[name].price,
-        quantity: currentOrder[name].quantity,
-        comments: currentOrder[name].comment
+    const orderDetails = items.map(key => ({
+        name: currentOrder[key].baseName || key,
+        variant: currentOrder[key].variant || null,
+        price: currentOrder[key].price,
+        quantity: currentOrder[key].quantity,
+        comments: currentOrder[key].comment
     }));
 
     // Auto-fetch best discount

@@ -181,6 +181,7 @@ exports.formatOrderDetails = (req, res) => {
 
             return {
                 name: item.name,
+                variant: item.variant || null, // ✅ إضافة التفريعة (لون/مقاس)
                 price: basePrice.toFixed(2),
                 quantity: quantity,
                 comments,
