@@ -916,9 +916,9 @@ async function selectItem(item, preExistingData = null) {
             let variantsToSave = [...state.variants];
             
             // 🧠 Rule: If parent quantity is explicitly set and different from the variants sum,
-            // we assume the user wants "Bulk Tracking". Zero out the children quantities.
+            // we assume the user wants "Bulk Tracking". Zero out the children quantities AND min.
             if (parentQty > 0 && parentQty !== variantsSum) {
-                variantsToSave = variantsToSave.map(v => ({ ...v, quantity: 0 }));
+                variantsToSave = variantsToSave.map(v => ({ ...v, quantity: 0, min: 0 }));
             }
 
             return {
