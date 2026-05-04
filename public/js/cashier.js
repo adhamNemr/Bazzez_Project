@@ -23,6 +23,7 @@ const t = {
         subtotal: 'المجموع الفرعي',
         delivery: 'توصيل',
         total: 'الإجمالي',
+        discount: 'الخصم',
         checkout: 'إتمام الطلب',
         selectDelivery: 'اختر منطقة التوصيل',
         items: 'أصناف',
@@ -48,6 +49,7 @@ const t = {
         subtotal: 'Subtotal',
         delivery: 'Delivery',
         total: 'Total',
+        discount: 'Discount',
         checkout: 'Complete',
         selectDelivery: 'Select Delivery Area',
         items: 'items',
@@ -113,6 +115,7 @@ function applyTranslations() {
     updateLoc('loc-empty-cart', langT.emptyCart);
     updateLoc('loc-subtotal', langT.subtotal);
     updateLoc('loc-delivery', langT.delivery);
+    updateLoc('loc-discount', langT.discount);
     updateLoc('loc-total', langT.total);
     updateLoc('loc-checkout', langT.checkout);
 
@@ -399,6 +402,7 @@ function updateQty(name, delta) {
 
 function renderOrderSummary() {
     let subtotal = 0;
+    let totalDiscount = 0;
     let itemCount = 0;
     orderSummary.innerHTML = '';
 
@@ -422,13 +426,27 @@ function renderOrderSummary() {
             let commentsHtml = '';
             item.comment.forEach((c, idx) => {
                 const addPrice = parseFloat(c.price) || 0;
-                subtotal += addPrice * item.quantity;
-                commentsHtml += `
-                    <div style="display: inline-flex; align-items: center; background: rgba(0, 128, 96, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
-                        <span>${c.text} (+${addPrice})</span>
-                        <button onclick="removeComment('${name}', ${idx})" style="background:none; border:none; color:inherit; cursor:pointer; font-size:0.8rem;"><i class="fas fa-times-circle"></i></button>
-                    </div>
-                `;
+                
+                if (c.isDiscount) {
+                    totalDiscount += Math.abs(addPrice) * item.quantity;
+                    // 🔴 Render discount badge in red
+                    commentsHtml += `
+                        <div style="display: inline-flex; align-items: center; background: rgba(239,68,68,0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
+                            <i class="fas fa-tag"></i>
+                            <span>${c.text} (${addPrice.toFixed(2)} EGP)</span>
+                            <button onclick="removeComment('${name}', ${idx})" style="background:none; border:none; color:inherit; cursor:pointer; font-size:0.8rem;"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    `;
+                } else {
+                    subtotal += addPrice * item.quantity;
+                    // 🟢 Render add-on badge in green
+                    commentsHtml += `
+                        <div style="display: inline-flex; align-items: center; background: rgba(0, 128, 96, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
+                            <span>${c.text} ${addPrice > 0 ? `(+${addPrice})` : ''}</span>
+                            <button onclick="removeComment('${name}', ${idx})" style="background:none; border:none; color:inherit; cursor:pointer; font-size:0.8rem;"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    `;
+                }
             });
 
             const row = document.createElement('div');
@@ -458,10 +476,11 @@ function renderOrderSummary() {
     }
 
     const delivery = parseFloat(deliveryPriceSelect.value) || 0;
-    const total = subtotal + delivery;
+    const total = subtotal + delivery - totalDiscount;
 
     document.getElementById('subtotal-val').innerHTML = `<span dir="ltr">${subtotal.toFixed(2)} EGP</span>`;
     document.getElementById('delivery-val').innerHTML = `<span dir="ltr">${delivery.toFixed(2)} EGP</span>`;
+    document.getElementById('discount-val').innerHTML = `<span dir="ltr">-${totalDiscount.toFixed(2)} EGP</span>`;
     document.getElementById('order-total').innerHTML = `<span dir="ltr">${total.toFixed(2)} EGP</span>`;
     document.getElementById('cart-count').textContent = `${itemCount} ${t[currentLang].items}`;
 }
@@ -480,36 +499,48 @@ function openCommentCard(itemName) {
     const lang = t[currentLang];
     
     commentCard.innerHTML = `
-        <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
-            <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${itemName}</h2>
-            <p style="color:#64748b; font-weight: 500;">${isAr ? 'أضف ملاحظات خاصة أو تكاليف إضافية' : 'Add special instructions or extra charges'}</p>
+        <div class="variant-modal-header" style="text-align:center; margin-bottom:1rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+            <h2 style="font-size:1.5rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${itemName}</h2>
+            <p style="color:#64748b; font-size: 0.9rem; font-weight: 500;">${isAr ? 'تخصيص الصنف (ملاحظات، إضافات، أو خصم)' : 'Customize item (Notes, Add-ons, or Discount)'}</p>
         </div>
         
-        <div class="variant-selection-container" style="padding: 0 1rem; text-align: center;">
-            <div style="margin-bottom: 1.5rem;">
-                <h4 style="margin-bottom:1rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
+        <div class="variant-selection-container" style="padding: 0 0.5rem; text-align: center;">
+            <div style="margin-bottom: 1rem;">
+                <h4 style="margin-bottom:0.75rem; font-size:0.9rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:8px;">
                     <i class="fas fa-edit" style="color:var(--primary);"></i> ${isAr ? 'ملاحظة خاصة' : 'Special Note'}
                 </h4>
                 <textarea id="customComment" 
-                    style="width: 100%; height: 100px; padding: 15px; border-radius: 16px; border: 2px solid #f1f5f9; font-family: inherit; font-size: 1rem; transition: 0.3s;"
+                    style="width: 100%; height: 80px; padding: 12px; border-radius: 14px; border: 2px solid #f1f5f9; font-family: inherit; font-size: 0.95rem; transition: 0.3s; resize: none;"
                     placeholder="${isAr ? 'مثال: بدون بصل، زيادة صوص...' : 'Ex: No onions, extra sauce...'}"></textarea>
             </div>
 
-            <div style="margin-bottom: 2rem;">
-                <h4 style="margin-bottom:1rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <i class="fas fa-plus-circle" style="color:var(--primary);"></i> ${isAr ? 'تكلفة إضافية (اختياري)' : 'Extra Charge (Optional)'}
-                </h4>
-                <input type="text" id="manualPriceInput" 
-                       placeholder="${isAr ? '0.00 EGP' : '0.00 EGP'}" 
-                       style="text-align: center; width: 200px; font-size: 1.25rem; padding: 12px; border-radius: 14px; border: 2px solid #f1f5f9; font-weight: 700; color: var(--primary);"
-                       oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="background: rgba(0, 128, 96, 0.02); padding: 0.75rem; border-radius: 16px; border: 1px solid #f1f5f9;">
+                    <h4 style="margin-bottom:0.5rem; font-size:0.85rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="fas fa-plus-circle" style="color:var(--primary);"></i> ${isAr ? 'تكلفة إضافية' : 'Extra Charge'}
+                    </h4>
+                    <input type="text" id="manualPriceInput" 
+                           placeholder="0.00" 
+                           style="text-align: center; width: 100%; font-size: 1.1rem; padding: 10px; border-radius: 12px; border: 2px solid #f1f5f9; font-weight: 700; color: var(--primary);"
+                           oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                </div>
+
+                <div style="background: rgba(239, 68, 68, 0.02); padding: 0.75rem; border-radius: 16px; border: 1px solid #fee2e2;">
+                    <h4 style="margin-bottom:0.5rem; font-size:0.85rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="fas fa-tag" style="color:#ef4444;"></i> ${isAr ? 'خصم يدوي' : 'Manual Discount'}
+                    </h4>
+                    <input type="text" id="manualDiscountInput" 
+                           placeholder="0.00" 
+                           style="text-align: center; width: 100%; font-size: 1.1rem; padding: 10px; border-radius: 12px; border: 2px solid #fee2e2; font-weight: 700; color: #ef4444; background: white;"
+                           oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                </div>
             </div>
 
-            <div class="popular-comments" id="popularComments" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 2rem;"></div>
+            <div class="popular-comments" id="popularComments" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 1.5rem;"></div>
             
-            <div style="border-top: 1px solid #f1f5f9; padding-top: 2rem;">
+            <div style="border-top: 1px solid #f1f5f9; padding-top: 1rem;">
                 <button class="save-comment-btn" onclick="saveCustomComment()" 
-                        style="width: 100%; max-width: 400px; padding: 1.25rem; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 128, 96, 0.2); transition: 0.3s;">
+                        style="width: 100%; padding: 1rem; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px rgba(0, 128, 96, 0.2); transition: 0.3s;">
                     <i class="fas fa-save" style="margin-inline-end: 8px;"></i> ${isAr ? 'حفظ وإضافة للسلة' : 'Save & Update Cart'}
                 </button>
             </div>
@@ -560,9 +591,21 @@ function addCommentToItem(itemName, text, price) {
 
 function saveCustomComment() {
     const text = document.getElementById('customComment').value.trim();
-    const price = document.getElementById('manualPriceInput').value;
-    if (text) {
-        addCommentToItem(selectedItem, text, price);
+    const price = parseFloat(document.getElementById('manualPriceInput').value) || 0;
+    const discount = parseFloat(document.getElementById('manualDiscountInput').value) || 0;
+
+    if (text || price > 0) {
+        addCommentToItem(selectedItem, text || (isAr ? 'إضافة' : 'Add-on'), price);
+    }
+    if (discount > 0) {
+        // Store discount as a negative price entry tagged with isDiscount flag
+        if (!currentOrder[selectedItem]) return closeCommentCard();
+        currentOrder[selectedItem].comment.push({
+            text: isAr ? `خصم يدوي` : 'Manual Discount',
+            price: -discount,
+            isDiscount: true
+        });
+        renderOrderSummary();
     }
     closeCommentCard();
 }

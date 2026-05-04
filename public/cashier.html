@@ -107,6 +107,10 @@
                             <span id="loc-delivery">Delivery</span>
                             <span id="delivery-val">0 EGP</span>
                         </div>
+                        <div class="summary-line" style="color: #ef4444; font-weight: 700;">
+                            <span id="loc-discount">Discount</span>
+                            <span id="discount-val">0 EGP</span>
+                        </div>
                         <div class="summary-line total-line">
                             <span id="loc-total">Total</span>
                             <span id="order-total">0 EGP</span>
@@ -142,6 +146,7 @@
                 subtotal: "Subtotal",
                 delivery: "Delivery",
                 total: "Total",
+                discount: "Discount",
                 checkout: "Complete Checkout",
                 selectDelivery: "Select Delivery Area"
             },
@@ -162,6 +167,7 @@
                 subtotal: "المجموع الفرعي",
                 delivery: "التوصيل",
                 total: "الإجمالي",
+                discount: "الخصم",
                 checkout: "إتمام الطلب",
                 selectDelivery: "اختر منطقة التوصيل"
             }
@@ -171,28 +177,36 @@
             const lang = localStorage.getItem('lang') || 'ar';
             const t = translations[lang];
 
+            const updateText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+
             // Update Placeholders
-            document.getElementById('customer-name').placeholder = t.searchCustomer;
-            document.getElementById('customer-phone').placeholder = t.phoneNumber;
+            const nameInp = document.getElementById('customer-name');
+            if (nameInp) nameInp.placeholder = t.searchCustomer;
+            const phoneInp = document.getElementById('customer-phone');
+            if (phoneInp) phoneInp.placeholder = t.phoneNumber;
             
             // Update Text Nodes
-            document.getElementById('loc-cash').textContent = t.cash;
-            document.getElementById('loc-card').textContent = t.card;
-            document.getElementById('loc-instapay').textContent = t.instapay;
-            document.getElementById('loc-vcash').textContent = t.vcash;
+            updateText('loc-cash', t.cash);
+            updateText('loc-card', t.card);
+            updateText('loc-instapay', t.instapay);
+            updateText('loc-vcash', t.vcash);
             
-            document.getElementById('loc-cat-beef').textContent = t.catBeef;
-            document.getElementById('loc-cat-chicken').textContent = t.catChicken;
-            document.getElementById('loc-cat-french').textContent = t.catFrench;
-            document.getElementById('loc-cat-combo').textContent = t.catCombo;
-            document.getElementById('loc-cat-addons').textContent = t.catAddons;
+            updateText('loc-cat-beef', t.catBeef);
+            updateText('loc-cat-chicken', t.catChicken);
+            updateText('loc-cat-french', t.catFrench);
+            updateText('loc-cat-combo', t.catCombo);
+            updateText('loc-cat-addons', t.catAddons);
             
-            document.getElementById('loc-cart-summary').textContent = t.cartSummary;
-            document.getElementById('loc-empty-cart').textContent = t.emptyCart;
-            document.getElementById('loc-subtotal').textContent = t.subtotal;
-            document.getElementById('loc-delivery').textContent = t.delivery;
-            document.getElementById('loc-total').textContent = t.total;
-            document.getElementById('loc-checkout').textContent = t.checkout;
+            updateText('loc-cart-summary', t.cartSummary);
+            updateText('loc-empty-cart', t.emptyCart);
+            updateText('loc-subtotal', t.subtotal);
+            updateText('loc-delivery', t.delivery);
+            updateText('loc-discount', t.discount);
+            updateText('loc-total', t.total);
+            updateText('loc-checkout', t.checkout);
 
             // Delivery Select default option
             const deliverySelect = document.getElementById('delivery-price');

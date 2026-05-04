@@ -24,7 +24,12 @@ async function printReceipt(orderData) {
             
             let addonsTotal = 0;
             if (Array.isArray(item.comments)) {
-                addonsTotal = item.comments.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+                // Only sum positive prices (actual add-ons). Negative prices are manual discounts
+                // which are already included in orderData.discount
+                addonsTotal = item.comments.reduce((sum, c) => {
+                    const p = parseFloat(c.price) || 0;
+                    return sum + (p > 0 ? p : 0);
+                }, 0);
             }
             
             return acc + (quantity * (basePrice + addonsTotal));

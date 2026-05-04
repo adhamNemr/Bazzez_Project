@@ -100,22 +100,34 @@ exports.createOrder = async (req, res) => {
             existingCustomer = await Customer.create({ name, phone, address });
         }
 
-        // ✅ حساب إجمالي المنتجات مع مراعاة الإضافات (Add-ons) في الكومنتات
+        // ✅ حساب إجمالي المنتجات مع مراعاة الإضافات (Add-ons) والخصومات اليدوية في الكومنتات
+        let manualDiscountTotal = 0;
         const productTotal = orderDetails.reduce((total, product) => {
             let itemBase = Number(product.price) * (Number(product.quantity) || 0);
             
-            // إضافة أسعار الكومنتات/الإضافات إذا وجدت
+            // إضافة أسعار الكومنتات/الإضافات (الموجبة) وحساب الخصومات اليدوية (السالبة)
             let addonsPrice = 0;
             if (Array.isArray(product.comments)) {
-                addonsPrice = product.comments.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
+                product.comments.forEach(c => {
+                    const price = Number(c.price) || 0;
+                    if (price < 0) {
+                        manualDiscountTotal += Math.abs(price) * (Number(product.quantity) || 0);
+                    } else {
+                        addonsPrice += price;
+                    }
+                });
             }
             
             return total + itemBase + (addonsPrice * (Number(product.quantity) || 0));
         }, 0);
 
-        // ✅ تطبيق الخصم تلقائيًا
+        // ✅ تطبيق الخصم تلقائيًا (Promo Codes)
         const { discountValue, appliedDiscounts } = await this.applyAutomaticDiscount(orderDetails, orderTotal, discountCode);
-        const finalProductTotal = productTotal - discountValue;
+        
+        // إجمالي الخصم = الخصم التلقائي + الخصم اليدوي
+        const totalDiscountAmount = discountValue + manualDiscountTotal;
+        
+        const finalProductTotal = productTotal - discountValue - manualDiscountTotal;
         const finalTotal = Math.max(finalProductTotal + finalDeliveryPrice, 0);
 
         // ✅ إضافة التعليق للـ orderDetails (إذا وُجد)
@@ -149,10 +161,11 @@ exports.createOrder = async (req, res) => {
             deliveryPrice: finalDeliveryPrice,
             orderTotal: finalTotal,
             orderDetails: JSON.stringify(orderDetails),
-            discountAmount: discountValue,
+            discountAmount: totalDiscountAmount,
             payment_status: payment_method === 'cash' ? "Pending" : "Paid",
             payment_method: payment_method,
             businessDate: businessDate,
+            createdAt: new Date(),
             dailySerial: nextSerial
         });
 
@@ -244,7 +257,7 @@ exports.createOrder = async (req, res) => {
             deliveryPrice: order.deliveryPrice,
             orderTotal: order.orderTotal,
             orderDetails,
-            discount: discountValue || 0,
+            discount: totalDiscountAmount || 0,
             orderDate: new Date().toLocaleString("en-US", { timeZone: "Africa/Cairo" }),
             appliedDiscounts,
             comment: commentText || null

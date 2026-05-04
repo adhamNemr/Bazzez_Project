@@ -39,7 +39,7 @@ const t = {
         cancelBtn: 'إلغاء',
         exportPdf: 'تصدير PDF',
         exportExcel: 'تصدير Excel',
-        colorTotal: 'إجمالي اللون',
+        colorTotal: 'إجمالي الخامة',
         other: 'أخرى',
         size: 'مقاس:'
     },
@@ -74,7 +74,7 @@ const t = {
         cancelBtn: 'Cancel',
         exportPdf: 'Export PDF',
         exportExcel: 'Export Excel',
-        colorTotal: 'Color Total',
+        colorTotal: 'Fabric Total',
         other: 'Other',
         size: 'Size:'
     }
@@ -439,7 +439,7 @@ function renderInventory(items) {
                 colorRow.innerHTML = `
                     <td style="padding-${isAr ? 'right' : 'left'}: 2rem; opacity: 0.8; font-weight: 700; color: #475569;">
                         ${cToggleIcon} 
-                        <i class="fas fa-palette" style="margin: 0 5px; opacity: 0.5;"></i> ${color}
+                        <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${color}
                     </td>
                     <td style="font-weight: 700; color: #64748b; font-size: 0.85rem;">
                         ${langT.colorTotal}
@@ -637,7 +637,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
         html: `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
                 <div style="grid-column: span 2;">
-                    <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'الاسم / اللون' : 'Name / Color'}</label>
+                    <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'الاسم / الخامة' : 'Name / Fabric'}</label>
                     <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ''}" placeholder="${isAr ? 'أحمر' : 'Red'}" ${initialData?.name ? 'disabled' : ''}>
                 </div>
                 <div>

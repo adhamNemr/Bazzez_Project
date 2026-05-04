@@ -34,7 +34,7 @@ const orderSchema = Joi.object({
             comments: Joi.array().items(
                 Joi.object({
                     text: Joi.string().required(),
-                    price: Joi.number().min(0).optional()
+                    price: Joi.number().optional()
                 })
             ).optional()
         })

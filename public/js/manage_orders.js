@@ -23,6 +23,7 @@ const t = {
         sidebarPayment: 'حالة الدفع',
         sidebarSubtotal: 'المجموع:',
         sidebarDelivery: 'خدمة التوصيل:',
+        sidebarDiscount: 'الخصم:',
         sidebarGrandTotal: 'الإجمالي النهائي:',
         printBtn: 'طباعة فاتورة',
         cancelBtn: 'إلغاء الطلب',
@@ -74,6 +75,7 @@ const t = {
         sidebarPayment: 'Payment Status',
         sidebarSubtotal: 'Subtotal:',
         sidebarDelivery: 'Delivery Fee:',
+        sidebarDiscount: 'Discount:',
         sidebarGrandTotal: 'Grand Total:',
         printBtn: 'Print Receipt',
         cancelBtn: 'Cancel Order',
@@ -261,6 +263,7 @@ function applyTranslations() {
         receiptLabels[0].textContent = t.sidebarPrice;
         receiptLabels[1].textContent = t.sidebarVat;
         receiptLabels[2].textContent = t.sidebarDelivery;
+        receiptLabels[3].textContent = t.sidebarDiscount;
     }
     const finalTotalLabel = document.querySelector('.total-label');
     if (finalTotalLabel) finalTotalLabel.textContent = t.sidebarTotal;
@@ -544,7 +547,7 @@ async function exportOrdersToExcel() {
         }
 
         const excelData = orders.map(o => {
-            const date = new Date(o.createdAt || Date.now());
+            const date = o.createdAt ? new Date(o.createdAt) : (o.businessDate ? new Date(o.businessDate) : new Date());
             const serial = o.dailySerial || o.id;
             return {
                 [isAr ? 'رقم الطلب' : 'Order #']: serial,
@@ -614,7 +617,7 @@ function renderOrders(orders = []) {
         
         tr.onclick = () => openSidebar(order, displaySerial);
 
-        const createdAt = new Date(order.createdAt || Date.now());
+        const createdAt = order.createdAt ? new Date(order.createdAt) : (order.businessDate ? new Date(order.businessDate) : new Date());
         const dateMain = createdAt.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const dateSub = createdAt.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
@@ -694,7 +697,8 @@ function openSidebar(order, dailySerial = null) {
 
     const total = parseFloat(order.orderTotal || 0);
     const delivery = parseFloat(order.deliveryPrice || 0);
-    const subtotalWithVat = total - delivery;
+    const discount = parseFloat(order.discountAmount || 0);
+    const subtotalWithVat = total - delivery + discount;
     
     // Calculate Base Price and VAT from the subtotal using the live vatRate
     // Base * (1 + vatRate) = SubtotalWithVat => Base = SubtotalWithVat / (1 + vatRate)
@@ -713,6 +717,7 @@ function openSidebar(order, dailySerial = null) {
     }
 
     document.getElementById('side-delivery').innerHTML = `<span style="color: var(--text-main);">${delivery.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
+    document.getElementById('side-discount').innerHTML = `<span style="color: #ef4444;">-${discount.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
     document.getElementById('side-total').innerHTML = `<span>${total.toFixed(2)}</span> <small style="font-size: 0.8rem; opacity: 0.9;">EGP</small>`;
 
     // Load Items
