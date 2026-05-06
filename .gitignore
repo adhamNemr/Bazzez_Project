@@ -8,3 +8,9 @@ logs/
 dist/
 coverage/
 .vscode/
+backups/
+scratch/
+*.pdf
+*.sqlite
+seed_april.js
+add_missing_column.js
