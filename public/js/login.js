@@ -27,8 +27,18 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
             localStorage.setItem('role', data.role);
             localStorage.setItem('username', data.username || username); // Fallback to provided username
     
-            // إعادة التوجيه لصفحة الـ Hub المركزية
-            window.location.href = '/launcher.html';
+            // Fetch system settings to apply globally (like Language and System Mode)
+            fetch('/api/settings', { headers: { 'Authorization': `Bearer ${data.token}` } })
+            .then(res => res.json())
+            .then(settings => {
+                if (settings.language) localStorage.setItem('lang', settings.language);
+                if (settings.system_mode) localStorage.setItem('systemMode', settings.system_mode);
+                window.location.href = '/launcher.html';
+            })
+            .catch(() => {
+                // If fetching settings fails, still proceed to launcher
+                window.location.href = '/launcher.html';
+            });
         } else {
             alert(data.error || 'فشل تسجيل الدخول.');
         }

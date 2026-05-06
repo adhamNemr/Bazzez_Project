@@ -258,7 +258,16 @@ exports.createOrder = async (req, res) => {
             orderTotal: order.orderTotal,
             orderDetails,
             discount: totalDiscountAmount || 0,
-            orderDate: new Date().toLocaleString("en-US", { timeZone: "Africa/Cairo" }),
+            orderDate: (() => {
+                const d = new Date();
+                const day = d.getDate();
+                const month = d.getMonth() + 1;
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                return `${day}/${month} ${hours}:${minutes} ${ampm}`;
+            })(),
             appliedDiscounts,
             comment: commentText || null
         };

@@ -717,7 +717,15 @@ function openSidebar(order, dailySerial = null) {
     }
 
     document.getElementById('side-delivery').innerHTML = `<span style="color: var(--text-main);">${delivery.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
-    document.getElementById('side-discount').innerHTML = `<span style="color: #ef4444;">-${discount.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
+    
+    const sideDiscountRow = document.getElementById('side-discount').parentElement;
+    if (discount > 0) {
+        sideDiscountRow.style.display = 'flex';
+        document.getElementById('side-discount').innerHTML = `<span style="color: #ef4444;">-${discount.toFixed(2)}</span> <small style="font-size: 0.7rem; opacity: 0.7;">EGP</small>`;
+    } else {
+        sideDiscountRow.style.display = 'none';
+    }
+    
     document.getElementById('side-total').innerHTML = `<span>${total.toFixed(2)}</span> <small style="font-size: 0.8rem; opacity: 0.9;">EGP</small>`;
 
     // Load Items
@@ -772,21 +780,40 @@ async function loadOrderItems(orderDetails) {
         data.formatted.forEach(item => {
             const div = document.createElement('div');
             div.className = 'item-row';
+            div.style.flexDirection = 'column';
+            div.style.alignItems = 'stretch';
+            div.style.padding = '1rem 0';
             
-            const comments = [...item.comments, ...item.manualComments].map(c => c.text).join(', ');
+            // Generate list of comments/addons with prices if any
+            let commentsHtml = '';
+            const allComments = [...item.comments, ...item.manualComments];
+            if (allComments.length > 0) {
+                commentsHtml = '<div style="margin-top: 0.5rem; padding-right: 2.5rem;">';
+                allComments.forEach(c => {
+                    const cPrice = parseFloat(c.price || 0);
+                    const color = cPrice < 0 ? '#ef4444' : (cPrice > 0 ? '#008060' : '#6d7175');
+                    const priceLabel = cPrice !== 0 ? ` (${cPrice > 0 ? '+' : ''}${cPrice})` : '';
+                    commentsHtml += `
+                        <div style="font-size: 0.8rem; color: ${color}; margin-bottom: 2px; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fas fa-caret-left" style="font-size: 0.6rem; opacity: 0.5;"></i>
+                            <span>${c.text}${priceLabel}</span>
+                        </div>`;
+                });
+                commentsHtml += '</div>';
+            }
             
             div.innerHTML = `
-                <div class="item-main">
-                    <div class="item-qty">${item.quantity}</div>
-                    <div>
-                        <div style="font-weight:700; color: var(--text-main);">${item.name}</div>
-                        ${comments ? `<div style="font-size:0.75rem; color:#6d7175; font-style: italic;">${comments}</div>` : ''}
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div class="item-main">
+                        <div class="item-qty">${item.quantity}</div>
+                        <div style="font-weight:700; color: var(--text-main); font-size: 1rem;">${item.name}</div>
                     </div>
+                    <span style="font-weight:800; color: var(--text-main); font-size: 1.05rem;">
+                        ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                        <small style="font-size: 0.7rem; opacity: 0.6; font-weight: 600;">EGP</small>
+                    </span>
                 </div>
-                <span style="font-weight:800; color: var(--text-main); font-size: 1.05rem;">
-                    ${(parseFloat(item.price) * item.quantity).toFixed(2)}
-                    <small style="font-size: 0.7rem; opacity: 0.6; font-weight: 600;">EGP</small>
-                </span>
+                ${commentsHtml}
             `;
             list.appendChild(div);
         });
@@ -847,7 +874,16 @@ async function printReceipt(orderId) {
             customerName: order.customerName,
             customerPhone: order.customerPhone,
             customerAddress: order.customerAddress,
-            orderDate: new Date(order.createdAt).toLocaleString(isAr ? 'ar-EG' : 'en-US'),
+            orderDate: (() => {
+                const d = new Date(order.createdAt);
+                const day = d.getDate();
+                const month = d.getMonth() + 1;
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                return `${day}/${month} ${hours}:${minutes} ${ampm}`;
+            })(),
             deliveryPrice: order.deliveryPrice,
             orderTotal: order.orderTotal,
             orderDetails: data.formatted,

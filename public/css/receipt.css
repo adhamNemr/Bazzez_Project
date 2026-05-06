@@ -4,140 +4,177 @@
  */
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Noto Sans Arabic', 'Inter', sans-serif;
     text-align: center;
-    direction: ltr;
-    background: #f1f5f9;
+    direction: rtl; /* Enforce RTL for Arabic */
+    background: #fff;
     margin: 0;
-    padding: 20px;
-    color: #0f172a;
+    padding: 0;
+    color: #000; /* True black for thermal printers */
 }
 
 #receipt-container {
-    width: 350px;
-    margin: auto;
-    padding: 24px;
+    width: 76mm; /* Slightly narrower for better side margins on 80mm paper */
+    margin: 0 auto;
+    padding: 15px 12px; /* Chic padding from edges */
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     text-align: left;
-    border: 1px solid #e2e8f0;
 }
 
 h2 {
     text-align: center;
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    color: #6366f1;
-    letter-spacing: -0.025em;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    margin-top: 0;
+    color: #000;
+    letter-spacing: 0.5px;
 }
 
-.customerBox {
-    border: 1px solid #e2e8f0;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    background: #f8fafc;
+#order-id-large {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 8px 0 15px 0;
+    color: #000;
+    border-bottom: 1px solid #000;
+    padding-bottom: 10px;
 }
 
-.customerBox p {
-    margin: 4px 0;
-    font-size: 0.875rem;
-    font-weight: 600;
+.header-info-grid {
+    margin-bottom: 10px;
+    border-bottom: none; /* Removed the dashed line here to avoid double lines */
 }
 
-.dataBox {
+.info-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 1rem;
-    font-size: 0.8125rem;
-    color: #64748b;
-    border-bottom: 1px dashed #e2e8f0;
-    padding-bottom: 8px;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
 }
 
-.dataBox p { margin: 0; }
-
-.info {
-    margin-bottom: 1rem;
+.info-row > div {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    width: 50%;
 }
 
-.info p {
-    margin: 2px 0;
-    font-size: 0.875rem;
+.info-row .right-col {
+    justify-content: flex-start;
+    text-align: right;
+}
+
+.info-row .left-col {
+    justify-content: flex-start;
+    text-align: right;
+}
+
+.info-row .label {
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 42px;
+    opacity: 0.85;
+}
+
+.info-row .value {
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 1.5rem;
+    margin-top: 5px;
 }
 
 th {
-    text-align: left;
-    font-size: 0.75rem;
+    text-align: right;
+    font-size: 0.82rem;
     font-weight: 700;
-    text-transform: uppercase;
-    color: #94a3b8;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #f1f5f9;
+    color: #000;
+    padding: 8px 0; /* Balanced padding */
+    border-top: 1px solid #000; /* Line above */
+    border-bottom: 1px solid #000; /* Line below */
 }
 
 td {
-    padding: 8px 0;
-    font-size: 0.875rem;
+    padding: 12px 0; /* More air between items */
+    font-size: 0.85rem;
     border-bottom: 1px solid #f8fafc;
 }
 
 .item-name {
-    font-weight: 700;
+    font-weight: 600;
+    text-align: right;
+    line-height: 1.4;
 }
 
 .item-addons {
-    margin-top: 2px;
+    margin-top: 4px;
+    padding-right: 15px;
 }
 
 .addon-line {
-    font-size: 0.75rem;
-    color: #64748b;
-    font-style: italic;
-    line-height: 1.2;
+    font-size: 0.72rem;
+    color: #555;
+    font-weight: 500;
+    line-height: 1.4;
 }
 
 .totalBox {
-    background: #f8fafc;
-    padding: 12px;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
+    background: #fff;
+    padding: 10px 0;
+    margin-bottom: 5px;
+    border-top: 1px solid #000;
 }
 
 .totalBox p {
     display: flex;
     justify-content: space-between;
-    margin: 4px 0;
-    font-size: 0.875rem;
+    margin: 3px 0;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #444;
 }
 
-.totalBox p:last-child {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #e2e8f0;
-    font-size: 1.125rem;
-    font-weight: 800;
-    color: #6366f1;
+.totalBox p.grand-total {
+    margin-top: 12px;
+    padding: 8px 0;
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000;
+    justify-content: center;
+    gap: 8px;
 }
 
 .footer {
     text-align: center;
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-top: 1rem;
-    border-top: 1px dashed #e2e8f0;
-    padding-top: 12px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #333;
+    margin-top: 10px;
 }
 
-.footer span { display: block; margin-bottom: 4px; }
+.footer span { 
+    display: block; 
+    margin-bottom: 3px; 
+}
+
+.footer #store-phone-footer {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+#store-footer-msg {
+    margin-top: 4px;
+    opacity: 0.75;
+    font-size: 0.7rem;
+}
 
 button {
     width: 100%;
@@ -165,5 +202,4 @@ button:hover {
         width: 100%; 
         padding: 0; 
     }
-    button { display: none; }
 }

@@ -14,6 +14,8 @@ const t = {
         receiptFooter: 'رسالة التذييل (Footer)',
         currency: 'العملة',
         vat: 'ضريبة القيمة المضافة (%)',
+        showDiscount: 'إظهار الخصم في الإيصال',
+        showComments: 'إظهار الإضافات والتعليقات',
         secSystem: 'إعدادات النظام',
         language: 'لغة الواجهة',
         systemMode: 'نوع النشاط (System Mode)',
@@ -36,6 +38,8 @@ const t = {
         receiptFooter: 'Footer Message',
         currency: 'Currency',
         vat: 'VAT (%)',
+        showDiscount: 'Show Discount on Receipt',
+        showComments: 'Show Addons & Comments',
         secSystem: 'System Configuration',
         language: 'Interface Language',
         systemMode: 'Business Type',
@@ -126,6 +130,8 @@ function applyTranslations() {
     updateLoc('loc-receipt-footer', langT.receiptFooter);
     updateLoc('loc-currency', langT.currency);
     updateLoc('loc-vat', langT.vat);
+    updateLoc('loc-show-discount', langT.showDiscount);
+    updateLoc('loc-show-comments', langT.showComments);
     updateLoc('loc-sec-system', langT.secSystem);
     updateLoc('loc-language', langT.language);
     updateLoc('loc-system-mode', langT.systemMode);

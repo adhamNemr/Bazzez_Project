@@ -9,16 +9,29 @@
 <body>
 
     <div id="receipt-container">
-        <h2>Vortex POS</h2>
-        <div class="customerBox">
-            <div class="dataBox">
-                <p>Order : <span id="order-id"></span></p>
-                <p>Date: <span id="order-date"></span></p>
+        <h2 id="store-name">Vortex POS</h2>
+        <h1 id="order-id-large">#0000</h1>
+        
+        <div class="header-info-grid">
+            <div class="info-row">
+                <div class="right-col">
+                    <span class="label">العميل:</span>
+                    <span id="customer-name" class="value"></span>
+                </div>
+                <div class="left-col">
+                    <span class="label">التاريخ:</span>
+                    <span id="order-date" class="value"></span>
+                </div>
             </div>
-            <div class="info">
-                <p>Name : <span id="customer-name"></span></p>
-                <p>Phone : <span id="customer-phone"></span></p>
-                <p>Address : <span id="customer-address"></span></p>
+            <div class="info-row">
+                <div class="right-col">
+                    <span class="label">الهاتف:</span>
+                    <span id="customer-phone" class="value"></span>
+                </div>
+                <div class="left-col">
+                    <span class="label">العنوان:</span>
+                    <span id="customer-address" class="value"></span>
+                </div>
             </div>
         </div>
 
@@ -26,25 +39,24 @@
             <thead>
                 <tr>
                     <th>الصنف</th>
-                    <th>الكمية</th>
-                    <th>السعر</th>
+                    <th style="text-align: center;">الكمية</th>
+                    <th style="text-align: left;">السعر</th>
                 </tr>
             </thead>
             <tbody id="order-details"></tbody>
         </table>
         <div class="totalBox">
-            <p>Total : <span id="order-total"></span></p>
-            <p>Delivery : <span id="delivery-price"></span></p>
-            <p>Sub-Total : <span id="subtotal"></span></p>
-            <p>Discount : <span id="discount"></span></p>
+            <p>الإجمالي الفرعي: <span id="subtotal"></span></p>
+            <p>خدمة التوصيل: <span id="delivery-price"></span></p>
+            <p id="discount-container">الخصم: <span id="discount"></span></p>
+            <p class="grand-total">الإجمالي الكلي: <span id="order-total"></span></p>
         </div>
         <div class="footer">
-            <span><strong>Phone :</strong> 01005078132 - 01211228565</span>
+            <span><strong>رقم التواصل:</strong> <span id="store-phone-footer">--</span></span>
             <div>
-                <span><strong>complements :</strong> 01005078132 </span>
+                <span id="store-footer-msg">شكراً لزيارتكم! نرجو أن تكون تجربتكم سعيدة.</span>
             </div>
         </div>
-        <button onclick="window.print()">🖨️ طباعة الإيصال</button>
     </div>
 
     <script src="./js/receipt.js"></script>
