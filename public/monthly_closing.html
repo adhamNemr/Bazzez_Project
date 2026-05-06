@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقفيل اليوم - Vortex POS</title>
+    <title>التقفيل الشهري - Vortex POS</title>
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -18,17 +18,17 @@
         /* =========================================
            1. SYSTEM CORE (DO NOT TOUCH)
            ========================================= */
-        body {
-            display: block !important;
+        body { 
+            display: block !important; 
             margin: 0 !important;
             padding: 0 !important;
             background-color: #f8fafc;
         }
-        .main-content {
-            width: 100%;
-            min-height: 100vh;
-            display: block;
-            box-sizing: border-box;
+        .main-content { 
+            width: 100%; 
+            min-height: 100vh; 
+            display: block; 
+            box-sizing: border-box; 
         }
 
         /* =========================================
@@ -49,7 +49,7 @@
         #header-container .context-pill i { color: #008060; }
 
         /* =========================================
-           3. DAILY CLOSING UI — UNIFIED WITH MONTHLY
+           3. MONTHLY CLOSING UI — UNIFIED WITH DAILY
            ========================================= */
         .closing-page {
             width: 100%;
@@ -109,6 +109,14 @@
             z-index: 1;
             transform: rotate(-10deg);
         }
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(16,185,129,0.15); color: #34d399;
+            padding: 0.3rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+            margin-top: 0.8rem;
+        }
+        .live-dot { width: 7px; height: 7px; background: #10b981; border-radius: 50%; animation: pulse 1.4s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         /* --- Stats Grid --- */
         .stats-grid {
@@ -133,7 +141,6 @@
         }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
         .stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
-
         .stat-icon-box {
             width: 42px; height: 42px;
             border-radius: 12px;
@@ -144,16 +151,20 @@
         .expenses-icon { background: #fef2f2; color: #dc2626; }
         .orders-icon   { background: #eff6ff; color: #2563eb; }
         .discount-icon { background: #fff7ed; color: #ea580c; }
+        .cost-icon     { background: #fefce8; color: #ca8a04; }
+        .items-icon    { background: #f1f5f9; color: #475569; }
+        .online-icon   { background: #fdf4ff; color: #a21caf; }
+        .cash-icon     { background: #dcfce7; color: #16a34a; }
 
         .stat-meta { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
         .stat-label  { color: #64748b; font-weight: 600; font-size: 0.85rem; }
         .stat-number { color: #0f172a; font-weight: 800; font-size: 1.35rem; margin-top: 0.3rem; }
 
-        /* Date Picker */
-        .date-picker-input {
+        /* Month Picker inside a stat card */
+        .month-picker-input {
             border: none; background: transparent; color: #0f172a;
             font-weight: 800; font-size: 1.1rem; text-align: right;
-            outline: none; cursor: pointer; padding: 0; width: 140px;
+            outline: none; cursor: pointer; padding: 0; width: 155px;
         }
 
         /* --- Detail Cards --- */
@@ -199,9 +210,12 @@
         }
         .icon-cash    { background: #dcfce7; color: #16a34a; }
         .icon-digital { background: #eff6ff; color: #2563eb; }
-        .icon-avg     { background: #fdf2f8; color: #db2777; }
-        .icon-items   { background: #f1f5f9; color: #475569; }
+        .icon-expense { background: #fef2f2; color: #dc2626; }
+        .icon-discount{ background: #fff7ed; color: #ea580c; }
         .icon-orders  { background: #eff6ff; color: #2563eb; }
+        .icon-items   { background: #f1f5f9; color: #475569; }
+        .icon-revenue { background: #ecfdf5; color: #059669; }
+        .icon-cost    { background: #fefce8; color: #ca8a04; }
 
         .data-label { color: #475569; font-weight: 700; font-size: 0.95rem; }
         .data-value { color: #0f172a; font-weight: 800; font-size: 1.1rem; }
@@ -215,6 +229,41 @@
         }
         .total-item .data-label { color: #0f172a; font-size: 1rem; }
         .highlight { color: #008060; font-size: 1.4rem !important; }
+
+        .profit-item {
+            background: #f5f3ff;
+            padding: 1rem !important;
+            border-radius: 14px;
+            margin-top: 0.5rem;
+            border: 2px dashed #7c3aed !important;
+        }
+        .profit-item .data-label { color: #0f172a; font-size: 1rem; }
+        .highlight-purple { color: #7c3aed; font-size: 1.4rem !important; }
+
+        /* --- Day Table --- */
+        .table-card {
+            background: white; border-radius: 20px; padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
+        }
+        .table-wrap { overflow-x: auto; margin-top: 1rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead tr { background: #0f172a; color: white; }
+        thead th {
+            padding: 0.9rem 1rem; text-align: center;
+            font-weight: 700; white-space: nowrap;
+        }
+        thead th:first-child { border-radius: 0 12px 12px 0; }
+        thead th:last-child  { border-radius: 12px 0 0 12px; }
+        tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody td {
+            padding: 0.85rem 1rem; text-align: center;
+            font-weight: 700; color: #334155; white-space: nowrap;
+        }
+        .badge-green  { color: #059669; }
+        .badge-red    { color: #dc2626; }
+        .badge-purple { color: #7c3aed; }
+        .empty-table  { text-align: center; padding: 3rem; color: #94a3b8; }
 
         /* --- Actions --- */
         .action-section {
@@ -250,28 +299,40 @@
 </head>
 <body>
     <main class="main-content">
-        <div id="header-container" data-title="التقفيل اليومي" data-icon="fa-file-invoice-dollar"></div>
+        <div id="header-container" data-title="التقفيل الشهري" data-icon="fa-chart-line"></div>
 
         <div class="closing-page">
 
-            <!-- Hero Profit Card -->
-            <div class="hero-card">
-                <div class="hero-content">
-                    <div class="hero-label">صافي الربح النهائي — <span id="current-business-date"></span></div>
-                    <div class="hero-value" id="stat-profit">0.00 EGP</div>
+            <!-- Controls -->
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                <div style="background: white; padding: 0.6rem 1.2rem; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.8rem; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    <i class="fas fa-calendar-alt" style="color: #64748b;"></i>
+                    <span style="color: #475569; font-weight: 700; font-size: 0.95rem;">اختر الشهر:</span>
+                    <input type="month" id="month-input" style="border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-weight: 800; font-size: 1rem; outline: none; cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 8px;">
                 </div>
-                <div class="hero-icon"><i class="fas fa-wallet"></i></div>
             </div>
 
-            <!-- Stats Grid (4 Cards) -->
+            <!-- Hero Card -->
+            <div class="hero-card">
+                <div class="hero-content">
+                    <div class="hero-label">صافي الربح الشهري — <span id="current-month-display">--</span></div>
+                    <div class="hero-value" id="stat-profit">0.00 EGP</div>
+                    <div class="live-badge" id="live-badge" style="display:none;">
+                        <span class="live-dot"></span>
+                        <span id="live-text">أوردرات اليوم لم تُقفَّل بعد</span>
+                    </div>
+                </div>
+                <div class="hero-icon"><i class="fas fa-chart-line"></i></div>
+            </div>
+
+            <!-- Stats Grid (4 cards) -->
             <div class="stats-grid">
-                <!-- Date Picker Card -->
-                <div class="stat-card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
+                <div class="stat-card">
                     <div class="stat-top">
-                        <div class="stat-icon-box orders-icon"><i class="fas fa-calendar-day"></i></div>
+                        <div class="stat-icon-box cost-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                         <div class="stat-meta">
-                            <span class="stat-label">تاريخ التقرير</span>
-                            <input type="date" id="closing-date-input" class="date-picker-input">
+                            <span class="stat-label">إجمالي التكاليف</span>
+                            <span class="stat-number" id="stat-cost">0.00 EGP</span>
                         </div>
                     </div>
                 </div>
@@ -290,7 +351,7 @@
                     <div class="stat-top">
                         <div class="stat-icon-box expenses-icon"><i class="fas fa-receipt"></i></div>
                         <div class="stat-meta">
-                            <span class="stat-label">مصروفات اليوم</span>
+                            <span class="stat-label">إجمالي المصروفات</span>
                             <span class="stat-number" id="stat-expenses">0.00 EGP</span>
                         </div>
                     </div>
@@ -307,25 +368,78 @@
                 </div>
             </div>
 
+            <!-- Second stats row -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon-box orders-icon"><i class="fas fa-shopping-bag"></i></div>
+                        <div class="stat-meta">
+                            <span class="stat-label">إجمالي الطلبات</span>
+                            <span class="stat-number" id="stat-orders-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon-box items-icon"><i class="fas fa-tshirt"></i></div>
+                        <div class="stat-meta">
+                            <span class="stat-label">إجمالي القطع المباعة</span>
+                            <span class="stat-number" id="stat-items-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon-box online-icon"><i class="fas fa-credit-card"></i></div>
+                        <div class="stat-meta">
+                            <span class="stat-label">مبيعات إلكترونية</span>
+                            <span class="stat-number" id="stat-digital">0.00 EGP</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon-box cash-icon"><i class="fas fa-money-bill-wave"></i></div>
+                        <div class="stat-meta">
+                            <span class="stat-label">مبيعات كاش</span>
+                            <span class="stat-number" id="stat-cash">0.00 EGP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Detail Cards -->
             <div class="details-split">
-                <!-- Cash Breakdown -->
                 <div class="detail-card">
-                    <h3 class="card-heading">نقدية الخزنة</h3>
+                    <h3 class="card-heading">تدفقات الشهر</h3>
                     <div class="data-list">
                         <div class="data-item">
                             <div class="data-left">
                                 <div class="item-icon icon-cash"><i class="fas fa-money-bill-wave"></i></div>
-                                <div class="data-label">كاش (الدرج)</div>
+                                <div class="data-label">مبيعات كاش</div>
                             </div>
-                            <div class="data-value" id="stat-cash">0.00 EGP</div>
+                            <div class="data-value" id="stat-cash-detail">0.00 EGP</div>
                         </div>
                         <div class="data-item">
                             <div class="data-left">
                                 <div class="item-icon icon-digital"><i class="fas fa-credit-card"></i></div>
-                                <div class="data-label">دفع إلكتروني</div>
+                                <div class="data-label">مبيعات إلكترونية</div>
                             </div>
-                            <div class="data-value" id="stat-digital">0.00 EGP</div>
+                            <div class="data-value" id="stat-digital-detail">0.00 EGP</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-left">
+                                <div class="item-icon icon-expense"><i class="fas fa-receipt"></i></div>
+                                <div class="data-label">إجمالي المصروفات</div>
+                            </div>
+                            <div class="data-value" style="color:#dc2626;" id="stat-expenses-detail">0.00 EGP</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-left">
+                                <div class="item-icon icon-discount"><i class="fas fa-tag"></i></div>
+                                <div class="data-label">إجمالي الخصومات</div>
+                            </div>
+                            <div class="data-value" style="color:#ea580c;" id="stat-discount-detail">0.00 EGP</div>
                         </div>
                         <div class="data-item total-item">
                             <div class="data-label">إجمالي المحصل</div>
@@ -334,41 +448,77 @@
                     </div>
                 </div>
 
-                <!-- Sales Breakdown -->
                 <div class="detail-card">
-                    <h3 class="card-heading">بيانات المبيعات</h3>
+                    <h3 class="card-heading">الأداء الشهري</h3>
                     <div class="data-list">
                         <div class="data-item">
                             <div class="data-left">
-                                <div class="item-icon icon-avg"><i class="fas fa-award"></i></div>
-                                <div class="data-label">الأكثر مبيعاً</div>
+                                <div class="item-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
+                                <div class="data-label">إجمالي الطلبات المقفلة</div>
                             </div>
-                            <div class="data-value" id="stat-top-product">لا يوجد</div>
+                            <div class="data-value" id="stat-orders-detail">0</div>
                         </div>
                         <div class="data-item">
                             <div class="data-left">
-                                <div class="item-icon icon-items"><i class="fas fa-boxes-stacked"></i></div>
+                                <div class="item-icon icon-items"><i class="fas fa-tshirt"></i></div>
                                 <div class="data-label">إجمالي القطع المباعة</div>
                             </div>
-                            <div class="data-value" id="stat-items-count">0</div>
+                            <div class="data-value" id="stat-items-detail">0</div>
                         </div>
                         <div class="data-item">
                             <div class="data-left">
-                                <div class="item-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
-                                <div class="data-label">عدد الطلبات (أوردرات)</div>
+                                <div class="item-icon icon-revenue"><i class="fas fa-cash-register"></i></div>
+                                <div class="data-label">إجمالي المبيعات</div>
                             </div>
-                            <div class="data-value" id="stat-orders-count">0</div>
+                            <div class="data-value" style="color:#059669;" id="stat-revenue-detail">0.00 EGP</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-left">
+                                <div class="item-icon icon-cost"><i class="fas fa-boxes-stacked"></i></div>
+                                <div class="data-label">إجمالي التكاليف</div>
+                            </div>
+                            <div class="data-value" style="color:#ca8a04;" id="stat-cost-detail">0.00 EGP</div>
+                        </div>
+                        <div class="data-item profit-item">
+                            <div class="data-label">صافي الربح</div>
+                            <div class="data-value highlight-purple" id="stat-profit-detail">0.00 EGP</div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Day-by-Day Table -->
+            <div class="table-card">
+                <h3 class="card-heading">تقرير الأيام المقفلة</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>التاريخ</th>
+                                <th>الطلبات</th>
+                                <th>القطع</th>
+                                <th>المبيعات</th>
+                                <th>المصروفات</th>
+                                <th>الخصومات</th>
+                                <th>التكاليف</th>
+                                <th>إلكتروني</th>
+                                <th>صافي الربح</th>
+                            </tr>
+                        </thead>
+                        <tbody id="daily-table-body">
+                            <tr><td colspan="10" class="empty-table"><i class="fas fa-inbox fa-2x" style="display:block;margin-bottom:0.5rem;"></i>لا توجد أيام مقفلة لهذا الشهر</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- Actions -->
             <div class="action-section">
                 <button class="btn-primary" onclick="handleClosing()">
-                    <i class="fas fa-lock"></i> إغلاق الوردية واعتماد البيانات
+                    <i class="fas fa-lock"></i> إغلاق الشهر وتصفير العدادات
                 </button>
-                <button class="btn-secondary" onclick="downloadExcelReport()">
+                <button class="btn-secondary" onclick="downloadMonthlyExcel()">
                     <i class="fas fa-file-excel"></i> تصدير تقرير إكسيل (Excel)
                 </button>
             </div>
@@ -380,6 +530,6 @@
     <script src="./js/sidebar-loader.js"></script>
     <script src="./js/header-loader.js"></script>
     <script src="./js/auth.js"></script>
-    <script src="./js/daily_closing.js"></script>
+    <script src="./js/monthly_closing.js"></script>
 </body>
 </html>

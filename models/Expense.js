@@ -28,6 +28,10 @@ module.exports = (sequelize, DataTypes) => {
     payment_method: {
       type: DataTypes.STRING,
       defaultValue: 'cash'
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     timestamps: true

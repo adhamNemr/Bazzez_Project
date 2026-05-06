@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         (function() {
             const savedLang = localStorage.getItem('lang') || 'ar';
@@ -44,6 +45,7 @@
         /* ===== Page Layout ===== */
         .expenses-page {
             padding: 0.5rem 2rem;
+            padding-bottom: 1.5rem;
             max-width: 1300px;
             width: 100%;
             margin: 0 auto;   /* centers horizontally */
@@ -57,13 +59,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
             gap: 1rem;
-            background: var(--bg-surface);
-            border: 1px solid #e1e3e5;
-            border-radius: var(--radius-md);
-            padding: 1rem 1.5rem;
-            box-shadow: var(--shadow-sm);
+            margin-bottom: 0.75rem;
+            padding: 0.5rem 0;
         }
 
         .page-header-left {
@@ -73,231 +71,353 @@
         }
 
         .page-title {
-            font-size: 1.25rem;
+            font-size: 1.6rem;
             font-weight: 800;
             color: var(--text-main);
-            letter-spacing: -0.02em;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.8rem;
             margin: 0;
         }
 
         .page-title i {
             color: var(--primary);
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             background: #dcfce7;
-            width: 32px;
-            height: 32px;
+            width: 42px;
+            height: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
         }
 
         .page-subtitle {
-            font-size: 0.78rem;
+            font-size: 0.88rem;
             color: var(--text-muted);
             font-weight: 600;
-            padding-right: 2.5rem; /* indent under icon */
+            padding-right: 3.2rem;
         }
 
         .page-header-right {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.85rem;
         }
 
-        .date-badge {
+        .btn-export {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--bg-surface);
-            border: 1px solid #e1e3e5;
-            border-radius: var(--radius-md);
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.15rem;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
 
-        .date-badge i { color: var(--primary); }
+        .btn-export:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-export i {
+            font-size: 1.2rem;
+        }
 
         .btn-add-expense {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
+            gap: 0.6rem;
+            padding: 0.65rem 1.5rem;
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: var(--radius-md);
-            font-size: 0.875rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 2px 8px rgba(0,128,96,0.25);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            white-space: nowrap;
         }
 
         .btn-add-expense:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(0,128,96,0.35);
         }
 
-        /* ===== Stats Grid ===== */
+        /* Remove arrows from number input */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* ===== Field Groups ===== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
         }
 
         .stat-card {
             background: var(--bg-surface);
-            border: 1px solid #e1e3e5;
-            border-radius: var(--radius-md);
-            padding: 1.25rem 1.5rem;
+            padding: 1.25rem;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
+            justify-content: space-between;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 4px;
-            height: 100%;
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-        }
-
-        .stat-card.today::before { background: var(--primary); }
-        .stat-card.month::before { background: #6366f1; }
-        .stat-card.cash-stat::before { background: #f59e0b; }
-        .stat-card.digital-stat::before { background: #3b82f6; }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-color: var(--primary-light);
         }
 
-        .stat-icon-wrap {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
+        .stat-info {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
+            flex-direction: column;
+            gap: 0.2rem;
         }
-
-        .today .stat-icon-wrap { background: #dcfce7; color: #166534; }
-        .month .stat-icon-wrap { background: #ede9fe; color: #5b21b6; }
-        .cash-stat .stat-icon-wrap { background: #fef3c7; color: #92400e; }
-        .digital-stat .stat-icon-wrap { background: #dbeafe; color: #1e40af; }
-
-        .stat-info { flex: 1; min-width: 0; }
 
         .stat-label {
             font-size: 0.75rem;
+            color: var(--text-muted);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            white-space: nowrap;
+            letter-spacing: 0.04em;
         }
 
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--text-main);
             letter-spacing: -0.02em;
-            line-height: 1.2;
-            margin-top: 0.15rem;
         }
 
         .stat-sub {
             font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 0.1rem;
+            color: #94a3b8;
+            font-weight: 600;
         }
 
-        /* ===== Toolbar ===== */
-        .toolbar {
+        .stat-icon-wrap {
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+            justify-content: center;
+            border-radius: 14px;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        /* Card Themes */
+        .today { border-right: 4px solid #10b981; }
+        .today .stat-icon-wrap { background: #ecfdf5; color: #10b981; }
+        
+        .month { border-right: 4px solid #8b5cf6; }
+        .month .stat-icon-wrap { background: #f5f3ff; color: #8b5cf6; }
+        
+        .cash-stat { border-right: 4px solid #f59e0b; }
+        .cash-stat .stat-icon-wrap { background: #fffbeb; color: #f59e0b; }
+        
+        .digital-stat { border-right: 4px solid #3b82f6; }
+        .digital-stat .stat-icon-wrap { background: #eff6ff; color: #3b82f6; }
+
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        .toolbar-top { width: 100%; }
+
+        .toolbar-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 1.25rem;
+        }
+
+        /* Action Group (Search + Add) */
+        .action-group-main {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .search-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e1e3e5;
+            border-radius: 12px;
+            padding: 0 1rem;
+            height: 44px; /* Standard height */
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+        .search-group:focus-within {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 128, 96, 0.1);
+        }
+
+        .search-group i { color: #94a3b8; font-size: 0.95rem; }
+        .search-group input {
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            width: 100%;
+            outline: none;
+        }
+
+        .btn-add-expense {
+            height: 44px; /* Matching height */
+            padding: 0 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .btn-add-expense:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Date Group (Date + Reset) */
+        .date-group-main {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .date-filter-group {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            background: var(--bg-surface);
+            gap: 0.6rem;
+            background: #f8fafc;
             border: 1px solid #e1e3e5;
-            border-radius: var(--radius-md);
-            padding: 0.4rem 0.75rem;
+            border-radius: 12px;
+            padding: 0 1rem;
+            height: 44px; /* Matching height */
         }
 
-        .date-filter-group i { color: var(--primary); font-size: 0.85rem; }
-
-        .date-filter-group input[type="date"] {
+        .date-filter-group i { color: var(--primary); }
+        .date-filter-group input {
             border: none;
             background: transparent;
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 700;
             color: var(--text-main);
-            padding: 0;
-            box-shadow: none;
             outline: none;
         }
 
         .btn-today {
-            padding: 0.45rem 0.875rem;
+            height: 44px; /* Matching height */
+            padding: 0 1.25rem;
+            background: white;
+            color: var(--text-main);
             border: 1px solid #e1e3e5;
-            background: var(--bg-surface);
-            border-radius: var(--radius-md);
-            font-size: 0.8rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 700;
-            color: var(--text-muted);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             transition: all 0.2s;
         }
 
         .btn-today:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+            background: #f1f5f9;
+            border-color: #cbd5e1;
         }
 
         .category-filter {
             display: flex;
-            gap: 0.4rem;
-            flex-wrap: wrap;
+            gap: 0.65rem;
+            width: 100%; /* Take full width */
         }
 
         .cat-pill {
-            padding: 0.35rem 0.875rem;
-            border-radius: 100px;
-            font-size: 0.75rem;
+            flex: 1; /* Distribute space equally */
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
-            border: 1.5px solid #e1e3e5;
-            background: var(--bg-surface);
+            border: 2px solid #f1f5f9;
+            background: #f8fafc;
             color: var(--text-muted);
             transition: all 0.2s;
+            text-align: center;
+            white-space: nowrap;
         }
 
-        .cat-pill:hover, .cat-pill.active {
+        .cat-pill:hover {
             border-color: var(--primary);
             color: var(--primary);
-            background: rgba(0,128,96,0.05);
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .cat-pill.active {
+            border-color: var(--primary);
+            color: white;
+            background: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);
+        }
+
+        .btn-submit-expense:hover { background: var(--primary-hover); }
+        .btn-submit-expense:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* Amount Cell */
+        .amount-cell {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--error);
+            letter-spacing: -0.02em;
         }
 
         /* ===== Table ===== */
@@ -309,21 +429,44 @@
             box-shadow: var(--shadow-sm);
         }
 
-        .table-header-row {
+        /* ===== Table Styling (New Remake) ===== */
+        .table-wrapper {
+            background: var(--bg-surface);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        .expenses-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center !important;
+            table-layout: fixed;
+        }
+
+        /* Title Row Styling */
+        .table-title-row th {
+            background: var(--bg-surface) !important;
+            padding: 1.25rem 1.5rem !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            text-align: right !important; /* Title to the right */
+        }
+
+        .table-title-content {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #f1f5f9;
+            width: 100%;
         }
 
         .table-title {
-            font-size: 0.875rem;
-            font-weight: 700;
+            font-size: 0.9rem;
+            font-weight: 800;
             color: var(--text-main);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         .table-count {
@@ -333,32 +476,56 @@
             padding: 0.2rem 0.6rem;
             border-radius: 100px;
             font-weight: 700;
+            margin-right: 0.5rem;
         }
 
-        table { width: 100%; border-collapse: collapse; }
-
-        th {
-            background: #f8fafc;
-            padding: 0.75rem 1.25rem;
-            text-align: right;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            border-bottom: 1px solid #e1e3e5;
+        /* Standard Header Styling */
+        .table-header-row-main th {
+            background: #f8fafc !important;
+            padding: 1.15rem 1rem !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            color: var(--text-muted) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            text-align: center !important;
         }
 
-        td {
-            padding: 0.9rem 1.25rem;
+        /* Sync side padding */
+        .expenses-table th:first-child, .expenses-table td:first-child { padding-right: 1.5rem !important; }
+        .expenses-table th:last-child, .expenses-table td:last-child { padding-left: 1.5rem !important; }
+
+        .expenses-table td {
+            padding: 0.75rem 1rem; /* Slightly tighter vertical padding */
             border-bottom: 1px solid #f1f5f9;
+            height: 60px;
             font-size: 0.875rem;
             color: var(--text-main);
             vertical-align: middle;
+            text-align: center !important;
         }
 
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #fafbfc; }
+        .expenses-table tr:hover td { background: #fafbfc; }
+        .expenses-table tr.empty-row:hover td { background: transparent; }
+        .expenses-table tr:last-child td { border-bottom: none; }
+
+        .actions-cell, .method-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center !important;
+            gap: 0.5rem;
+        }
+
+        .expense-desc { font-weight: 600; }
+        .expense-notes { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+        .actions-cell, .method-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center !important;
+            gap: 0.5rem;
+        }
 
         .expense-desc { font-weight: 600; }
         .expense-notes { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
@@ -440,7 +607,59 @@
             100% { background-position: -200% 0; }
         }
 
-        /* ===== Modal ===== */
+        /* ===== Action Buttons Styling ===== */
+        .action-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+        }
+
+        .btn-edit {
+            background: #eff6ff; /* Soft Blue */
+            color: #2563eb;
+        }
+
+        .btn-edit:hover {
+            background: #dbeafe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+
+        .btn-delete {
+            background: #fff1f2; /* Soft Red */
+            color: #e11d48;
+        }
+
+        .btn-delete:hover {
+            background: #ffe4e6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15);
+        }
+
+        .btn-icon i {
+            transition: transform 0.2s;
+        }
+
+        .btn-icon:hover i {
+            transform: scale(1.1);
+        }
+
+        /* ===== Modal Styling ===== */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -578,6 +797,8 @@
         }
 
         .btn-submit-expense:hover { background: var(--primary-hover); }
+
+        .btn-submit-expense:hover { background: var(--primary-hover); }
         .btn-submit-expense:disabled { opacity: 0.7; cursor: not-allowed; }
 
         /* ===== Amount Cell ===== */
@@ -611,100 +832,114 @@
         <div id="header-container" data-title="إدارة المصروفات" data-icon="fa-receipt"></div>
 
         <div class="expenses-page">
-
-            <!-- ===== Page Header ===== -->
-            <div class="page-header">
-                <div class="page-header-left">
-                    <div class="page-title">
-                        <i class="fas fa-receipt"></i>
-                        إدارة المصروفات
-                    </div>
-                    <div class="page-subtitle" id="business-date-label">جاري تحميل وردية العمل...</div>
-                </div>
-                <div class="page-header-right">
-                    <button class="btn-add-expense" id="btn-open-modal" onclick="openModal()">
-                        <i class="fas fa-plus"></i>
-                        تسجيل مصروف
-                    </button>
-                </div>
-            </div>
-
-            <!-- ===== Stats Cards ===== -->
+            <!-- Header removed -->
+            <!-- ===== Stats Grid ===== -->
             <div class="stats-grid">
+                <!-- Today -->
                 <div class="stat-card today">
+                    <div class="stat-info">
+                        <span class="stat-label">مصروفات الوردية</span>
+                        <span class="stat-value" id="stat-today">---</span>
+                        <span class="stat-sub">إجمالي صرف اليوم</span>
+                    </div>
                     <div class="stat-icon-wrap"><i class="fas fa-wallet"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-label">مصروفات الوردية</div>
-                        <div class="stat-value" id="stat-today">---</div>
-                        <div class="stat-sub">إجمالي اليوم</div>
-                    </div>
                 </div>
+
+                <!-- Month -->
                 <div class="stat-card month">
+                    <div class="stat-info">
+                        <span class="stat-label">مصروفات الشهر</span>
+                        <span class="stat-value" id="stat-month">---</span>
+                        <span class="stat-sub">إجمالي الشهر الحالي</span>
+                    </div>
                     <div class="stat-icon-wrap"><i class="fas fa-calendar-alt"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-label">مصروفات الشهر</div>
-                        <div class="stat-value" id="stat-month">---</div>
-                        <div class="stat-sub">إجمالي الشهر الحالي</div>
-                    </div>
                 </div>
+
+                <!-- Cash -->
                 <div class="stat-card cash-stat">
+                    <div class="stat-info">
+                        <span class="stat-label">دفع كاش</span>
+                        <span class="stat-value" id="stat-cash">---</span>
+                        <span class="stat-sub">مدفوع من الدرج</span>
+                    </div>
                     <div class="stat-icon-wrap"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-label">دفع كاش</div>
-                        <div class="stat-value" id="stat-cash">---</div>
-                        <div class="stat-sub">مدفوع من الدرج نقداً</div>
-                    </div>
                 </div>
+
+                <!-- Digital -->
                 <div class="stat-card digital-stat">
-                    <div class="stat-icon-wrap"><i class="fas fa-credit-card"></i></div>
                     <div class="stat-info">
-                        <div class="stat-label">دفع إلكتروني</div>
-                        <div class="stat-value" id="stat-digital">---</div>
-                        <div class="stat-sub">فيزا + محافظ رقمية</div>
+                        <span class="stat-label">دفع إلكتروني</span>
+                        <span class="stat-value" id="stat-digital">---</span>
+                        <span class="stat-sub">فيزا + محافظ رقمية</span>
                     </div>
+                    <div class="stat-icon-wrap"><i class="fas fa-credit-card"></i></div>
                 </div>
             </div>
 
             <!-- ===== Toolbar ===== -->
             <div class="toolbar">
-                <div class="date-filter-group">
-                    <i class="fas fa-calendar"></i>
-                    <input type="date" id="date-filter">
+                <div class="toolbar-top">
+                    <div class="category-filter" id="cat-filter">
+                        <button class="cat-pill active" data-cat="all">الكل</button>
+                        <button class="cat-pill" data-cat="Supplies">خامات</button>
+                        <button class="cat-pill" data-cat="Rent">إيجار</button>
+                        <button class="cat-pill" data-cat="Utilities">مرافق</button>
+                        <button class="cat-pill" data-cat="Salaries">رواتب</button>
+                        <button class="cat-pill" data-cat="Maintenance">صيانة</button>
+                        <button class="cat-pill" data-cat="Marketing">تسويق</button>
+                        <button class="cat-pill" data-cat="Other">أخرى</button>
+                    </div>
                 </div>
-                <button class="btn-today" id="btn-today" onclick="resetToBusinessDate()">
-                    <i class="fas fa-sync-alt"></i> وردية اليوم
-                </button>
-                <div class="category-filter" id="cat-filter">
-                    <button class="cat-pill active" data-cat="all">الكل</button>
-                    <button class="cat-pill" data-cat="Supplies">خامات</button>
-                    <button class="cat-pill" data-cat="Rent">إيجار</button>
-                    <button class="cat-pill" data-cat="Utilities">مرافق</button>
-                    <button class="cat-pill" data-cat="Salaries">رواتب</button>
-                    <button class="cat-pill" data-cat="Maintenance">صيانة</button>
-                    <button class="cat-pill" data-cat="Marketing">تسويق</button>
-                    <button class="cat-pill" data-cat="Other">أخرى</button>
+                <div class="toolbar-bottom">
+                    <!-- Right: Search + Add (RTL) -->
+                    <div class="action-group-main">
+                        <div class="search-group">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="expense-search" placeholder="بحث بالوصف، الملاحظات، أو الموظف...">
+                        </div>
+
+                    </div>
+
+                    <!-- Left: Date Controls (RTL) -->
+                    <div class="date-group-main">
+                        <div class="date-filter-group">
+                            <i class="fas fa-calendar"></i>
+                            <input type="date" id="date-filter">
+                        </div>
+                        <button class="btn-today" id="btn-today" onclick="resetToBusinessDate()">
+                            <i class="fas fa-sync-alt"></i> وردية اليوم
+                        </button>
+                                                <button class="btn-add-expense" id="btn-open-modal" onclick="openModal()">
+                            <i class="fas fa-plus"></i>
+                            تسجيل مصروف جديد
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- ===== Table ===== -->
             <div class="table-wrapper">
-                <div class="table-header-row">
-                    <div class="table-title">
-                        <i class="fas fa-list-ul" style="color:var(--primary)"></i>
-                        سجل المصروفات
-                        <span class="table-count" id="expenses-count">0</span>
-                    </div>
-                </div>
-                <table>
+                <table class="expenses-table">
                     <thead>
-                        <tr>
-                            <th>التاريخ</th>
-                            <th>الوصف</th>
-                            <th>الفئة</th>
-                            <th>المبلغ</th>
-                            <th>طريقة الدفع</th>
-                            <th>بواسطة</th>
-                            <th>إجراءات</th>
+                        <!-- Title Row -->
+                        <tr class="table-title-row">
+                            <th colspan="7">
+                                <div class="table-title">
+                                    <i class="fas fa-list-ul" style="color:var(--primary)"></i>
+                                    سجل المصروفات
+                                    <span class="table-count" id="expenses-count">0</span>
+                                </div>
+                            </th>
+                        </tr>
+                        <!-- Header Row -->
+                        <tr class="table-header-row-main">
+                            <th style="width: 12%;">التاريخ</th>
+                            <th style="width: 28%;">الوصف</th>
+                            <th style="width: 12%;">الفئة</th>
+                            <th style="width: 15%;">المبلغ</th>
+                            <th style="width: 13%;">طريقة الدفع</th>
+                            <th style="width: 10%;">بواسطة</th>
+                            <th style="width: 10%;">إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="expenses-table-body">
@@ -720,6 +955,9 @@
                 </table>
             </div>
 
+            <button class="btn-export" onclick="exportToExcel()">
+               Excel
+            </button>
         </div><!-- end expenses-page -->
     </div><!-- end main-content -->
 
@@ -742,7 +980,7 @@
                         </div>
                         <div class="field-group">
                             <label class="field-label">المبلغ (EGP) <span style="color:var(--error)">*</span></label>
-                            <input type="number" id="field-amount" class="field-input" placeholder="0.00" step="0.01" min="0.01" required>
+                            <input type="text" id="field-amount" class="field-input" placeholder="0.00" required>
                         </div>
                         <div class="field-group">
                             <label class="field-label">الفئة <span style="color:var(--error)">*</span></label>

@@ -47,7 +47,7 @@ app.use("/api/order", orderRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/discounts", discountRoutes);
-app.use("/api", closingRoutes);
+app.use("/api/closing", closingRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/payment", paymentRoutes);

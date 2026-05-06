@@ -79,7 +79,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Skip the /protected-route check - it was causing false redirects
     // Security is enforced by the API endpoints themselves.
 
-    const allowedPagesForCashier = ['/cashier.html', '/receipt.html', '/manage_orders.html', '/expenses.html'];
+    const allowedPagesForCashier = ['/cashier.html', '/receipt.html'];
     const allowedPagesForManager = [
         '/dashboard.html',
         '/cashier.html',
@@ -90,37 +90,36 @@ window.addEventListener('DOMContentLoaded', () => {
         '/daily_closing.html',
         '/monthly_report.html',
         '/products.html',
-        '/pages/products.html',  // ✅ Subdirectory path
+        '/pages/products.html',
         '/sales.html',
-        '/pages/sales.html',     // ✅ Subdirectory path
+        '/pages/sales.html',
         '/users.html',
-        '/pages/users.html',     // ✅ Subdirectory path
+        '/pages/users.html',
         '/receipt.html',
         '/customers.html',
         '/discount.html',
         '/analytics.html',
         '/expenses.html',
+        '/daily_closing.html',
+        '/monthly_closing.html',
         '/settings.html'
     ];
 
-
-    // إذا المستخدم غير مسجل الدخول
-    if (!userRole) {
+    // Redirect if not logged in
+    if (!token || !userRole) {
         window.location.href = '/index.html';
         return;
     }
 
-    // التحقق من صلاحيات الكاشير
+    // Strictly redirect cashier to cashier page if they try to access management
     if (userRole === 'cashier' && !allowedPagesForCashier.includes(currentPage)) {
-        // showToast('غير مصرح لك بالدخول لهذه الصفحة.', 'error');
-        window.location.href = '/index.html';
+        window.location.href = '/cashier.html';
         return;
     }
 
-    // التحقق من صلاحيات المدير
+    // Redirect manager if somehow they hit an illegal page
     if (userRole === 'manager' && !allowedPagesForManager.includes(currentPage)) {
-        // showToast('غير مصرح لك بالدخول لهذه الصفحة.', 'error');
-        window.location.href = '/index.html';
+        window.location.href = '/dashboard.html';
         return;
     }
 

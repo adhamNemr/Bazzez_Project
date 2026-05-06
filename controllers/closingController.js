@@ -1,210 +1,218 @@
-const { Order, Recipe, Inventory, DailyClosing, MonthlyClosing, sequelize, Payment, Product } = require('../models');
+const { Order, Recipe, Inventory, DailyClosing, MonthlyClosing, sequelize, Payment, Product, Expense } = require('../models');
 const { Op } = require('sequelize');
 
+// Helper to get active business date
+async function getActiveBusinessDate() {
+    const { Setting } = require('../models');
+    const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+    return activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+}
 
 exports.getDailySummary = async (req, res) => {
     try {
-        const { Setting } = require('../models');
-        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
-        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+        const businessDate = req.query.date || await getActiveBusinessDate();
 
-        // 🟢 حساب إجمالي الطلبات
+        // 🟢 Total Orders
         const totalOrders = await Order.count({
-            where: { businessDate: businessDate, isCancelled: "No" }
+            where: { businessDate, isCancelled: "No" }
         });
 
+        // 🟢 Total Sandwiches
         const orders = await Order.findAll({
-            where: { businessDate: businessDate, isCancelled: "No" },
+            where: { businessDate, isCancelled: "No" },
             attributes: ['orderDetails']
         });
 
-        let totalSandwiches = 0;
-        const ingredientMap = {};
+        let totalItems = 0;
+        const productStats = {};
+        const categoryStats = {};
 
         for (const order of orders) {
             const orderDetails = JSON.parse(order.orderDetails);
-
             for (const item of orderDetails) {
-                if (!item.quantity || isNaN(item.quantity)) continue;
-
-                totalSandwiches += item.quantity;
-
-                const recipes = await Recipe.findAll({ where: { sandwich: item.name } });
-
-                recipes.forEach(recipe => {
-                    const ingredient = recipe.ingredient.trim().toLowerCase();
-                    const quantityUsed = recipe.amount * item.quantity;
-                    ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
-                });
+                if (!item.quantity || isNaN(item.quantity) || item.name === "تعليق") continue;
+                totalItems += item.quantity;
+                productStats[item.name] = (productStats[item.name] || 0) + item.quantity;
+                
+                // Track category
+                const product = await Product.findOne({ where: { name: item.name } });
+                if (product && product.category) {
+                    categoryStats[product.category] = (categoryStats[product.category] || 0) + item.quantity;
+                }
             }
         }
 
-        // 🟢 حساب التكاليف
-        const inventoryData = await Inventory.findAll({
-            where: { name: { [Op.in]: Object.keys(ingredientMap) } },
-            attributes: ['name', 'cost']
-        });
-
-        let totalCost = 0;
-        inventoryData.forEach(item => {
-            const ingredient = item.name.trim().toLowerCase();
-            if (ingredientMap[ingredient]) {
-                const ingredientCost = ingredientMap[ingredient] * item.cost;
-                totalCost += ingredientCost;
+        let topProduct = "لا يوجد";
+        let topProductQty = 0;
+        for (const [name, qty] of Object.entries(productStats)) {
+            if (qty > topProductQty) {
+                topProduct = name;
+                topProductQty = qty;
             }
-        });
+        }
 
-        totalCost = parseFloat(totalCost.toFixed(2));
+        let topCategory = "لا يوجد";
+        let topCategoryQty = 0;
+        for (const [cat, qty] of Object.entries(categoryStats)) {
+            if (qty > topCategoryQty) {
+                topCategory = cat;
+                topCategoryQty = qty;
+            }
+        }
 
-        // ✅ حساب إجمالي الإيرادات بعد الخصم
+        // 🟢 Total Ingredient Costs
+        const totalCost = await calculateTotalCost(businessDate);
+
+        // 🟢 Total Revenue
         const totalRevenue = await Order.sum('orderTotal', {
-            where: { businessDate: businessDate, isCancelled: "No" }
+            where: { businessDate, isCancelled: "No" }
         }) || 0;
 
-        // ✅ إجمالي الأرباح
-        const totalEarnings = parseFloat((totalRevenue - totalCost).toFixed(2));
-
-        // ✅ حساب إجمالي الخصومات
-        const discount = await Order.sum('discountAmount') || 0;
-
-        // ✅ حساب إجمالي المدفوعات الإلكترونية
-        const onlinePaymentsTotal = await Payment.sum('payment_amount', {
-            where: {
-                payment_method: { [Op.in]: ["electronic", "Paymob", "InstaPay", "Visa", "MasterCard"] },
-                payment_date: { [Op.startsWith]: today }
-            }
+        // 🟢 Total Discounts
+        const totalDiscount = await Order.sum('discountAmount', {
+            where: { businessDate, isCancelled: "No" }
         }) || 0;
 
-        // ✅ طباعة القيم للتحقق
-        console.log({
-            totalOrders,
-            totalSandwiches,
-            totalRevenue,
-            totalCost,
-            totalEarnings,
-            discount,
-            onlinePaymentsTotal
+        // 🔴 NEW: Total Daily Expenses
+        const totalExpenses = await Expense.sum('amount', {
+            where: { date: businessDate }
+        }) || 0;
+
+        // 💰 Calculate Breakdown (In-Memory for maximum accuracy)
+        const activeOrders = await Order.findAll({
+            where: { businessDate, isCancelled: "No" },
+            attributes: ['orderTotal', 'payment_method']
+        });
+
+        let cashTotal = 0;
+        let instaPayTotal = 0;
+        let vcashTotal = 0;
+        let cardTotal = 0;
+        let othersTotal = 0;
+
+        activeOrders.forEach(o => {
+            const amount = parseFloat(o.orderTotal) || 0;
+            const method = (o.payment_method || '').toLowerCase();
+            if (method === 'cash') cashTotal += amount;
+            else if (method === 'instapay') instaPayTotal += amount;
+            else if (method === 'vcash') vcashTotal += amount;
+            else if (method === 'card') cardTotal += amount;
+            else othersTotal += amount;
+        });
+
+        // 💰 Net Earnings (Revenue - Cost - Expenses)
+        const totalEarnings = parseFloat((totalRevenue - totalCost - totalExpenses).toFixed(2));
+
+        // 📜 Get Detailed Orders List
+        const ordersList = await Order.findAll({
+            where: { businessDate, isCancelled: "No" },
+            attributes: ['id', 'customerName', 'orderTotal', 'payment_method', 'createdAt'],
+            order: [['createdAt', 'ASC']]
+        });
+
+        // 📜 Get Detailed Expenses List
+        const expensesList = await Expense.findAll({
+            where: { date: businessDate },
+            attributes: ['description', 'category', 'amount'],
+            order: [['createdAt', 'ASC']]
         });
 
         res.json({ 
             totalOrders, 
-            totalSandwiches, 
-            totalRevenue, 
+            totalItems, 
+            topProduct,
+            topProductQty,
+            topCategory,
+            totalRevenue: parseFloat(totalRevenue.toFixed(2)), 
             totalCost, 
+            totalExpenses: parseFloat(totalExpenses.toFixed(2)),
             totalEarnings, 
-            discount: discount.toFixed(2), 
-            onlinePaymentsTotal: onlinePaymentsTotal.toFixed(2) 
+            discount: parseFloat(totalDiscount.toFixed(2)), 
+            cashTotal: parseFloat(cashTotal.toFixed(2)),
+            instaPayTotal: parseFloat(instaPayTotal.toFixed(2)),
+            vcashTotal: parseFloat(vcashTotal.toFixed(2)),
+            cardTotal: parseFloat(cardTotal.toFixed(2)),
+            othersTotal: parseFloat(othersTotal.toFixed(2)),
+            ordersList,
+            expensesList
         });
 
     } catch (error) {
-        console.error('⚠️ خطأ أثناء جلب ملخص اليوم:', error);
-        res.status(500).json({ error: '⚠️ خطأ في تحميل البيانات!' });
+        console.error('⚠️ Daily Summary Error:', error);
+        res.status(500).json({ error: '⚠️ Error loading summary data!' });
     }
 };
 
 exports.closeDay = async (req, res) => {
     try {
-        const { Setting } = require('../models');
-        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
-        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+        const businessDate = await getActiveBusinessDate();
 
-        // 🔍 التحقق من إغلاق اليوم مسبقًا
         const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) {
             return res.status(400).json({ error: '⚠️ اليوم قد تم إغلاقه بالفعل!' });
         }
 
-        // 🟢 حساب إجمالي الطلبات
-        const totalOrders = await Order.count({
-            where: { businessDate: businessDate, isCancelled: "No" }
-        });
-
-        // 🟢 حساب إجمالي الإيرادات
-        const totalRevenue = await Order.sum("orderTotal", {
-            where: { businessDate: businessDate, isCancelled: "No" }
-        }) || 0;
-
-        // 🟢 حساب التكلفة الإجمالية للمواد الخام
+        // Re-calculate everything to be sure (using robust Order-based logic)
+        const totalOrders = await Order.count({ where: { businessDate, isCancelled: "No" } });
+        const totalRevenue = await Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }) || 0;
+        const totalDiscount = await Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }) || 0;
         const totalCost = await calculateTotalCost(businessDate);
+        const totalExpenses = await Expense.sum('amount', { where: { date: businessDate } }) || 0;
 
-        // 🏷️ حساب إجمالي الخصومات
-        const totalDiscount = await Order.sum("discountAmount", {
-            where: { businessDate: businessDate, isCancelled: "No" }
+        // Calculate Digital Breakdown from Order table
+        const onlinePaymentsTotal = await Order.sum('orderTotal', {
+            where: { 
+                businessDate, 
+                isCancelled: "No",
+                payment_method: { [Op.ne]: "cash" }
+            }
         }) || 0;
 
-        // 🥪 حساب إجمالي السندويشات المباعة
-        const orders = await Order.findAll({
-            where: { businessDate: businessDate, isCancelled: "No" },
-            attributes: ['orderDetails']
-        });
-
+        const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
         let totalSandwiches = 0;
         for (const order of orders) {
-            const orderDetails = JSON.parse(order.orderDetails);
-            for (const item of orderDetails) {
-                totalSandwiches += item.quantity;
-            }
+            const details = JSON.parse(order.orderDetails);
+            for (const item of details) totalSandwiches += item.quantity;
         }
 
-        // 💳 حساب إجمالي المدفوعات الإلكترونية
-        const onlinePaymentsTotal = await Payment.sum('payment_amount', {
-            where: {
-                payment_method: { 
-                    [Op.in]: ["electronic", "Paymob", "InstaPay", "Visa", "MasterCard"] 
-                },
-                payment_date: { [Op.startsWith]: businessDate } // Note: Payment table might need businessDate too, but for now we use businessDate prefix
-            }
-        }) || 0;
+        const totalEarnings = parseFloat((totalRevenue - totalCost - totalExpenses).toFixed(2));
 
-        // 💰 حساب الأرباح الإجمالية
-        const totalEarnings = parseFloat((totalRevenue - totalCost - totalDiscount).toFixed(2));
-
-        // 📝 تخزين البيانات في جدول التقفيل اليومي
         await DailyClosing.create({
             closingDate: businessDate,
             totalOrders,
             totalSandwiches,
             totalRevenue: parseFloat(totalRevenue.toFixed(2)),
             totalCost: parseFloat(totalCost.toFixed(2)),
+            totalExpenses: parseFloat(totalExpenses.toFixed(2)),
             totalEarnings,
             totalDiscount: parseFloat(totalDiscount.toFixed(2)),
             onlinePaymentsTotal: parseFloat(onlinePaymentsTotal.toFixed(2))
         });
 
-        // 🚮 أرشفة الطلبات بدلاً من الحذف
-        await Order.update({ archived: true }, { where: { businessDate: businessDate } });
+        await Order.update({ archived: true }, { where: { businessDate } });
         
-        // 📅 تحديث تاريخ العمل لليوم التالي
         const nextDate = new Date(businessDate);
         nextDate.setDate(nextDate.getDate() + 1);
         const nextDateStr = nextDate.toLocaleDateString('en-CA');
         
-        await Setting.upsert({
-            key: 'active_business_date',
-            value: nextDateStr,
-            group: 'system'
-        });
+        const { Setting } = require('../models');
+        await Setting.upsert({ key: 'active_business_date', value: nextDateStr, group: 'system' });
 
         res.json({ success: true, message: '✅ تم إغلاق اليوم بنجاح!', nextDate: nextDateStr });
 
     } catch (error) {
-        console.error('❌ خطأ أثناء إغلاق اليوم:', error);
-        res.status(500).json({ error: '⚠️ خطأ أثناء إغلاق اليوم' });
+        console.error('❌ Close Day Error:', error);
+        res.status(500).json({ error: '⚠️ Error closing the day' });
     }
 };
 
 async function calculateTotalCost(businessDate) {
     let totalCost = 0;
     const ingredientMap = {};
-
-    const orders = await Order.findAll({
-        where: { businessDate: businessDate, isCancelled: "No" },
-        attributes: ['orderDetails']
-    });
-
+    const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
     for (const order of orders) {
-        const orderDetails = JSON.parse(order.orderDetails);
-        for (const item of orderDetails) {
+        const details = JSON.parse(order.orderDetails);
+        for (const item of details) {
             const recipes = await Recipe.findAll({ where: { sandwich: item.name } });
             recipes.forEach(recipe => {
                 const ingredient = recipe.ingredient.trim().toLowerCase();
@@ -213,147 +221,121 @@ async function calculateTotalCost(businessDate) {
             });
         }
     }
-
     const inventoryData = await Inventory.findAll({
         where: { name: { [Op.in]: Object.keys(ingredientMap) } },
         attributes: ['name', 'cost']
     });
-
     inventoryData.forEach(item => {
-        const ingredient = item.name.trim().toLowerCase();
-        if (ingredientMap[ingredient]) {
-            const ingredientCost = parseFloat((ingredientMap[ingredient] * item.cost).toFixed(2));
-            totalCost += ingredientCost;
-        }
+        const name = item.name.trim().toLowerCase();
+        if (ingredientMap[name]) totalCost += ingredientMap[name] * item.cost;
     });
-
     return parseFloat(totalCost.toFixed(2));
 }
 
-// 🔹 جلب ملخص الشهر الحالي
 exports.getMonthlySummary = async (req, res) => {
     try {
-        const currentMonth = new Date().toISOString().slice(0, 7); // "yyyy-MM"
+        const currentMonth = req.query.month || new Date().toISOString().slice(0, 7); // "yyyy-MM"
+        
+        // Use MySQL DATE() function to avoid UTC timezone offset issues
+        // This ensures e.g. '2026-04-30 00:00:00 UTC' is treated as April, not March
+        const whereClause = {
+            [Op.and]: [
+                sequelize.where(sequelize.fn('DATE', sequelize.col('closingDate')), { [Op.gte]: `${currentMonth}-01` }),
+                sequelize.where(sequelize.fn('DATE', sequelize.col('closingDate')), { [Op.lte]: sequelize.literal(`LAST_DAY('${currentMonth}-01')`) })
+            ]
+        };
 
-        const total_orders = await DailyClosing.sum("totalOrders", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0;
+        const total_orders = await DailyClosing.sum("totalOrders", { where: whereClause }) || 0;
+        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: whereClause }) || 0;
+        const total_revenue = await DailyClosing.sum("totalRevenue", { where: whereClause }) || 0;
+        const total_cost = await DailyClosing.sum("totalCost", { where: whereClause }) || 0;
+        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: whereClause }) || 0;
+        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: whereClause }) || 0;
+        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: whereClause }) || 0;
 
-        const total_sandwiches = await DailyClosing.sum("totalSandwiches", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0;
+        const total_earnings = parseFloat((total_revenue - total_cost - totalExpenses).toFixed(2));
 
-        const total_revenue = await DailyClosing.sum("totalRevenue", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
+        // 📜 Daily Breakdown for the selected month
+        const dailyBreakdown = await DailyClosing.findAll({
+            where: whereClause,
+            order: [['closingDate', 'ASC']]
+        });
 
-        const total_cost = await DailyClosing.sum("totalCost", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        const totalDiscount = await DailyClosing.sum("totalDiscount", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        const total_earnings = parseFloat((total_revenue - total_cost).toFixed(2));
-
-        // ✅ التأكد من الاسم الصحيح للمدفوعات الأونلاين
-        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
+        // Also fetch live (not-yet-closed) orders for current month if querying current month
+        const liveOrders = currentMonth === new Date().toISOString().slice(0, 7)
+            ? await Order.findAll({
+                where: { 
+                    businessDate: { 
+                        [Op.startsWith]: currentMonth
+                    },
+                    isCancelled: "No"
+                },
+                attributes: ['businessDate', 'orderTotal', 'payment_method'],
+                order: [['businessDate', 'ASC']]
+            })
+            : [];
 
         res.json({ 
+            currentMonth,
             total_orders, 
             total_sandwiches, 
             total_revenue, 
             total_cost, 
+            totalExpenses,
             total_earnings, 
             totalDiscount,
-            onlinePaymentsTotal
+            onlinePaymentsTotal,
+            dailyBreakdown,
+            liveOrdersCount: liveOrders.length,
+            liveRevenue: liveOrders.reduce((s, o) => s + (parseFloat(o.orderTotal) || 0), 0)
         });
 
     } catch (error) {
-        console.error("❌ خطأ أثناء جلب ملخص الشهر:", error);
-        res.status(500).json({ error: "⚠️ خطأ في تحميل البيانات!" });
+        console.error("❌ Monthly Summary Error:", error);
+        res.status(500).json({ error: "⚠️ Error loading data!" });
     }
 };
 
 exports.closeMonth = async (req, res) => {
     try {
-        const currentMonth = new Date().toISOString().slice(0, 7); // "yyyy-MM"
+        const currentMonth = new Date().toISOString().slice(0, 7); 
 
-        // ✅ تحقق مما إذا كان الشهر قد تم إغلاقه بالفعل
-        const existingClosing = await MonthlyClosing.findOne({
-            where: { month_year: currentMonth }
-        });
-
+        const existingClosing = await MonthlyClosing.findOne({ where: { month_year: currentMonth } });
         if (existingClosing) {
             return res.status(400).json({ error: "⚠️ الشهر قد تم إغلاقه بالفعل!" });
         }
 
-        // ✅ حساب إجمالي الطلبات، السندويشات، الإيرادات، التكاليف، والمدفوعات الأونلاين
-        const total_orders = await DailyClosing.sum("totalOrders", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0;
+        const total_orders = await DailyClosing.sum("totalOrders", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const total_revenue = await DailyClosing.sum("totalRevenue", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const total_cost = await DailyClosing.sum("totalCost", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
 
-        const total_sandwiches = await DailyClosing.sum("totalSandwiches", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0;
+        const total_earnings = parseFloat((total_revenue - total_cost - totalExpenses).toFixed(2));
 
-        const total_revenue = await DailyClosing.sum("totalRevenue", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        const total_cost = await DailyClosing.sum("totalCost", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        // 🏷️ حساب إجمالي الخصومات من DailyClosing
-        const totalDiscount = await DailyClosing.sum("totalDiscount", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        const total_earnings = parseFloat((total_revenue - total_cost - totalDiscount).toFixed(2));
-
-        // ✅ حساب المدفوعات الأونلاين
-        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", {
-            where: { closingDate: { [Op.startsWith]: currentMonth } }
-        }) || 0.0;
-
-        // ✅ تخزين البيانات في جدول MonthlyClosing
         await MonthlyClosing.create({
             month_year: currentMonth,
             total_orders,
             total_sandwiches,
             total_revenue,
             total_cost,
+            totalExpenses,
             total_earnings,
-            totalDiscount, // ✅ الآن يتم تخزين الخصم الصحيح
+            totalDiscount,
             onlinePaymentsTotal
         });
 
-        // ✅ مسح جميع السجلات من جدول DailyClosing بعد الحفظ الشهري
-        await DailyClosing.destroy({ where: {} });
-
-        // ✅ إعادة تعيين AUTO_INCREMENT للجدول
-        await sequelize.query("ALTER TABLE daily_closing AUTO_INCREMENT = 1;");
-
-        // ✅ تصفير البيانات في جدول المنتجات (صفحة التحليلات)
-        await Product.update(
-            { sold: 0 },
-            { where: {} }
-        );
-
-        console.log("✅ تم تصفير البيانات في جدول المنتجات بعد التقفيل الشهري.");
-
-        // ✅ تصفير بيانات صفحة التحليلات (ممكن تضيف أي كود إضافي هنا لو التحليلات مخزنة في جدول منفصل)
-        await sequelize.query("UPDATE products SET sold = 0;");
-        console.log("✅ تم تصفير صفحة التحليلات بعد التقفيل الشهري.");
+        // Archive daily closings for the month
+        await DailyClosing.destroy({ where: { closingDate: { [Op.startsWith]: currentMonth } } });
+        
+        await Product.update({ sold: 0 }, { where: {} });
 
         res.json({ success: true, message: "✅ تم إغلاق الشهر بنجاح!" });
 
     } catch (error) {
-        console.error("❌ خطأ أثناء إغلاق الشهر:", error);
-        res.status(500).json({ error: "⚠️ خطأ أثناء إغلاق الشهر" });
+        console.error("❌ Close Month Error:", error);
+        res.status(500).json({ error: "⚠️ Error closing month" });
     }
 };

@@ -91,8 +91,10 @@
         const isExpenses = window.location.pathname.includes('expenses.html');
         const isInventory = window.location.pathname.includes('inventory.html');
         const isSettings = window.location.pathname.includes('settings.html');
+        const isDailyClosing = window.location.pathname.includes('daily_closing.html');
+        const isMonthlyClosing = window.location.pathname.includes('monthly_closing.html');
 
-        if (!isLauncher && !isDashboard && !isCashier && !isOrders && !isProducts && !isExpenses && !isInventory && !isSettings) {
+        if (!isLauncher && !isDashboard && !isCashier && !isOrders && !isProducts && !isExpenses && !isInventory && !isSettings && !isDailyClosing && !isMonthlyClosing) {
             const homeBtn = document.createElement('a');
             homeBtn.href = '/launcher.html';
             homeBtn.className = 'chic-home-btn';

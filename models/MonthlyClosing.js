@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true 
         },
         month_year: { 
-            type: DataTypes.STRING(7), // لضبط الطول الأقصى إلى 7 (مثال: YYYY-MM)
+            type: DataTypes.STRING(7), 
             allowNull: false, 
             unique: true 
         },
@@ -30,6 +30,11 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false, 
             defaultValue: 0.00 
         },
+        totalExpenses: { 
+            type: DataTypes.DECIMAL(10, 2), 
+            allowNull: false, 
+            defaultValue: 0.00 
+        },
         total_earnings: { 
             type: DataTypes.DECIMAL(10, 2), 
             allowNull: false, 
@@ -48,10 +53,10 @@ module.exports = (sequelize, DataTypes) => {
         closing_date: { 
             type: DataTypes.DATE, 
             allowNull: true, 
-            defaultValue: DataTypes.NOW // لضبط القيمة الافتراضية إلى الوقت الحالي
+            defaultValue: DataTypes.NOW 
         }
     }, {
-        tableName: "monthly_closing", // مطابق لاسم الجدول في قاعدة البيانات
+        tableName: "monthly_closing",
         timestamps: false
     });
 

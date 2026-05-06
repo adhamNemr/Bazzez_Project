@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
         closingDate: {
             type: DataTypes.DATE,
             allowNull: false,
-            unique: true // ✅ يمنع تكرار نفس التاريخ في الجدول
+            unique: true 
         },
         totalOrders: {
             type: DataTypes.INTEGER,
@@ -25,6 +25,11 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             defaultValue: 0.00
         },
+        totalExpenses: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            defaultValue: 0.00
+        },
         totalEarnings: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: true,
@@ -41,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 0.00
         }
     }, {
-        tableName: "daily_closing",  // تأكد أن الاسم هنا مطابق لاسم الجدول في قاعدة البيانات
+        tableName: "daily_closing",
         timestamps: false
     });
 

@@ -63,7 +63,8 @@ exports.getAllExpenses = async (req, res) => {
         res.json({
             expenses,
             stats: {
-                activeBusinessDate: filterDate,
+                activeBusinessDate: activeBusinessDate, // The TRUE business date from settings
+                filteredDate: filterDate,               // The date actually being viewed
                 todayTotal,
                 monthTotal,
                 byMethod: { cash: cashTotal, card: cardTotal, vcash: vcashTotal, instapay: instapayTotal }
