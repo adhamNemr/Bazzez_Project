@@ -123,15 +123,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dateInput = document.getElementById('date-filter');
     const todayStr = new Date().toLocaleDateString('en-CA');
     
-    // Initial Fallback
-    selectedDate = todayStr;
-    if (dateInput) dateInput.value = todayStr;
-
-    await fetchSettings(); // This will populate appSettings including active_business_date
+    await fetchSettings(); // Fetch settings first to know the active business date
     
+    // 🗓️ Default to the Active Business Day (The shift you are currently working on)
     if (appSettings.active_business_date) {
         selectedDate = appSettings.active_business_date;
         if (dateInput) dateInput.value = selectedDate;
+    } else {
+        selectedDate = todayStr;
+        if (dateInput) dateInput.value = todayStr;
     }
 
     // Update Label to "Business Day Total"

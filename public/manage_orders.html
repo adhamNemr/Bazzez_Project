@@ -23,7 +23,7 @@
         /* Layout specifics - inherits background and fonts from common.css */
         body[dir="rtl"], html[dir="rtl"] body {
             padding-left: 0;
-            padding-right: 260px;
+            padding-right: 16.25rem;
         }
 
         @media (max-width: 992px) {
@@ -34,7 +34,7 @@
 
         body[dir="ltr"], html[dir="ltr"] body {
             padding-right: 0;
-            padding-left: 260px;
+            padding-left: 16.25rem;
         }
 
         /* 🏔️ Fix Header to match Inventory EXACTLY */
@@ -438,17 +438,17 @@
             position: fixed;
             top: 0;
             right: 0;
-            width: 480px;
+            width: 30rem;
             max-width: 95vw;
             height: 100%;
             background: #f8fafc; /* Subtle background color */
-            box-shadow: -20px 0 50px rgba(0,0,0,0.15);
+            box-shadow: -1.25rem 0 3.125rem rgba(0,0,0,0.15);
             transform: translateX(100%);
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 2001;
             display: none; /* 🚫 Hidden by default to prevent flickering */
             flex-direction: column;
-            border-left: 1px solid rgba(255,255,255,0.2);
+            border-left: 0.0625rem solid rgba(255,255,255,0.2);
         }
 
         .sidebar-header {
@@ -470,8 +470,8 @@
         .close-sidebar-btn {
             background: #f1f5f9;
             border: none;
-            width: 36px;
-            height: 36px;
+            width: 2.25rem;
+            height: 2.25rem;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -551,8 +551,8 @@
         }
 
         .customer-detail i {
-            width: 32px;
-            height: 32px;
+            width: 2rem;
+            height: 2rem;
             background: #f0fdf4;
             color: var(--primary);
             border-radius: 50%;
