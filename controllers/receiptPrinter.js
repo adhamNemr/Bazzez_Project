@@ -36,15 +36,23 @@ async function getStoreSettings() {
  * @param {Object} orderData - بيانات الطلب
  */
 async function printReceipt(orderData) {
-    if (!orderData) {
-        console.error("❌ No order data provided for printing.");
-        return;
-    }
+    console.log("📄 Starting print process for order:", orderData.id);
 
     try {
         const storeConfig = await getStoreSettings();
 
-        const subtotal = orderData.orderDetails?.reduce((acc, item) => {
+        // ✅ محاولة الطباعة الصامتة عبر Electron (الطريقة الأضمن للويندوز)
+        try {
+            const { ipcMain } = require('electron');
+            if (ipcMain) {
+                console.log("🔌 Emitting print-receipt event to Electron...");
+                ipcMain.emit('print-receipt', null, orderData);
+            }
+        } catch (e) {
+            console.log("⚠️ Not running in Electron environment, skipping silent print.");
+        }
+
+        const subtotal = orderData.orderDetails?.reduce((total, item) => {
             const basePrice = parseFloat(item.price) || 0;
             const quantity = parseFloat(item.quantity) || 0;
             
@@ -52,7 +60,7 @@ async function printReceipt(orderData) {
             if (Array.isArray(item.comments)) {
                 addonsTotal = item.comments.reduce((sum, c) => sum + (parseFloat(c.price) > 0 ? parseFloat(c.price) : 0), 0);
             }
-            return acc + (quantity * (basePrice + addonsTotal));
+            return total + (quantity * (basePrice + addonsTotal));
         }, 0) || 0;
 
         const deliveryPrice = parseFloat(orderData.deliveryPrice) || 0;
@@ -201,148 +209,93 @@ function generatePDF(orderData, subtotal, deliveryPrice, discount, calculatedTot
 }
 
 /**
- * Professional Thermal Print Logic
+ * Professional Thermal Print Logic using escpos (USB Direct)
  */
 async function printThermal(orderData, subtotal, deliveryPrice, discount, calculatedTotal, storeConfig) {
-    const { interface, type, characterSet } = branding.printerSettings;
-
-    if (!interface || interface === 'none') return;
-
-    const printer = new ThermalPrinter({
-        type: type === 'star' ? PrinterTypes.STAR : PrinterTypes.EPSON,
-        interface: interface,
-        removeSpecialCharacters: false,
-        characterSet: characterSet || 'PC864_ARABIC',
-        options: { timeout: 3000 }
-    });
+    const escpos = require('escpos');
+    escpos.USB = require('escpos-usb');
 
     try {
-        const isConnected = await printer.isPrinterConnected();
-        if (!isConnected) {
-            console.warn("⚠️ Thermal printer not found at", interface);
+        // البحث عن طابعة USB
+        const devices = escpos.USB.findPrinter();
+        if (!devices || devices.length === 0) {
+            console.warn("⚠️ No USB Thermal Printer found via escpos-usb");
             return;
         }
 
-        printer.alignCenter();
-        printer.setTextDoubleHeight();
-        printer.setTextDoubleWidth();
-        printer.println(fixArabic(storeConfig.restaurantName));
-        
-        printer.setTextNormal();
-        printer.setTextDoubleHeight();
-        printer.println(`#${orderData.id}`);
-        
-        printer.setTextNormal();
-        printer.alignCenter();
-        printer.println("V O R T E X  P O S");
-        printer.drawLine();
+        const device = new escpos.USB();
+        const printer = new escpos.Printer(device);
 
-        const cleanValue = (val, forbiddenKeywords = []) => {
-            let trimmed = val?.trim() || "";
-            if (!trimmed) return "-";
-            const isForbidden = forbiddenKeywords.some(k => trimmed.includes(k));
-            if (isForbidden) return "-";
-            if (["0000000000", "0", "--", "Store", "Local"].includes(trimmed)) return "-";
-            return trimmed;
-        };
-        const cName = cleanValue(orderData.customerName, ["تيك أوي", "نقدي", "Guest"]);
-        const cPhone = cleanValue(orderData.customerPhone);
-        const cAddress = cleanValue(orderData.customerAddress);
-
-        printer.newLine();
-        // Row 1: Name & Date (Both align towards the center)
-        printer.tableCustom([
-            { text: fixArabic(`التاريخ: ${orderData.orderDate}`), align: "RIGHT", width: 0.5 },
-            { text: fixArabic(`العميل: ${cName}`), align: "LEFT", width: 0.5 }
-        ]);
-
-        // Row 2: Phone & Address
-        printer.tableCustom([
-            { text: fixArabic(`العنوان: ${cAddress}`), align: "RIGHT", width: 0.5 },
-            { text: fixArabic(`الهاتف: ${cPhone}`), align: "LEFT", width: 0.5 }
-        ]);
-        
-        printer.newLine();
-        printer.drawLine();
-        
-        // Table Header: Boxed with lines
-        printer.drawLine();
-        printer.tableCustom([
-            { text: fixArabic("Item"), align: "LEFT", width: 0.4 },
-            { text: fixArabic("Qty"), align: "CENTER", width: 0.2 },
-            { text: fixArabic("Price"), align: "RIGHT", width: 0.4 }
-        ]);
-        printer.drawLine();
-
-        orderData.orderDetails?.forEach(item => {
-            let addonsTotal = 0;
-            let commentsToPrint = [];
-
-            if (item.comments && item.comments.length > 0) {
-                item.comments.forEach(c => {
-                    const addonPrice = parseFloat(c.price || 0);
-                    
-                    if (addonPrice < 0 && storeConfig.showDiscount === 'no') return;
-                    if (addonPrice > 0) addonsTotal += addonPrice;
-                    
-                    if (storeConfig.showComments !== 'no') {
-                        commentsToPrint.push(`${c.text} ${addonPrice > 0 ? '(+'+addonPrice+')' : ''}`);
-                    }
-                });
+        device.open(async function(error) {
+            if (error) {
+                console.error("❌ Failed to open printer device:", error);
+                return;
             }
 
-            const finalPrice = ((parseFloat(item.price) + addonsTotal) * item.quantity).toFixed(2);
-            printer.tableCustom([
-                { text: fixArabic(item.name), align: "LEFT", width: 0.4 },
-                { text: String(item.quantity), align: "CENTER", width: 0.2 },
-                { text: finalPrice, align: "RIGHT", width: 0.4 }
-            ]);
-            
-            commentsToPrint.forEach(c => {
-                printer.println(fixArabic(` > ${c}`));
-            });
+            try {
+                printer
+                    .font('a')
+                    .align('ct')
+                    .style('bu')
+                    .size(2, 2)
+                    .text(fixArabic(storeConfig.restaurantName))
+                    .size(1, 1)
+                    .text(`#${orderData.id}`)
+                    .text("V O R T E X  P O S")
+                    .text("--------------------------------")
+                    .align('lt');
+
+                const cleanValue = (val, forbiddenKeywords = []) => {
+                    let trimmed = val?.trim() || "";
+                    if (!trimmed) return "-";
+                    const isForbidden = forbiddenKeywords.some(k => trimmed.includes(k));
+                    if (isForbidden) return "-";
+                    if (["0000000000", "0", "--", "Store", "Local"].includes(trimmed)) return "-";
+                    return trimmed;
+                };
+
+                const cName = cleanValue(orderData.customerName, ["تيك أوي", "نقدي", "Guest"]);
+                const cPhone = cleanValue(orderData.customerPhone);
+                const cAddress = cleanValue(orderData.customerAddress);
+
+                printer
+                    .text(fixArabic(`Date: ${orderData.orderDate}`))
+                    .text(fixArabic(`Customer: ${cName}`))
+                    .text(fixArabic(`Phone: ${cPhone}`))
+                    .text(fixArabic(`Address: ${cAddress}`))
+                    .text("--------------------------------");
+
+                orderData.orderDetails?.forEach(item => {
+                    let addonsTotal = 0;
+                    if (item.comments && item.comments.length > 0) {
+                        item.comments.forEach(c => {
+                            if (parseFloat(c.price) > 0) addonsTotal += parseFloat(c.price);
+                        });
+                    }
+                    const finalPrice = ((parseFloat(item.price) + addonsTotal) * item.quantity).toFixed(2);
+                    printer.text(`${item.quantity} x ${fixArabic(item.name)} : ${finalPrice}`);
+                });
+
+                printer
+                    .text("--------------------------------")
+                    .align('rt')
+                    .text(fixArabic(`Total: ${calculatedTotal.toFixed(2)} ${storeConfig.currency}`))
+                    .align('ct')
+                    .text("--------------------------------")
+                    .text(fixArabic(storeConfig.footerMessage))
+                    .text(`Vortex POS - ${new Date().toLocaleDateString()}`)
+                    .cut()
+                    .close();
+
+                console.log("🖨️ Thermal Receipt Printed via Direct USB");
+            } catch (err) {
+                console.error("❌ Error during print sequence:", err);
+                device.close();
+            }
         });
 
-        // Totals
-        printer.drawLine();
-        printer.tableCustom([
-            { text: fixArabic("المجموع:"), align: "LEFT", width: 0.5 },
-            { text: subtotal.toFixed(2), align: "RIGHT", width: 0.5 }
-        ]);
-
-        if (deliveryPrice > 0) {
-            printer.tableCustom([
-                { text: fixArabic("التوصيل:"), align: "LEFT", width: 0.5 },
-                { text: deliveryPrice.toFixed(2), align: "RIGHT", width: 0.5 }
-            ]);
-        }
-
-        if (discount > 0 && storeConfig.showDiscount !== 'no') {
-            printer.tableCustom([
-                { text: fixArabic("الخصم:"), align: "LEFT", width: 0.5 },
-                { text: `-${discount.toFixed(2)}`, align: "RIGHT", width: 0.5 }
-            ]);
-        }
-
-        printer.newLine();
-        printer.alignCenter();
-        printer.setTextDoubleHeight();
-        printer.println(fixArabic(`الإجمالي: ${calculatedTotal.toFixed(2)} ${storeConfig.currency}`));
-        printer.setTextNormal();
-        printer.drawLine();
-
-        // Footer
-        printer.alignCenter();
-        printer.println(fixArabic(`رقم التواصل: ${storeConfig.hotline}`));
-        printer.println(fixArabic(storeConfig.footerMessage));
-        printer.println(`Vortex POS - ${new Date().toLocaleDateString()}`);
-        
-        printer.cut();
-        await printer.execute();
-        console.log("🖨️ Thermal Receipt Printed Successfully");
-
     } catch (error) {
-        console.error("❌ Thermal Printing Failed:", error.message);
+        console.error("❌ Direct USB Thermal Printing Failed:", error.message);
     }
 }
 

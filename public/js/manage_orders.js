@@ -40,7 +40,7 @@ const t = {
         errorLoading: '⚠️ فشل في تحميل التفاصيل',
         todayTotal: 'إجمالي الطلبات اليوم:',
         sidebarPrice: 'السعر:',
-        sidebarVat: 'القيمة المضافة (14%):',
+        sidebarVat: 'القيمة المضافة:',
         sidebarTotal: 'الإجمالي النهائي:',
         prev: 'السابق',
         next: 'التالي',
@@ -92,7 +92,7 @@ const t = {
         errorLoading: '⚠️ Failed to load details',
         todayTotal: "Today's Total Orders:",
         sidebarPrice: 'Price:',
-        sidebarVat: 'VAT (14%):',
+        sidebarVat: 'VAT:',
         sidebarTotal: 'Grand Total:',
         prev: 'Previous',
         next: 'Next',
@@ -111,7 +111,7 @@ const t = {
 let activeFilter = 'all';
 let currentOrders = [];
 let appSettings = {};
-let vatRate = 0.14; // Default fallback
+let vatRate = 0; // Default to 0% if no settings found
 let selectedDate = ""; // Will be fetched from settings
 let currentPage = 1;
 const ordersPerPage = 10;
@@ -293,42 +293,15 @@ function applyTranslations() {
         const percentage = (vatRate * 100).toFixed(0);
         vatLabel.textContent = isAr ? `القيمة المضافة (${percentage}%):` : `VAT (${percentage}%):`;
     }
+    
+    // 💡 Update visibility of VAT label in real-time
+    const vatRow = document.querySelector('.receipt-row:has(#side-vat)');
+    if (vatRow) {
+        vatRow.style.display = vatRate > 0 ? 'flex' : 'none';
+    }
 }
 
-function updateCounts() {
-    // Use local date string (YYYY-MM-DD) to avoid timezone shifts
-    const getLocalDate = (date) => {
-        const d = new Date(date);
-        if (isNaN(d.getTime())) return null;
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
 
-    const todayStr = getLocalDate(new Date());
-    const activeDate = selectedDate || todayStr;
-
-    // Filter orders for the active date once for tab counts
-    const ordersForDate = currentOrders.filter(o => {
-        const orderDate = getLocalDate(o.createdAt || new Date());
-        return orderDate === activeDate;
-    });
-
-    const counts = {
-        all: ordersForDate.length,
-        paid: ordersForDate.filter(o => o.payment_status === 'Paid' && o.isCancelled !== 'Yes').length,
-        pending: ordersForDate.filter(o => o.payment_status === 'Pending' && o.isCancelled !== 'Yes').length,
-        cancelled: ordersForDate.filter(o => o.isCancelled === 'Yes').length,
-        todayGlobal: currentOrders.filter(o => getLocalDate(o.createdAt || new Date()) === todayStr).length
-    };
-
-    document.getElementById('count-all').textContent = counts.all;
-    document.getElementById('count-paid').textContent = counts.paid;
-    document.getElementById('count-pending').textContent = counts.pending;
-    document.getElementById('count-cancelled').textContent = counts.cancelled;
-    document.getElementById('today-count').textContent = counts.todayGlobal;
-}
 
 async function fetchSettings() {
     try {
@@ -337,6 +310,7 @@ async function fetchSettings() {
         if (appSettings.vat_percent !== undefined) {
             vatRate = parseFloat(appSettings.vat_percent) / 100;
         }
+        applyTranslations(); // ✅ Update UI with fetched settings (like VAT %)
     } catch (error) {
         console.error('❌ Error fetching settings:', error);
     }
@@ -498,6 +472,9 @@ function updateCounts(totalCount, counts = {}) {
         document.getElementById('count-paid').textContent = counts.paid;
         document.getElementById('count-pending').textContent = counts.pending;
         document.getElementById('count-cancelled').textContent = counts.cancelled;
+        if (counts.today !== undefined) {
+            document.getElementById('today-count').textContent = counts.today;
+        }
     }
 }
 
@@ -857,47 +834,39 @@ async function cancelOrder(orderId) {
 }
 
 async function printReceipt(orderId) {
-    const order = currentOrders.find(o => o.id == orderId);
-    if (!order) return;
-
+    const printBtn = document.getElementById('print-receipt-btn');
+    const originalContent = printBtn.innerHTML;
+    
     try {
-        // Fetch formatted details
-        const response = await fetch('/api/orders/format-details', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderDetails: order.orderDetails })
-        });
-        const data = await response.json();
-        
-        const receiptData = {
-            id: order.id,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            customerAddress: order.customerAddress,
-            orderDate: (() => {
-                const d = new Date(order.createdAt);
-                const day = d.getDate();
-                const month = d.getMonth() + 1;
-                let hours = d.getHours();
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12;
-                return `${day}/${month} ${hours}:${minutes} ${ampm}`;
-            })(),
-            deliveryPrice: order.deliveryPrice,
-            orderTotal: order.orderTotal,
-            orderDetails: data.formatted,
-            discount: order.discountAmount || 0
-        };
+        printBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${isAr ? 'جاري الطباعة...' : 'Printing...'}`;
+        printBtn.disabled = true;
 
-        localStorage.setItem("receiptData", JSON.stringify(receiptData));
-        window.open('/receipt.html', '_blank');
+        const response = await fetch(`/api/orders/${orderId}/print`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: isAr ? 'تم الإرسال للطابعة' : 'Sent to Printer',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
+        } else {
+            throw new Error('Print failed');
+        }
     } catch (error) {
         console.error("❌ Error printing receipt:", error);
         Swal.fire(
             isAr ? 'خطأ' : 'Error', 
-            isAr ? 'فشل في تجهيز الفاتورة' : 'Failed to prepare receipt', 
+            isAr ? 'فشل في الاتصال بالطابعة' : 'Failed to connect to printer', 
             'error'
         );
+    } finally {
+        printBtn.innerHTML = originalContent;
+        printBtn.disabled = false;
     }
 }

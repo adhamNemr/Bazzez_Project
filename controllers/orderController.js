@@ -233,7 +233,8 @@ exports.createOrder = async (req, res) => {
                         let variantUpdated = false;
                         variants = variants.map(v => {
                             const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
-                            if (vLabel === item.variant) {
+                            // Flexible match: Exact match OR item.variant starts with the fabric name (vLabel)
+                            if (vLabel === item.variant || (vLabel && item.variant.startsWith(vLabel + ' '))) {
                                 variantUpdated = true;
                                 return { ...v, quantity: (v.quantity || 0) - item.quantity };
                             }
@@ -283,5 +284,53 @@ exports.createOrder = async (req, res) => {
     } catch (error) {
         console.error("❌ خطأ أثناء إنشاء الطلب:", error);
         res.status(500).json({ message: "❌ فشل إنشاء الطلب", error });
+    }
+};
+
+// ✅ دالة جلب جميع الطلبات مع الفلترة والبحث (إضافة الدالة الناقصة)
+exports.getAllOrders = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, date, status, search } = req.query;
+        const offset = (page - 1) * limit;
+
+        let whereClause = {};
+
+        // فلترة بالتاريخ
+        if (date) {
+            whereClause.businessDate = date;
+        }
+
+        // فلترة بالحالة
+        if (status && status !== 'all') {
+            whereClause.payment_status = status;
+        }
+
+        // بحث بالاسم أو الهاتف أو العنوان
+        if (search) {
+            whereClause[Op.or] = [
+                { customerName: { [Op.iLike]: `%${search}%` } },
+                { customerPhone: { [Op.iLike]: `%${search}%` } },
+                { customerAddress: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        const { count, rows } = await Order.findAndCountAll({
+            where: whereClause,
+            order: [['createdAt', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            include: [{ model: Customer, as: 'customer_info', attributes: ['name', 'phone', 'address'] }]
+        });
+
+        res.json({
+            orders: rows,
+            totalOrders: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page)
+        });
+
+    } catch (error) {
+        console.error("❌ خطأ أثناء جلب الطلبات:", error);
+        res.status(500).json({ message: "🚨 حدث خطأ أثناء جلب الطلبات." });
     }
 };

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { User } = require('../models'); // تأكد من صحة المسار حسب مشروعك
 
 const secretKey = 'mySuperSecretKey123';

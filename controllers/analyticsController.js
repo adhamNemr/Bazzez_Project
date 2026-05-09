@@ -17,7 +17,7 @@ exports.getAnalytics = async (req, res) => {
         const recentOrders = await Order.findAll({
             attributes: ["orderDetails", "createdAt", "orderTotal"],
             where: {
-                createdAt: { [Op.gte]: Sequelize.literal("CURDATE() - INTERVAL 7 DAY") },
+                createdAt: { [Op.gte]: Sequelize.literal("CURRENT_DATE - INTERVAL '7 days'") },
             },
         });
 

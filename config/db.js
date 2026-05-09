@@ -1,22 +1,30 @@
 const { Sequelize } = require('sequelize');
 require("dotenv").config();
-const config = require("./config.json").development; // تحميل إعدادات البيئة `development`
 
-// إنشاء اتصال بقاعدة البيانات باستخدام الإعدادات من `config.json` أو `.env`
-const sequelize = new Sequelize(
-    process.env.DB_NAME || config.database,
-    process.env.DB_USER || config.username,
-    process.env.DB_PASSWORD || config.password,
-    {
-        host: process.env.DB_HOST || config.host,
-        dialect: config.dialect,
-        logging: false // تعطيل تسجيل الاستعلامات في الكونسول
-    }
-);
+// بيانات الاتصال السحابية مثبتة لضمان عمل النسخة الـ Portable
+const DB_USER = 'postgres.glvqdcucqgshdkotmwfs';
+const DB_PASSWORD = encodeURIComponent('MARWANroma77@#$');
+const DB_HOST = 'aws-0-eu-west-1.pooler.supabase.com';
+const DB_PORT = '6543';
+const DB_NAME = 'postgres';
 
-// اختبار الاتصال
+const connectionString = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?pgbouncer=true`;
+
+const sequelize = new Sequelize(connectionString, {
+    dialect: 'postgres',
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false
+        }
+    },
+    logging: false
+});
+
 sequelize.authenticate()
-    .then(() => console.log('✅ Database Connected'))
-    .catch(err => console.error('❌ Error:', err));
+    .then(() => console.log('✅ Connected to Supabase Pooler!'))
+    .catch(err => {
+        console.error('❌ Connection Error:', err.message);
+    });
 
-module.exports = sequelize; // ✅ تأكد من تصدير `sequelize`
+module.exports = sequelize;

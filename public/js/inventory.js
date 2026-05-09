@@ -412,189 +412,62 @@ function renderInventory(items) {
                 }
             });
 
-            // 🟢 Level 2: Render Color Rows
-            Object.keys(groupedByColor).forEach((color, index) => {
-                const variantsInColor = groupedByColor[color];
-                
-                // 📊 Aggregate Data for Color (Level 2)
-                const colorTotalQty = variantsInColor.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
-                const colorTotalMin = variantsInColor.reduce((sum, v) => sum + parseFloat(v.min || 0), 0);
-                const colorTotalValue = variantsInColor.reduce((sum, v) => sum + (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)), 0);
-                const colorHasLowStock = variantsInColor.some(v => parseFloat(v.quantity || 0) <= parseFloat(v.min || 0));
-                const colorIsLow = colorTotalQty <= colorTotalMin || colorHasLowStock;
-                
-                const colorId = `c${index}`; // safe identifier
-                
+            // 🟢 Level 2: Render Color/Fabric Rows
+            item.variants.forEach((variant, index) => {
                 const colorRow = document.createElement('tr');
                 colorRow.className = `${colorGroupBaseClass} tree-child-row tree-level-2`;
-                colorRow.dataset.colorId = colorId;
-                colorRow.dataset.expanded = 'false';
-                colorRow.style.display = 'none'; // Hidden initially
+                colorRow.style.display = 'none';
                 colorRow.style.cursor = 'pointer';
 
-                const cToggleIcon = `<i class="fas fa-chevron-${isAr ? 'left' : 'right'} color-toggle-icon" style="cursor:pointer; margin-${isAr ? 'left' : 'right'}:8px; color:#64748b; transition: transform 0.3s; width: 15px; text-align: center;"></i>`;
-
-                const colorFormattedMin = isRetail ? Math.round(colorTotalMin) : colorTotalMin.toFixed(2);
+                const variantQty = isRetail ? Math.round(variant.quantity) : parseFloat(variant.quantity).toFixed(2);
+                const isLow = variant.quantity <= (variant.min || 0);
+                const branchIcon = isAr ? '<i class="fas fa-level-down-alt fa-rotate-90" style="margin-left: 10px; color:#cbd5e1;"></i>' : '<i class="fas fa-level-up-alt fa-rotate-90" style="margin-right: 10px; color:#cbd5e1;"></i>';
 
                 colorRow.innerHTML = `
-                    <td style="padding-${isAr ? 'right' : 'left'}: 2rem; opacity: 0.8; font-weight: 700; color: #475569;">
-                        ${cToggleIcon} 
-                        <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${color}
+                    <td style="padding-${isAr ? 'right' : 'left'}: 2.5rem; font-weight: 700; color: #475569;">
+                        ${branchIcon} <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${variant.name || variant.color}
                     </td>
-                    <td style="font-weight: 700; color: #64748b; font-size: 0.85rem;">
-                        ${langT.colorTotal}
-                    </td>
-                    <td><span class="${colorIsLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${isRetail ? Math.round(colorTotalQty) : colorTotalQty.toFixed(2)}</span></td>
-                    <td style="opacity: 0.6; font-size: 0.9rem;">${colorFormattedMin}</td>
-                    <td style="opacity: 0.3;">---</td>
-                    <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${colorTotalValue.toFixed(2)} <small>EGP</small></td>
-                    <td style="opacity: 0.3;">---</td>
+                    <td style="opacity: 0.6; font-size: 0.85rem;">${isAr ? 'خامة' : 'Fabric'}</td>
+                    <td><span class="${isLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${variantQty}</span></td>
+                    <td style="opacity: 0.6; font-size: 0.9rem;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
+                    <td style="font-size: 0.9rem;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                    <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
+                    <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
                     ${!isRetail ? `<td>---</td>` : ''}
                 `;
 
-                tableBody.appendChild(colorRow);
-
-                // 🟢 Level 2 Click (Expand/Collapse Sizes)
-                colorRow.addEventListener('click', (e) => {
+                // Edit variant
+                colorRow.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    let cExpanded = colorRow.dataset.expanded === 'true';
-                    cExpanded = !cExpanded;
-                    colorRow.dataset.expanded = cExpanded.toString();
-
-                    // Track expansion
-                    if (cExpanded) {
-                        colorRow.classList.add('expanded-row', 'tree-node-expanded');
-                    } else {
-                        colorRow.classList.remove('expanded-row', 'tree-node-expanded');
-                    }
-
-                    const cIcon = colorRow.querySelector('.color-toggle-icon');
-                    if (cIcon) cIcon.style.transform = cExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
-
-                    const sizeRows = document.querySelectorAll(`.size-group-${item.id}-${colorId}`);
-                    
-                    if (cExpanded) {
-                        sizeRows.forEach(sRow => {
-                            sRow.style.display = 'table-row';
-                            sRow.classList.add('closing');
-                            requestAnimationFrame(() => {
-                                requestAnimationFrame(() => {
-                                    sRow.classList.remove('closing');
-                                });
-                            });
-                        });
-                    } else {
-                        sizeRows.forEach(sRow => {
-                            sRow.classList.add('closing');
-                            setTimeout(() => {
-                                if (sRow.classList.contains('closing')) {
-                                    sRow.style.display = 'none';
-                                    sRow.classList.remove('closing');
-                                }
-                            }, 200);
-                        });
-                    }
-                });
-
-                // 🟢 Level 3: Render Size Rows
-                variantsInColor.forEach(variant => {
-                    const childRow = document.createElement('tr');
-                    childRow.className = `size-group-${item.id}-${colorId} child-row tree-child-row tree-level-3`;
-                    childRow.style.display = 'none'; // Hidden initially
-                    
-                    const childQty = isRetail ? Math.round(variant.quantity) : parseFloat(variant.quantity).toFixed(2);
-                    const childLow = variant.quantity <= (variant.min || 0);
-                    const branchIcon = isAr ? '<i class="fas fa-level-down-alt fa-rotate-90" style="margin-left: 10px; color:#cbd5e1;"></i>' : '<i class="fas fa-level-up-alt fa-rotate-90" style="margin-right: 10px; color:#cbd5e1;"></i>';
-
-                    const childFormattedMin = isRetail ? Math.round(variant.min || 0) : parseFloat(variant.min || 0).toFixed(2);
-
-                    childRow.innerHTML = `
-                        <td style="padding-${isAr ? 'right' : 'left'}: 3.5rem; opacity: 0.5; font-size: 0.85rem; font-family: monospace;">
-                            ${branchIcon} <bdi>#${variant.id || `${item.id}-${variant.size || index}`}</bdi>
-                        </td>
-                        <td style="font-weight: 600; color: #475569;">
-                            ${variant.size ? `<span style="background: var(--luxury-emerald-light); color: var(--luxury-emerald); padding: 3px 10px; border-radius: 12px; font-size: 0.75rem;">${langT.size} ${variant.size}</span>` : `<span style="opacity:0.5;">-</span>`}
-                        </td>
-                        <td><span class="${childLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.85);">${childQty}</span></td>
-                        <td style="opacity: 0.6; font-size: 0.85rem;">${childFormattedMin}</td>
-                        <td style="font-size: 0.85rem;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
-                        <td style="font-weight: 700; color: #64748b; font-size: 0.85rem;">${(variant.quantity * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
-                        <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || latestUpdateDate)}</td>
-                        ${!isRetail ? `<td>---</td>` : ''}
-                    `;
-
-                    // Edit variant directly
-                    childRow.addEventListener('click', async (e) => {
-                        e.stopPropagation(); 
-                        
-                        // Open the small, focused variant modal instead of the full item modal
-                        const updatedVariant = await openVariantEntryModal(isAr, langT, variant);
-                        
-                        if (updatedVariant) {
-                            // Find and update this specific variant in the parent's array
-                            const vIndex = item.variants.findIndex(v => v === variant);
-                            if (vIndex !== -1) {
-                                const updatedVariants = [...item.variants];
-                                updatedVariants[vIndex] = updatedVariant;
-                                // Save using the parent's valid DB ID
-                                handleEdit(item.id, { ...item, variants: updatedVariants });
-                            }
-                        }
-                    });
-                    
-                    tableBody.appendChild(childRow);
-                });
-
-                // ➕ Add "Add Size" row for this color group
-                const addSizeRow = document.createElement('tr');
-                addSizeRow.className = `size-group-${item.id}-${colorId} child-row tree-child-row tree-level-3 add-action-row`;
-                addSizeRow.style.display = 'none';
-                addSizeRow.style.cursor = 'pointer';
-                addSizeRow.style.background = 'rgba(16, 185, 129, 0.03)';
-                
-                addSizeRow.innerHTML = `
-                    <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem; border: 1px dashed rgba(16, 185, 129, 0.2);">
-                        <i class="fas fa-plus-circle" style="margin-${isAr ? 'left' : 'right'}: 8px;"></i>
-                        ${isAr ? `إضافة مقاس جديد للون (${color})` : `Add new size for (${color})`}
-                    </td>
-                `;
-
-                addSizeRow.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const newVariant = await openVariantEntryModal(isAr, langT, { name: color, cost: item.cost });
-                    if (newVariant) {
-                        const updatedVariants = [...(item.variants || []), newVariant];
+                    const updatedVariant = await openVariantEntryModal(isAr, langT, variant);
+                    if (updatedVariant) {
+                        const updatedVariants = [...item.variants];
+                        updatedVariants[index] = updatedVariant;
                         handleEdit(item.id, { ...item, variants: updatedVariants });
                     }
                 });
 
-                tableBody.appendChild(addSizeRow);
+                tableBody.appendChild(colorRow);
             });
 
-            // ➕ Level 2: Add "Add New Color/Variant" row for the entire product
+            // ➕ Level 2: Add New Variant
             const addColorRow = document.createElement('tr');
             addColorRow.className = `${colorGroupBaseClass} child-row tree-child-row tree-level-2 add-action-row`;
             addColorRow.style.display = 'none';
             addColorRow.style.cursor = 'pointer';
-            addColorRow.style.background = 'rgba(0, 128, 96, 0.05)';
-            
             addColorRow.innerHTML = `
-                <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 2rem; color: var(--luxury-emerald); font-weight: 800; font-size: 0.9rem; border: 1px solid rgba(0, 128, 96, 0.1);">
-                    <i class="fas fa-plus-circle" style="margin-${isAr ? 'left' : 'right'}: 8px;"></i>
-                    ${isAr ? 'إضافة لون أو تفريعة جديدة لهذا المنتج' : 'Add new color or variant for this product'}
+                <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem;">
+                    <i class="fas fa-plus-circle"></i> ${isAr ? 'إضافة خامة/لون جديد' : 'Add new fabric/color'}
                 </td>
             `;
-
             addColorRow.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                // Open modal with empty name to allow adding a new color
                 const newVariant = await openVariantEntryModal(isAr, langT, { cost: item.cost });
                 if (newVariant) {
                     const updatedVariants = [...(item.variants || []), newVariant];
                     handleEdit(item.id, { ...item, variants: updatedVariants });
                 }
             });
-
             tableBody.appendChild(addColorRow);
         }
     });
@@ -635,36 +508,20 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
     const { value: variant } = await Swal.fire({
         title: isAr ? (initialData?.name ? 'تعديل تفريعة' : 'إضافة تفريعة') : (initialData?.name ? 'Edit Variant' : 'Add Variant'),
         html: `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
-                <div style="grid-column: span 2;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? 'right' : 'left'};">
+                <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'الاسم / الخامة' : 'Name / Fabric'}</label>
                     <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ''}" placeholder="${isAr ? 'أحمر' : 'Red'}" ${initialData?.name ? 'disabled' : ''}>
                 </div>
-                <div>
-                    <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? 'المقاس' : 'Size'}</label>
-                    <input list="size-options" id="v-size" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.size || ''}" placeholder="${isAr ? 'اختر أو اكتب مقاس...' : 'Select or type...'}">
-                    <datalist id="size-options">
-                        <!-- جلاليب رجالي (56 إلى 64) -->
-                        <option value="56 S"><option value="56 M"><option value="56 L"><option value="56 XL"><option value="56 2XL"><option value="56 3XL">
-                        <option value="58 S"><option value="58 M"><option value="58 L"><option value="58 XL"><option value="58 2XL"><option value="58 3XL">
-                        <option value="60 S"><option value="60 M"><option value="60 L"><option value="60 XL"><option value="60 2XL"><option value="60 3XL">
-                        <option value="62 S"><option value="62 M"><option value="62 L"><option value="62 XL"><option value="62 2XL"><option value="62 3XL">
-                        <option value="64 S"><option value="64 M"><option value="64 L"><option value="64 XL"><option value="64 2XL"><option value="64 3XL">
-                        <!-- جلاليب أطفالي / شبابي (30 إلى 54) -->
-                        <option value="30"><option value="32"><option value="34"><option value="36">
-                        <option value="38"><option value="40"><option value="42"><option value="44">
-                        <option value="46"><option value="48"><option value="50"><option value="52"><option value="54">
-                        <!-- مقاسات أخرى -->
-                        <option value="Free Size">
-                    </datalist>
-                </div>
-                <div>
-                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                    <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
-                </div>
-                <div>
-                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                    <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
+                        <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                    </div>
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
+                        <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                    </div>
                 </div>
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
@@ -681,8 +538,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
             if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال الاسم' : 'Name is required');
             return {
                 name,
-                color: name, // 🎨 Save explicitly as color for robust grouping
-                size: document.getElementById('v-size').value.trim(),
+                color: name, 
                 quantity: parseFloat(document.getElementById('v-qty').value) || 0,
                 min: parseFloat(document.getElementById('v-min').value) || 0,
                 cost: parseFloat(document.getElementById('v-cost').value) || 0
@@ -734,7 +590,7 @@ async function openAddModal(preExistingData = null) {
                         <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 5px; border: 1px solid #e2e8f0;">
                             <div>
                                 <strong style="color: var(--luxury-emerald);">${v.name}</strong> 
-                                <small style="opacity: 0.7;">(${v.size || '-'}) | Qty: ${v.quantity} | ${v.cost} EGP</small>
+                                <small style="opacity: 0.7;">Qty: ${v.quantity} | ${v.cost} EGP</small>
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button type="button" class="edit-v-btn" data-index="${i}" style="background:none; border:none; color:var(--luxury-emerald); cursor:pointer;"><i class="fas fa-edit"></i></button>

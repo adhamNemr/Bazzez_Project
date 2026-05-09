@@ -39,24 +39,32 @@
                 viewAll:        _isAr ? 'عرض كل المنتجات' : 'View All Products',
             };
 
+            const updateText = (id, text, isHTML = false) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (isHTML) el.innerHTML = text;
+                    else el.textContent = text;
+                }
+            };
+
             document.title = `Vortex POS | ${T.pageTitle}`;
-            document.getElementById('pill-text').textContent = T.pill;
-            document.getElementById('home-btn-text').textContent = T.home;
-            document.getElementById('stat-revenue-label').textContent = T.statRevenue;
-            document.getElementById('stat-orders-label').textContent = T.statOrders;
-            document.getElementById('stat-avg-label').textContent = T.statAvg;
-            document.getElementById('stat-avg-trend').textContent = T.trendStable;
-            document.getElementById('stat-customers-label').textContent = T.statCustomers;
-            document.getElementById('chart-title').textContent = T.chartTitle;
-            document.getElementById('chart-sub').textContent = T.chartSub;
-            document.getElementById('toggle-today').textContent = T.today;
-            document.getElementById('toggle-yesterday').textContent = T.yesterday;
-            document.getElementById('toggle-week').textContent = T.week;
-            document.getElementById('activity-title').textContent = T.activity;
-            document.getElementById('engine-title').textContent = T.engineControl;
-            document.getElementById('restart-text').textContent = T.restart;
-            document.getElementById('top-products-title').textContent = T.topProducts;
-            document.getElementById('view-all-link').innerHTML = `${T.viewAll} <i class="fas fa-${_isAr ? 'arrow-left' : 'arrow-right'}"></i>`;
+            updateText('pill-text', T.pill);
+            updateText('home-btn-text', T.home);
+            updateText('stat-revenue-label', T.statRevenue);
+            updateText('stat-orders-label', T.statOrders);
+            updateText('stat-avg-label', T.statAvg);
+            updateText('stat-avg-trend', T.trendStable);
+            updateText('stat-customers-label', T.statCustomers);
+            updateText('chart-title', T.chartTitle);
+            updateText('chart-sub', T.chartSub);
+            updateText('toggle-today', T.today);
+            updateText('toggle-yesterday', T.yesterday);
+            updateText('toggle-week', T.week);
+            updateText('activity-title', T.activity);
+            updateText('engine-title', T.engineControl);
+            updateText('restart-text', T.restart);
+            updateText('top-products-title', T.topProducts);
+            updateText('view-all-link', `${T.viewAll} <i class="fas fa-${_isAr ? 'arrow-left' : 'arrow-right'}"></i>`, true);
         });
     </script>
 </head>

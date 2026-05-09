@@ -269,7 +269,7 @@ tr:hover td {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    padding: 0 2rem !important;
+    padding: 20px 2rem !important;
     box-sizing: border-box !important;
 }
 

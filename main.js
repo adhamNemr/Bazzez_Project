@@ -1,53 +1,62 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const waitOn = require('wait-on');
 
 // Start the Express server
 require('./server.js');
 
+let mainWindow;
+
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: false, // Security best practice
-      contextIsolation: true,
+      nodeIntegration: true,
+      contextIsolation: false,
     },
-    icon: path.join(__dirname, 'public/img/logo.png') // Assuming there is a logo
+    icon: path.join(__dirname, 'public/img/logo.png')
   });
 
-  // Wait for the server to be ready before loading the URL
   const opts = {
-    resources: [
-      'http://localhost:8083'
-    ],
-    delay: 1000, // initial delay in ms
-    interval: 100, // poll interval in ms
-    simultaneous: 1, // limit to 1 connection per resource at a time
-    timeout: 30000, // timeout in ms
-    tcpTimeout: 1000, // tcp timeout in ms
-    window: 1000, // stabilization time in ms
+    resources: ['http://localhost:8083'],
+    timeout: 30000,
   };
 
   waitOn(opts).then(() => {
-    win.loadURL('http://localhost:8083');
-  }).catch((err) => {
-    console.error('Error waiting for server:', err);
+    mainWindow.loadURL('http://localhost:8083');
   });
 }
 
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+// ✅ وظيفة الطباعة الصامتة (Silent Printing)
+ipcMain.on('print-receipt', (event, orderData) => {
+  let printWin = new BrowserWindow({
+    show: false, // مخفية
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
     }
+  });
+
+  // تحميل صفحة الإيصال مع البيانات
+  const receiptUrl = `http://localhost:8083/receipt.html?orderId=${orderData.id}&silent=true`;
+  printWin.loadURL(receiptUrl);
+
+  printWin.webContents.on('did-finish-load', () => {
+    // الطباعة للطابعة المحددة أوتوماتيكياً
+    printWin.webContents.print({
+      silent: true,
+      printBackground: true,
+      deviceName: 'POSPrinter POS80', // اسم الطابعة اللي أنت سطبتها
+    }, (success, failureReason) => {
+      if (!success) console.error('❌ Print failed:', failureReason);
+      printWin.close();
+    });
   });
 });
 
+app.whenReady().then(createWindow);
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });

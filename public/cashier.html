@@ -68,17 +68,22 @@
                 <!-- Category Tabs (Polaris Pills) -->
                  <nav class="category-nav">
                     <div id="category-pills" class="category-pills">
-                        <button class="pill active" id="beef-btn" onclick="showMenu('beef')"><span id="loc-cat-beef">Beef Burgers</span></button>
-                        <button class="pill" id="chicken-btn" onclick="showMenu('chicken')"><span id="loc-cat-chicken">Chicken</span></button>
-                        <button class="pill" id="french-btn" onclick="showMenu('french')"><span id="loc-cat-french">French</span></button>
-                        <button class="pill" id="combo-btn" onclick="showMenu('combo')"><span id="loc-cat-combo">Combos</span></button>
-                        <button class="pill" id="addons-btn" onclick="showMenu('Add_ons')"><span id="loc-cat-addons">Add-ons</span></button>
+                        <!-- Categories will be injected dynamically from the database -->
+                        <div class="skeleton-pills" style="display: flex; gap: 10px;">
+                            <div class="skeleton" style="width: 80px; height: 35px; border-radius: 20px;"></div>
+                            <div class="skeleton" style="width: 80px; height: 35px; border-radius: 20px;"></div>
+                            <div class="skeleton" style="width: 80px; height: 35px; border-radius: 20px;"></div>
+                        </div>
                     </div>
                  </nav>
-
+ 
                  <!-- Product Grid -->
                  <div id="menu-items" class="product-grid"> 
-                     <!-- Injected via JS -->
+                     <!-- Skeleton cards while loading -->
+                     <div class="skeleton" style="width: 100%; height: 120px; border-radius: 16px;"></div>
+                     <div class="skeleton" style="width: 100%; height: 120px; border-radius: 16px;"></div>
+                     <div class="skeleton" style="width: 100%; height: 120px; border-radius: 16px;"></div>
+                     <div class="skeleton" style="width: 100%; height: 120px; border-radius: 16px;"></div>
                  </div>
             </section>
             
@@ -87,33 +92,39 @@
                 <div class="cart-card">
                     <div class="cart-header">
                         <h3 id="loc-cart-summary">Cart Summary</h3>
-                        <span id="cart-count" class="badge">0 items</span>
+                        <div class="cart-count-wrapper">
+                            <i class="fas fa-shopping-bag"></i>
+                            <span id="cart-count">0 items</span>
+                        </div>
                     </div>
                     
                     <div id="order-summary" class="cart-items-list">
                         <!-- Items injected here -->
                         <div class="empty-cart">
-                            <i class="fas fa-shopping-basket"></i>
+                            <div class="empty-cart-icon-wrapper">
+                                <i class="fas fa-shopping-basket"></i>
+                            </div>
                             <p id="loc-empty-cart">Empty Cart</p>
+                            <span>ابدأ بإضافة منتجات لطلبك</span>
                         </div>
                     </div>
 
                     <div class="cart-footer">
                         <div class="summary-line">
                             <span id="loc-subtotal">Subtotal</span>
-                            <span id="subtotal-val">0 EGP</span>
+                            <span id="subtotal-val" class="zero-val">0.00</span>
                         </div>
                         <div class="summary-line">
                             <span id="loc-delivery">Delivery</span>
-                            <span id="delivery-val">0 EGP</span>
+                            <span id="delivery-val" class="zero-val">0.00</span>
                         </div>
-                        <div class="summary-line" style="color: #ef4444; font-weight: 700;">
+                        <div class="summary-line discount-row">
                             <span id="loc-discount">Discount</span>
-                            <span id="discount-val">0 EGP</span>
+                            <span id="discount-val" class="zero-val">0.00</span>
                         </div>
                         <div class="summary-line total-line">
                             <span id="loc-total">Total</span>
-                            <span id="order-total">0 EGP</span>
+                            <span id="order-total" class="zero-val">0.00</span>
                         </div>
                         <button id="submit-order" class="btn btn-primary checkout-btn">
                             <span id="loc-checkout">Complete Checkout</span>
@@ -126,98 +137,6 @@
 
     <!-- Scripts -->
     <script src="./js/sidebar-loader.js"></script>
-    <script>
-        // --- 🌍 Localization Dictionary ---
-        const translations = {
-            en: {
-                searchCustomer: "Search or add customer",
-                phoneNumber: "Phone number",
-                cash: "Cash",
-                card: "Card",
-                instapay: "InstaPay",
-                vcash: "V-Cash",
-                catBeef: "Beef Burgers",
-                catChicken: "Chicken",
-                catFrench: "French",
-                catCombo: "Combos",
-                catAddons: "Add-ons",
-                cartSummary: "Cart Summary",
-                emptyCart: "Empty Cart",
-                subtotal: "Subtotal",
-                delivery: "Delivery",
-                total: "Total",
-                discount: "Discount",
-                checkout: "Complete Checkout",
-                selectDelivery: "Select Delivery Area"
-            },
-            ar: {
-                searchCustomer: "ابحث أو أضف عميل",
-                phoneNumber: "رقم الهاتف",
-                cash: "كاش",
-                card: "فيزا / بطاقة",
-                instapay: "إنستاباي",
-                vcash: "فودافون كاش",
-                catBeef: "برجر لحم",
-                catChicken: "دجاج",
-                catFrench: "فرينش",
-                catCombo: "كومبو",
-                catAddons: "إضافات",
-                cartSummary: "ملخص السلة",
-                emptyCart: "السلة فارغة",
-                subtotal: "المجموع الفرعي",
-                delivery: "التوصيل",
-                total: "الإجمالي",
-                discount: "الخصم",
-                checkout: "إتمام الطلب",
-                selectDelivery: "اختر منطقة التوصيل"
-            }
-        };
-
-        function applyLocalization() {
-            const lang = localStorage.getItem('lang') || 'ar';
-            const t = translations[lang];
-
-            const updateText = (id, text) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = text;
-            };
-
-            // Update Placeholders
-            const nameInp = document.getElementById('customer-name');
-            if (nameInp) nameInp.placeholder = t.searchCustomer;
-            const phoneInp = document.getElementById('customer-phone');
-            if (phoneInp) phoneInp.placeholder = t.phoneNumber;
-            
-            // Update Text Nodes
-            updateText('loc-cash', t.cash);
-            updateText('loc-card', t.card);
-            updateText('loc-instapay', t.instapay);
-            updateText('loc-vcash', t.vcash);
-            
-            updateText('loc-cat-beef', t.catBeef);
-            updateText('loc-cat-chicken', t.catChicken);
-            updateText('loc-cat-french', t.catFrench);
-            updateText('loc-cat-combo', t.catCombo);
-            updateText('loc-cat-addons', t.catAddons);
-            
-            updateText('loc-cart-summary', t.cartSummary);
-            updateText('loc-empty-cart', t.emptyCart);
-            updateText('loc-subtotal', t.subtotal);
-            updateText('loc-delivery', t.delivery);
-            updateText('loc-discount', t.discount);
-            updateText('loc-total', t.total);
-            updateText('loc-checkout', t.checkout);
-
-            // Delivery Select default option
-            const deliverySelect = document.getElementById('delivery-price');
-            if (deliverySelect && deliverySelect.options.length > 0) {
-                deliverySelect.options[0].textContent = t.selectDelivery;
-            }
-        }
-
-        // Run localization immediately
-        applyLocalization();
-    </script>
     <script src="./js/cashier.js"></script>
     <script src="./js/auth.js"></script>
 </body>

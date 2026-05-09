@@ -4,20 +4,20 @@
         "password": "Adham123!",
         "database": "pos_system",
         "host": "127.0.0.1",
-        "dialect": "mysql"
+        "dialect": "postgres"
     },
     "test": {
         "username": "adham",
         "password": "Adham123!",
         "database": "pos_system",
         "host": "127.0.0.1",
-        "dialect": "mysql"
+        "dialect": "postgres"
     },
     "production": {
         "username": "adham",
         "password": "Adham123!",
         "database": "pos_system",
         "host": "127.0.0.1",
-        "dialect": "mysql"
+        "dialect": "postgres"
     }
 }

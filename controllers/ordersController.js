@@ -1,4 +1,4 @@
-const { Order, sequelize } = require("../models");
+const { Order, sequelize, Setting, Product, Inventory, Recipe } = require("../models");
 
 exports.fetchOrders = async (req, res) => {
     try {
@@ -9,15 +9,13 @@ exports.fetchOrders = async (req, res) => {
         const { date, status, search } = req.query;
         const { Op } = require("sequelize");
 
-        const { Setting } = require('../models');
         const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
         const activeBusinessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 
         const where = {};
 
-        // 🗓️ Strict Date Filter (Always filter by businessDate)
+        // 🗓️ Strict Date Filter
         const filterDate = (date && date.trim() !== "" && date !== 'undefined') ? date : activeBusinessDate;
-        console.log("🔍 Filtering by business date:", filterDate);
         where.businessDate = filterDate;
 
         // 🏷️ Status Filter
@@ -31,8 +29,6 @@ exports.fetchOrders = async (req, res) => {
         }
 
         let cleanSearch = (search && search !== 'undefined') ? search.trim() : "";
-        
-        // 🌍 Normalize Arabic/Hindi Numerals to English
         const arabicMap = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
         cleanSearch = cleanSearch.replace(/[٠-٩]/g, d => arabicMap[d]);
 
@@ -41,14 +37,11 @@ exports.fetchOrders = async (req, res) => {
         if (cleanSearch !== "") {
             where[Op.or] = [
                 { dailySerial: isNumericSearch ? parseInt(cleanSearch) : 0 },
-                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'CHAR'), { [Op.like]: `%${cleanSearch}%` }),
-                { customerName: { [Op.like]: `%${cleanSearch}%` } },
-                { customerPhone: { [Op.like]: `%${cleanSearch}%` } }
+                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'TEXT'), { [Op.iLike]: `%${cleanSearch}%` }),
+                { customerName: { [Op.iLike]: `%${cleanSearch}%` } },
+                { customerPhone: { [Op.iLike]: `%${cleanSearch}%` } }
             ];
-            console.log("🔍 Searching for:", cleanSearch, "within", filterDate);
         }
-
-        console.log("🛠️ Sequelize Where Clause:", JSON.stringify(where));
 
         if (nopaging) {
             const orders = await Order.findAll({ where, order: [["id", "DESC"]] });
@@ -56,44 +49,24 @@ exports.fetchOrders = async (req, res) => {
         }
 
         const { count, rows } = await Order.findAndCountAll({
-            attributes: {
-                include: [
-                    [
-                        sequelize.literal(`(CASE 
-                            WHEN dailySerial = ${isNumericSearch ? parseInt(cleanSearch) : -1} THEN 1
-                            WHEN CAST(dailySerial AS CHAR) LIKE '%${cleanSearch}%' THEN 2
-                            ELSE 100 END)`),
-                        'relevance'
-                    ]
-                ]
-            },
             where,
-            order: (isNumericSearch && cleanSearch !== "") ? [
-                [sequelize.literal('relevance'), 'ASC'],
-                ["dailySerial", "ASC"]
-            ] : [["id", "DESC"]],
+            order: [["id", "DESC"]],
             limit: limit,
             offset: offset
         });
 
-        // 📊 Unified Count Calculation (Scoped ONLY to Business Date)
+        // 📊 Unified Count Calculation
         const countsWhere = { businessDate: filterDate };
         const counts = {
             all: await Order.count({ where: countsWhere }),
             paid: await Order.count({ where: { ...countsWhere, payment_status: 'Paid', isCancelled: { [Op.ne]: 'Yes' } } }),
             pending: await Order.count({ where: { ...countsWhere, payment_status: 'Pending', isCancelled: { [Op.ne]: 'Yes' } } }),
-            cancelled: await Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } })
+            cancelled: await Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } }),
+            today: await Order.count({ where: { businessDate: activeBusinessDate } }) // ✅ Total for current active day
         };
 
-        const rankedRows = rows.map(r => {
-            const data = r.get({ plain: true });
-            // Remove relevance from the final object if you want it super clean, 
-            // but keeping it is fine as it doesn't affect the UI.
-            return data;
-        });
-
         res.json({
-            orders: rankedRows,
+            orders: rows,
             total: count,
             currentPage: page,
             totalPages: Math.ceil(count / limit),
@@ -125,12 +98,7 @@ exports.formatOrderDetails = (req, res) => {
         const { orderDetails } = req.body;
         if (!orderDetails) return res.json({ formatted: [] });
 
-        console.log("✅ orderDetails:", orderDetails);
-        console.log("🔎 typeof orderDetails:", typeof orderDetails);
-
         let items;
-
-        // ✅ تنظيف النص قبل التحويل
         const cleanedOrderDetails = orderDetails.replace(/\u200B/g, "").trim();
 
         if (typeof cleanedOrderDetails === "string") {
@@ -139,34 +107,16 @@ exports.formatOrderDetails = (req, res) => {
             items = cleanedOrderDetails;
         }
 
-        // ✅ تحويل إلى مصفوفة بشكل مضمون
         items = Array.from(items);
 
-        console.log("🚨 items بعد JSON.parse:", items);
-        console.log("🔍 Array.isArray:", Array.isArray(items));
-        console.log("🔍 instanceof Array:", items instanceof Array);
-
-        // ✅ التحقق النهائي
-        if (!Array.isArray(items)) {
-            console.error("❌ items ليست مصفوفة بعد JSON.parse");
-            throw new Error("⚠️ items ليست مصفوفة بعد JSON.parse");
-        }
-
-        // ✅ بناء مصفوفة منسقة بدلاً من HTML
         const formatted = items.map((item) => {
             let addonsTotal = 0;
-
-            // 🔥 حساب إجمالي الإضافات (Add-ons)
             const comments = (item.comments || []).map(comment => {
                 const addPrice = parseFloat(comment.price || 0);
                 addonsTotal += addPrice;
-                return {
-                    text: comment.text,
-                    price: addPrice.toFixed(2)
-                };
+                return { text: comment.text, price: addPrice.toFixed(2) };
             });
 
-            // دعم manualComments كحالة احتياطية للطلبات القديمة
             const manualComments = (item.manualComments || []).map(comment => {
                 if (typeof comment === "object") {
                     const addPrice = parseFloat(comment.price || 0);
@@ -181,7 +131,7 @@ exports.formatOrderDetails = (req, res) => {
 
             return {
                 name: item.name,
-                variant: item.variant || null, // ✅ إضافة التفريعة (لون/مقاس)
+                variant: item.variant || null,
                 price: basePrice.toFixed(2),
                 quantity: quantity,
                 comments,
@@ -206,12 +156,90 @@ exports.cancelOrder = async (req, res) => {
             return res.status(404).json({ success: false, message: "❌ الطلب غير موجود" });
         }
 
-        order.isCancelled = "Yes"; // ✅ تعديل القيمة هنا إلى "Yes"
+        if (order.isCancelled === "Yes") {
+            return res.status(400).json({ success: false, message: "⚠️ الطلب ملغي بالفعل" });
+        }
+
+        // 🔄 استرجاع المخزون (خامات وتفريعات)
+        const orderDetails = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+
+        for (const item of orderDetails) {
+            const product = await Product.findOne({ where: { name: item.name } });
+            if (product) {
+                // 1. تقليل عدد مرات البيع
+                await product.decrement("sold", { by: item.quantity });
+
+                // 2. استرجاع المواد الخام
+                const recipeItems = await Recipe.findAll({ where: { sandwich: item.name } });
+                for (const recipe of recipeItems) {
+                    const inventoryItem = await Inventory.findOne({
+                        where: sequelize.where(sequelize.fn('LOWER', sequelize.col('name')), 'LIKE', recipe.ingredient.toLowerCase())
+                    });
+                    if (inventoryItem) {
+                        await inventoryItem.increment("quantity", { by: (recipe.amount || 1) * item.quantity });
+                    }
+                }
+
+                // 3. استرجاع التفريعة (لون/مقاس)
+                if (item.variant) {
+                    const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
+                    if (inventoryItem && inventoryItem.variants) {
+                        let variants = typeof inventoryItem.variants === 'string' ? JSON.parse(inventoryItem.variants) : inventoryItem.variants;
+                        variants = variants.map(v => {
+                            const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
+                            if (vLabel === item.variant) return { ...v, quantity: (v.quantity || 0) + item.quantity };
+                            return v;
+                        });
+                        await inventoryItem.update({ variants: variants });
+                    }
+                }
+            }
+        }
+
+        order.isCancelled = "Yes";
         await order.save();
 
-        res.json({ success: true, order }); // ✅ إرجاع الطلب المحدث
+        res.json({ success: true, message: "✅ تم إلغاء الطلب واسترجاع المخزون" });
     } catch (error) {
         console.error("❌ خطأ أثناء إلغاء الطلب:", error);
         res.status(500).json({ success: false, message: "❌ خطأ أثناء الإلغاء" });
+    }
+};
+
+// ✅ دالة إعادة طباعة أوردر موجود بالفعل
+exports.reprintOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await Order.findByPk(id);
+        const { printReceipt } = require("./receiptPrinter");
+
+        if (!order) return res.status(404).json({ message: "❌ الطلب غير موجود." });
+
+        const orderData = {
+            id: order.id,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            customerAddress: order.customerAddress,
+            deliveryPrice: order.deliveryPrice,
+            orderTotal: order.orderTotal,
+            orderDetails: typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails,
+            discount: order.discountAmount || 0,
+            orderDate: (() => {
+                const d = new Date(order.createdAt);
+                const day = d.getDate();
+                const month = d.getMonth() + 1;
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                return `${day}/${month} ${hours}:${minutes} ${ampm}`;
+            })()
+        };
+
+        printReceipt(orderData);
+        res.json({ message: "✅ تم إرسال الطلب للطابعة." });
+    } catch (error) {
+        console.error("❌ خطأ أثناء إعادة الطباعة:", error);
+        res.status(500).json({ message: "❌ فشل في الطباعة." });
     }
 };

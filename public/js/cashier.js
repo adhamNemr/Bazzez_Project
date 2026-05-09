@@ -172,6 +172,40 @@ async function fetchProducts() {
         }
         
         const rawData = await response.json();
+        
+        // 🧪 Manual Category Override: Move 'سروال الامثل' to its own category
+        let saruwalProducts = [];
+        Object.keys(rawData).forEach(cat => {
+            rawData[cat] = rawData[cat].filter(p => {
+                if (p.name === 'سروال الامثل') {
+                    p.category = 'سراويل';
+                    saruwalProducts.push(p);
+                    return false;
+                }
+                return true;
+            });
+        });
+        
+        if (saruwalProducts.length > 0) {
+            rawData['سراويل'] = saruwalProducts;
+        }
+
+        // 🧪 Manual Category Injection: Always ensure Kids category has real test data
+        console.log("🧪 Ensuring Kids Category has valid test data...");
+        rawData['جلباب أطفالي'] = [
+            { 
+                id: 'kids-test-1',
+                name: "جلباب أطفالي مطرز", 
+                category: "جلباب أطفالي", 
+                price: 450,
+                wholesalePrice: 400,
+                variants: [
+                    { name: "أبيض", price: 450 },
+                    { name: "كريمي", price: 450 }
+                ]
+            }
+        ];
+
         allCategorizedProducts = rawData;
         
         renderCategories();
@@ -230,11 +264,22 @@ function showCategory(category) {
     }
 
     products.forEach(product => {
-        const hasVariants = product.variants && product.variants.length > 0;
+        const variants = product.variants || [];
+        const hasVariants = variants.length > 0;
+        const sizes = getSizesForCategory(product.category, product.name);
+        
+        // ⚡ Total Simplicity Check: 1 Fabric & 1 Size (One Size)
+        const isSuperSimple = variants.length === 1 && sizes.length === 1 && sizes[0] === 'مقاس واحد';
+
         const card = document.createElement('div');
         card.className = 'menu-item animate-fade-in';
         card.onclick = () => {
-            if (hasVariants) {
+            console.log("🖱️ Item Clicked:", product.name, "Has Variants:", hasVariants, "Is Super Simple:", isSuperSimple);
+            if (isSuperSimple) {
+                // Add directly with the only available variant and size
+                const singleVariant = variants[0];
+                addVariantToOrder(product.name, singleVariant.price, singleVariant.name || singleVariant.color, sizes[0]);
+            } else if (hasVariants) {
                 showVariantModal(product);
             } else {
                 addToOrder(product.name, product.price);
@@ -248,58 +293,164 @@ function showCategory(category) {
     });
 }
 
+function getSizesForCategory(category, productName) {
+    const isKids = productName.includes("أطفالي");
+
+    if (category === "ملابس إحرام") {
+        if (isKids) {
+            return ["1", "2", "3", "4", "5"];
+        } else {
+            return ["مقاس واحد"];
+        }
+    }
+
+    if (category === "جلباب أطفالي") {
+        // Even sizes from 30 to 54
+        let sizes = [];
+        for (let i = 30; i <= 54; i += 2) {
+            sizes.push(i.toString());
+        }
+        return sizes;
+    }
+
+    const isHalfSleeve = productName.includes("نص كم") || productName.includes("نص كم");
+    const isAlAzzLongSleeve = productName.includes("العز") && productName.includes("فخامه كم طويل");
+
+    if (category === "جلباب رجالي" && (isHalfSleeve || isAlAzzLongSleeve)) {
+        // Numeric sizes from 54 to 68
+        let sizes = [];
+        for (let i = 54; i <= 68; i += 2) {
+            sizes.push(i.toString());
+        }
+        return sizes;
+    }
+
+    if (category === "سراويل") {
+        // Even sizes from 22 to 34
+        let sizes = [];
+        for (let i = 22; i <= 34; i += 2) {
+            sizes.push(i.toString());
+        }
+        return sizes;
+    }
+
+    if (category === "جلباب رجالي") {
+        // Standard Men's sizes (56-64 with S-3XL)
+        return [
+            "56 S", "56 M", "56 L", "56 XL", "56 2XL", "56 3XL",
+            "58 S", "58 M", "58 L", "58 XL", "58 2XL", "58 3XL",
+            "60 S", "60 M", "60 L", "60 XL", "60 2XL", "60 3XL",
+            "62 S", "62 M", "62 L", "62 XL", "62 2XL", "62 3XL",
+            "64 S", "64 M", "64 L", "64 XL", "64 2XL", "64 3XL"
+        ];
+    }
+
+    // Default fallback
+    return ["Free Size"];
+}
+
+let selectedFabricForModal = '';
+let selectedPriceForModal = 0;
+
 function showVariantModal(product) {
     currentProductForModal = product;
-    const variants = product.variants;
+    selectedFabricForModal = ''; 
+    selectedPriceForModal = product.price;
+    const variants = product.variants || [];
+    const sizes = getSizesForCategory(product.category, product.name);
 
-    // Get unique colors and unique sizes
-    const colors = [...new Set(variants.map(v => v.color).filter(c => c && c.trim() !== ""))];
-    const allUniqueSizes = [...new Set(variants.map(v => v.size).filter(s => s))];
+    const fabricMap = {};
+    variants.forEach(v => {
+        const fName = v.name || v.color;
+        if (fName && fName.trim() !== "") {
+            fabricMap[fName] = v.price || product.price;
+        }
+    });
     
-    // If no colors are defined at all, jump straight to size selection
-    if (colors.length === 0) {
-        renderVariantSizes(null);
-        return;
+    const fabrics = Object.keys(fabricMap);
+    const hasFabrics = fabrics.length > 0;
+    const isSingleFabric = fabrics.length === 1;
+    
+    // Unlock sizes immediately if there's only one fabric choice
+    const initialButtonStyle = (hasFabrics && !isSingleFabric) ? 'opacity: 0.4; pointer-events: none;' : '';
+
+    // ⚡ Auto-select if single fabric
+    if (isSingleFabric) {
+        selectedFabricForModal = fabrics[0];
+        selectedPriceForModal = fabricMap[fabrics[0]];
     }
 
     let variantsHtml = `
-        <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
-            <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${product.name}</h2>
-            <p style="color:#64748b; font-weight: 500;">${isAr ? 'تخصيص المنتج حسب طلب العميل' : 'Customize product for customer'}</p>
-        </div>
-        
-        <div class="variant-selection-container" style="padding: 0 1rem;">
-            <!-- 🎨 Colors Section -->
-            <div style="margin-bottom: 2.5rem; text-align: center;">
-                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                        <i class="fas fa-palette" style="color:var(--primary); font-size:0.9rem;"></i>
-                    </div>
-                    ${isAr ? 'اختر اللون' : 'Choose Color'}
-                </h4>
-                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
-                    ${colors.map(color => `
-                        <button class="variant-btn-select color-choice-btn" style="min-width: 140px;" data-color="${color}" onclick="renderVariantSizes('${color}')">
-                            <span style="font-weight:700; font-size:1rem; color:#1e293b;">${color}</span>
+        <div class="variant-selection-container" style="padding: 1.2rem 0.8rem; font-family: 'Almarai', 'Tajawal', sans-serif;">
+            <!-- 🏷️ Brand Header -->
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <h2 style="
+                    font-size: 1.8rem; 
+                    font-weight: 800; 
+                    color: var(--secondary); 
+                    margin-bottom: 5px;
+                    font-family: 'Almarai', sans-serif;
+                ">${product.name}</h2>
+                <div style="width: 50px; height: 3px; background: var(--primary); margin: 0 auto; border-radius: 10px; opacity: 0.6;"></div>
+            </div>
+
+            <!-- 🎨 Fabric Selection Section (Expanded slightly to avoid scroll) -->
+            <div style="margin-bottom: 1rem; text-align: center;">
+                <div style="
+                    display: flex; 
+                    flex-wrap: wrap; 
+                    justify-content: center; 
+                    gap: 8px; 
+                    max-height: 160px; 
+                    overflow-y: auto; 
+                    padding: 8px 4px;
+                    scrollbar-width: none;
+                ">
+                    ${fabrics.length > 0 ? fabrics.map(fabric => `
+                        <button class="variant-btn-select color-choice-btn ${fabric === selectedFabricForModal ? 'active' : ''}" 
+                                style="min-width: 140px; padding: 10px 5px; border-radius: 12px;" 
+                                data-fabric="${fabric}" 
+                                data-price="${fabricMap[fabric]}"
+                                onclick="selectFabricForOrder('${fabric}', ${fabricMap[fabric]})">
+                            <span style="font-weight:800; font-size:1rem; color:#1e293b;">${fabric}</span>
+                            <span style="font-size:0.8rem; color:var(--primary); font-weight:900;">${fabricMap[fabric]} EGP</span>
                         </button>
-                    `).join('')}
+                    `).join('') : `<p style="opacity:0.5;">${isAr ? 'لا يوجد خامات معرفة' : 'No fabrics defined'}</p>`}
                 </div>
             </div>
             
-            <!-- 📏 Sizes Section -->
-            <div id="size-selection-area" style="text-align: center;">
-                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                        <i class="fas fa-ruler-combined" style="color:var(--primary); font-size:0.9rem;"></i>
-                    </div>
-                    ${isAr ? 'اختر المقاس' : 'Choose Size'}
-                </h4>
-                <div id="size-buttons-grid" style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
-                    ${allUniqueSizes.map(size => `
-                        <button class="variant-btn-select disabled size-btn" data-size="${size}">
-                            <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${size}</span>
-                        </button>
-                    `).join('')}
+            <!-- 📏 Sizes Selection Section (Ultra Compact) -->
+            <div id="size-selection-area" style="text-align: center; display: ${sizes.length === 1 && sizes[0] === 'مقاس واحد' ? 'none' : 'block'}; border-top: 1px solid #f1f5f9; padding-top: 1.2rem;">
+                <div id="size-buttons-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 5px;">
+                    ${product.category === 'جلباب رجالي' ? 
+                        // Grouping for Men's Galabeya
+                        (() => {
+                            const groups = {};
+                            sizes.forEach(s => {
+                                const length = s.split(' ')[0];
+                                if (!groups[length]) groups[length] = [];
+                                groups[length].push(s);
+                            });
+                            return Object.keys(groups).map(len => `
+                                <div class="size-column" style="background: #ffffff; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 12px 8px; display: flex; flex-direction: column; gap: 8px; min-width: 150px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                                    <div style="font-weight: 900; color: var(--primary); margin-bottom: 5px; font-size: 1.3rem; border-bottom: 2px solid var(--primary); padding-bottom: 4px; display: inline-block; font-family: 'Almarai', sans-serif;">${len}</div>
+                                    ${groups[len].map(s => `
+                                        <button class="variant-btn-select size-btn" 
+                                                style="width: 100%; background:#f8fafc !important; border: 1px solid #e2e8f0; padding: 6px 4px; border-radius: 10px; ${initialButtonStyle}" 
+                                                onclick="handleSizeClick('${s}')">
+                                            <span style="font-weight:800; font-size:1.05rem; color:#334155;">${s.split(' ')[1] || s}</span>
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            `).join('');
+                        })() : 
+                        // Default simple grid for other categories
+                        sizes.map(size => `
+                            <button class="variant-btn-select size-btn" style="min-width: 140px; height: 50px; background:white !important; border: 1.5px solid #e2e8f0; border-radius: 12px; ${initialButtonStyle}" onclick="handleSizeClick('${size}')">
+                                <span style="font-weight:800; font-size:1.1rem; color:#1e293b; font-family: 'Almarai', sans-serif;">${size}</span>
+                            </button>
+                        `).join('')
+                    }
                 </div>
             </div>
         </div>
@@ -310,68 +461,148 @@ function showVariantModal(product) {
     commentCard.classList.add('active');
 }
 
-function renderVariantSizes(color) {
-    if (!currentProductForModal) return;
-    const variants = currentProductForModal.variants;
-    const sizeButtonsGrid = document.getElementById('size-buttons-grid');
+function selectFabricForOrder(fabric, price) {
+    selectedFabricForModal = fabric;
+    selectedPriceForModal = parseFloat(price);
     
-    // UI Feedback: Highlight selected color button
+    // UI Feedback: Highlight selected fabric button
     document.querySelectorAll('.color-choice-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.dataset.color === color) btn.classList.add('active');
+        if (btn.dataset.fabric === fabric) btn.classList.add('active');
     });
 
-    // Filter variants by chosen color
-    const colorVariants = variants.filter(v => (color ? v.color === color : !v.color || v.color.trim() === ""));
-    const availableSizesForColor = colorVariants.map(v => v.size);
+    // ⚡ Automation: If category is Ihram and only One Size exists, add to order immediately
+    const sizes = getSizesForCategory(currentProductForModal.category, currentProductForModal.name);
+    if (sizes.length === 1 && sizes[0] === 'مقاس واحد') {
+        handleSizeClick('مقاس واحد');
+        return;
+    }
 
-    if (sizeButtonsGrid) {
-        // Clear and Re-render only buttons to update click handlers with specific color
-        sizeButtonsGrid.style.display = 'flex';
-        sizeButtonsGrid.style.flexWrap = 'wrap';
-        sizeButtonsGrid.style.justifyContent = 'center';
-        
-        sizeButtonsGrid.innerHTML = colorVariants.map(v => `
-            <button class="variant-btn-select" style="min-width: 110px;" onclick="addVariantToOrder('${currentProductForModal.name}', ${currentProductForModal.price}, '${color || ''}', '${v.size}')">
-                <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${v.size}</span>
-            </button>
+    // 🔄 Dynamic Size Refresh: If fabric is Half-Sleeve, change sizes to numeric 54-68
+    const isHalfSleeve = fabric.includes("نص كم");
+    const isAlAzzLongSleeve = (currentProductForModal.name.includes("العز") && fabric.includes("فخامه كم طويل"));
+    
+    if (isHalfSleeve || isAlAzzLongSleeve) {
+        const sizes = [];
+        for (let i = 54; i <= 68; i += 2) sizes.push(i.toString());
+        renderSizeButtons(sizes);
+    } else {
+        // Revert to original category sizes
+        const originalSizes = getSizesForCategory(currentProductForModal.category, currentProductForModal.name);
+        renderSizeButtons(originalSizes);
+    }
+
+    // 🔓 Unlock size buttons
+    document.querySelectorAll('.size-btn').forEach(btn => {
+        btn.classList.remove('disabled');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+    });
+}
+
+function renderSizeButtons(sizes) {
+    const grid = document.getElementById('size-buttons-grid');
+    const initialButtonStyle = (selectedFabricForModal) ? '' : 'opacity: 0.4; pointer-events: none;';
+    
+    const isNumericCategory = currentProductForModal.category === 'جلباب أطفالي' || currentProductForModal.category === 'سراويل' || (currentProductForModal.category === 'جلباب رجالي' && !sizes[0].includes('S'));
+
+    if (isNumericCategory) {
+        // 📏 Large & Bold Numeric Grid (Two Rows)
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(4, 1fr)'; // 4 columns
+        grid.style.gap = '15px';
+        grid.style.width = '100%';
+        grid.style.maxWidth = '600px';
+        grid.style.margin = '0 auto';
+        grid.style.padding = '10px';
+
+        grid.innerHTML = sizes.map(size => {
+            const isSpecial = size === '66' || size === '68' || size === '32' || size === '34';
+            return `
+                <button class="variant-btn-select size-btn numeric-btn ${isSpecial ? 'special-price-btn' : ''}" 
+                        style="height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white !important; border: 2.5px solid #f1f5f9; border-radius: 18px; transition: 0.3s; ${initialButtonStyle}" 
+                        onclick="handleSizeClick('${size}')">
+                    <span style="font-weight: 900; font-size: 1.5rem; color: #1e293b; line-height: 1.1;">${size}</span>
+                </button>
+            `;
+        }).join('');
+    } else if (currentProductForModal.category === 'جلباب رجالي') {
+        // Standard grouped grid for Men's Galabeya
+        const groups = {};
+        sizes.forEach(s => {
+            const length = s.split(' ')[0];
+            if (!groups[length]) groups[length] = [];
+            groups[length].push(s);
+        });
+        grid.innerHTML = Object.keys(groups).map(len => `
+            <div class="size-column" style="background: #ffffff; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 12px 8px; display: flex; flex-direction: column; gap: 8px; min-width: 150px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                <div style="font-weight: 900; color: var(--primary); margin-bottom: 5px; font-size: 1.3rem; border-bottom: 2px solid var(--primary); padding-bottom: 4px; display: inline-block;">${len}</div>
+                ${groups[len].map(s => `
+                    <button class="variant-btn-select size-btn" style="width: 100%; background:#f8fafc !important; border: 1px solid #e2e8f0; padding: 6px 4px; border-radius: 10px; ${initialButtonStyle}" onclick="handleSizeClick('${s}')">
+                        <span style="font-weight:800; font-size:1.05rem; color:#334155;">${s.split(' ')[1] || s}</span>
+                    </button>
+                `).join('')}
+            </div>
         `).join('');
     } else {
-        // Fallback for products with no color (show all sizes active from start)
-        const allSizesHtml = `
-            <div class="variant-modal-header" style="text-align:center; margin-bottom:2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #f1f5f9;">
-                <h2 style="font-size:1.75rem; font-weight:900; color:#1e293b; margin-bottom: 5px;">${currentProductForModal.name}</h2>
-                <p style="color:#64748b; font-weight: 500;">${isAr ? 'اختر المقاس المطلوب' : 'Select required size'}</p>
-            </div>
-            <div class="variant-selection-container" style="padding: 0 1rem; text-align: center;">
-                <h4 style="margin-bottom:1.5rem; font-size:1rem; font-weight:800; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px;">
-                    <div style="width:32px; height:32px; background:rgba(0,128,96,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                        <i class="fas fa-ruler-combined" style="color:var(--primary); font-size:0.9rem;"></i>
-                    </div>
-                    ${isAr ? 'المقاسات المتاحة' : 'Available Sizes'}
-                </h4>
-                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:15px;">
-                    ${variants.map(v => `
-                        <button class="variant-btn-select" style="min-width: 110px;" onclick="addVariantToOrder('${currentProductForModal.name}', ${currentProductForModal.price}, '', '${v.size}')">
-                            <span style="font-weight:700; font-size:1.1rem; color:#1e293b;">${v.size}</span>
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-        commentCard.innerHTML = allSizesHtml;
+        grid.innerHTML = sizes.map(size => `
+            <button class="variant-btn-select size-btn" style="min-width: 140px; height: 50px; background:white !important; border: 1.5px solid #e2e8f0; border-radius: 12px; ${initialButtonStyle}" onclick="handleSizeClick('${size}')">
+                <span style="font-weight:800; font-size:1.1rem; color:#1e293b;">${size}</span>
+            </button>
+        `).join('');
     }
 }
 
+function handleSizeClick(size) {
+    if (!currentProductForModal) return;
+    
+    // Check if fabric is required and selected
+    const variants = currentProductForModal.variants || [];
+    const hasFabrics = variants.some(v => (v.name || v.color));
+    
+    if (hasFabrics && !selectedFabricForModal) {
+        Swal.fire({
+            icon: 'warning',
+            title: isAr ? 'تنبيه' : 'Attention',
+            text: isAr ? 'يرجى اختيار الخامة / اللون أولاً' : 'Please select fabric / color first',
+            confirmButtonColor: 'var(--primary)'
+        });
+        return;
+    }
+
+    addVariantToOrder(currentProductForModal.name, selectedPriceForModal, selectedFabricForModal, size);
+}
+
 function addVariantToOrder(name, price, color, size) {
-    const variantLabel = `${color || ''} ${size || ''}`.trim();
-    const uniqueKey = `${name} (${variantLabel})`;
+    // 🧠 Automatic Special Size Surcharge (+50 EGP)
+    let finalPrice = parseFloat(price);
+    let finalSizeLabel = size || '';
+    
+    // Check if size is "Special"
+    // Rule 1: 'الفقي' products with size starting with "64" OR containing "2XL" or "3XL"
+    const isFaqiSpecial = name.startsWith("الفقي") && (size.startsWith("64") || size.includes("2XL") || size.includes("3XL"));
+    
+    // Rule 2: 'سراويل' category with size "32" or "34"
+    const isSaruwalSpecial = currentProductForModal && currentProductForModal.category === "سراويل" && (size === "32" || size === "34");
+
+    // Rule 3: Half-sleeve or specific long-sleeve with size "66" or "68"
+    const isLargeSizeGalabeya = (color.includes("نص كم") || color.includes("فخامه كم طويل")) && 
+                               (size === "66" || size === "68");
+
+    if (isFaqiSpecial || isSaruwalSpecial || isLargeSizeGalabeya) {
+        finalPrice += 50;
+    }
+
+    // 🎨 Smart Labeling: Hide "عادي" or empty colors
+    const displayColor = (color && color !== 'عادي') ? color : '';
+    const variantLabel = `${displayColor} ${finalSizeLabel}`.trim();
+    const uniqueKey = variantLabel ? `${name} (${variantLabel})` : name;
     
     if (!currentOrder[uniqueKey]) {
         currentOrder[uniqueKey] = { 
             baseName: name,
             variant: variantLabel,
-            price: parseFloat(price), 
+            price: finalPrice, 
             quantity: 1, 
             comment: [] 
         };
@@ -411,8 +642,11 @@ function renderOrderSummary() {
     if (items.length === 0) {
         orderSummary.innerHTML = `
             <div class="empty-cart">
-                <i class="fas fa-shopping-basket"></i>
+                <div class="empty-cart-icon-wrapper">
+                    <i class="fas fa-shopping-basket"></i>
+                </div>
                 <p>${t[currentLang].emptyCart}</p>
+                <span>${t[currentLang].startAdding || 'ابدأ بإضافة منتجات لطلبك'}</span>
             </div>
         `;
     } else {
@@ -478,10 +712,22 @@ function renderOrderSummary() {
     const delivery = parseFloat(deliveryPriceSelect.value) || 0;
     const total = subtotal + delivery - totalDiscount;
 
-    document.getElementById('subtotal-val').innerHTML = `<span dir="ltr">${subtotal.toFixed(2)} EGP</span>`;
-    document.getElementById('delivery-val').innerHTML = `<span dir="ltr">${delivery.toFixed(2)} EGP</span>`;
-    document.getElementById('discount-val').innerHTML = `<span dir="ltr">-${totalDiscount.toFixed(2)} EGP</span>`;
-    document.getElementById('order-total').innerHTML = `<span dir="ltr">${total.toFixed(2)} EGP</span>`;
+    const subtotalEl = document.getElementById('subtotal-val');
+    const deliveryEl = document.getElementById('delivery-val');
+    const discountEl = document.getElementById('discount-val');
+    const totalEl = document.getElementById('order-total');
+
+    subtotalEl.textContent = subtotal.toFixed(2);
+    subtotalEl.className = subtotal === 0 ? 'zero-val' : 'active-val';
+
+    deliveryEl.textContent = delivery.toFixed(2);
+    deliveryEl.className = delivery === 0 ? 'zero-val' : 'active-val';
+
+    discountEl.textContent = totalDiscount === 0 ? '0.00' : totalDiscount.toFixed(2);
+    discountEl.className = totalDiscount === 0 ? 'zero-val' : 'active-discount';
+
+    totalEl.textContent = total.toFixed(2);
+    totalEl.className = total === 0 ? 'zero-val' : 'active-total';
     document.getElementById('cart-count').textContent = `${itemCount} ${t[currentLang].items}`;
 }
 

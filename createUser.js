@@ -1,20 +1,44 @@
-const bcrypt = require("bcrypt");
-const { User } = require("./models");
+const { User } = require('./models');
+const bcrypt = require('bcryptjs');
+const sequelize = require('./config/db');
 
-const createManager = async () => {
+async function createUsers() {
     try {
-        const hashedPassword = await bcrypt.hash("1234", 10);
+        await sequelize.authenticate();
+        console.log('✅ Connected to Supabase Pooler!');
 
-        const newUser = await User.create({
-            username: "adham",
-            password: hashedPassword,
-            role: "cashier", // ✅ تأكد أن الدور يتم تحديده هنا
-        });
+        // إنشاء يوزر الأدمن الأساسي
+        const adminExists = await User.findOne({ where: { username: 'admin' } });
+        if (!adminExists) {
+            const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+            await User.create({
+                username: 'admin',
+                password: hashedAdminPassword,
+                role: 'manager'
+            });
+            console.log('✅ Admin user created: admin / admin123');
+        } else {
+            console.log('ℹ️ Admin user already exists.');
+        }
 
-        console.log("✅ تم إنشاء المستخدم المدير بنجاح:", newUser);
+        // إنشاء يوزر أدهم (اختياري)
+        const adhamExists = await User.findOne({ where: { username: 'adham' } });
+        if (!adhamExists) {
+            const hashedAdhamPassword = await bcrypt.hash('adham123', 10);
+            await User.create({
+                username: 'adham',
+                password: hashedAdhamPassword,
+                role: 'manager'
+            });
+            console.log('✅ Adham user created: adham / adham123');
+        }
+
+        console.log('🚀 All users are ready!');
+        process.exit(0);
     } catch (error) {
-        console.error("❌ حدث خطأ أثناء إنشاء المستخدم:", error);
+        console.error('❌ Error:', error);
+        process.exit(1);
     }
-};
+}
 
-createManager();
+createUsers();

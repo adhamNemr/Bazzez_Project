@@ -9,7 +9,7 @@ module.exports = {
     footerMessage: "شكراً لزيارتكم! نرجو أن تكون تجربتكم سعيدة.",
     printerSettings: {
         type: process.env.PRINTER_TYPE || 'epson',
-        interface: process.env.PRINTER_INTERFACE || '//./COM1',
+        interface: process.env.PRINTER_INTERFACE || 'printer:POSPrinter POS80',
         characterSet: 'PC864_ARABIC' // Trying Arabic code page
     }
 };

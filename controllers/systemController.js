@@ -5,19 +5,19 @@ exports.restartServer = (req, res) => {
     try {
         console.log('🚀 Restarting server...');
 
-        // ✅ تشغيل أمر Node.js لإعادة تشغيل السيرفر
-        exec('pm2 restart server', (error, stdout, stderr) => {
-            if (error) {
-                console.error(`❌ Error restarting server: ${error.message}`);
-                return res.status(500).json({ message: 'Failed to restart server' });
+        // ✅ إعادة تشغيل البرنامج بالكامل (Electron Relaunch)
+        try {
+            const { app } = require('electron');
+            if (app) {
+                console.log('♻️ Relaunching Electron app...');
+                app.relaunch();
+                app.exit(0);
+                return res.json({ message: 'System relaunching...' });
             }
-            if (stderr) {
-                console.error(`❌ Stderr: ${stderr}`);
-                return res.status(500).json({ message: 'Error during server restart' });
-            }
-            console.log(`✅ Server restarted successfully: ${stdout}`);
-            res.json({ message: 'Server restarted successfully!' });
-        });
+        } catch (e) {
+            console.log('⚠️ Not in Electron, just exiting process.');
+            process.exit(0);
+        }
 
     } catch (error) {
         console.error('❌ Unexpected error:', error);

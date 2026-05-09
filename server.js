@@ -67,8 +67,8 @@ app.use("/", indexRoutes);
 // ✅ Error Handler (must be last)
 app.use(errorHandler);
 
-require("dotenv").config();
-console.log("🔑 JWT Secret:", process.env.JWT_SECRET);
+const JWT_SECRET = 'mySuperSecretKey123';
+console.log("🔑 JWT Secret Loaded");
 
 const { Setting } = require("./models");
 
@@ -77,13 +77,26 @@ sequelize
   .then(async () => {
     console.log("✅ Connected to the database successfully!");
     try {
-      await Setting.sync();
+      await sequelize.sync(); // Sync all models for Supabase fresh start
       
-      // ✅ Check and add 'variants' column to 'inventory' table if missing
-      const [results] = await sequelize.query("SHOW COLUMNS FROM inventory LIKE 'variants'");
-      if (results.length === 0) {
-        await sequelize.query("ALTER TABLE inventory ADD COLUMN variants JSON NULL AFTER min");
+      // ✅ Check and add 'variants' column to 'inventory' table if missing (DB Agnostic)
+      const tableInfo = await sequelize.getQueryInterface().describeTable('inventory');
+      if (!tableInfo.variants) {
+        await sequelize.query('ALTER TABLE inventory ADD COLUMN variants JSON NULL');
         console.log("✅ Column 'variants' added to 'inventory' table.");
+      }
+
+      // ✅ Seed Default Settings if empty
+      const settingsCount = await Setting.count();
+      if (settingsCount === 0) {
+        console.log("🌱 Seeding default settings...");
+        await Setting.bulkCreate([
+          { key: 'store_name', value: 'Vortex POS', group: 'general' },
+          { key: 'vat_percent', value: '0', group: 'finance' },
+          { key: 'currency', value: 'EGP', group: 'finance' },
+          { key: 'active_business_date', value: new Date().toLocaleDateString('en-CA'), group: 'system' }
+        ]);
+        console.log("✅ Default settings seeded.");
       }
 
       console.log("✅ Settings table synced");

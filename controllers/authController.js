@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { User } = require("../models");
 
 exports.login = async (req, res) => {
@@ -27,7 +27,7 @@ exports.login = async (req, res) => {
         // إنشاء التوكن مع تضمين دور المستخدم
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role }, 
-            process.env.JWT_SECRET, 
+            'mySuperSecretKey123', 
             { expiresIn: "7d" }
         );
 

@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     container.innerHTML = `
         <header class="main-brand-header">
             <div class="brand-group">
-                <img src="/img/logo.png" alt="Vortex" class="brand-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5164/5164023.png'">
+                <img src="/img/logo.png" alt="Bazzez" class="brand-logo">
                 <div class="brand-text">
                     <h1>VORTEX</h1>
                     <span>SYSTEMS</span>

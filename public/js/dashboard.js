@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
                 datasets: [{
                     label: isAr ? 'إجمالي المبيعات' : 'Gross Sales',
-                    data: [420, 650, 1200, 2800, 3400, 3100, 4200, 3800],
+                    data: [0, 0, 0, 0, 0, 0, 0, 0], // Start empty
                     borderColor: '#008060',
                     borderWidth: 2.5,
                     fill: true,
@@ -74,11 +74,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                 },
                 scales: {
                     x: { grid: { display: false }, ticks: { font: { size: 11, weight: 500 }, color: '#6d7175' } },
-                    y: { grid: { color: '#f1f2f3', drawBorder: false }, ticks: { font: { size: 11, weight: 500 }, color: '#6d7175' } }
+                    y: { 
+                        grid: { color: '#f1f2f3', drawBorder: false }, 
+                        ticks: { 
+                            font: { size: 11, weight: 500 }, 
+                            color: '#6d7175',
+                            callback: function(value) { return value + (isAr ? ' ج.م' : ' LE'); }
+                        } 
+                    }
                 }
             }
         });
     }
+
+    // ✅ Global Chart Storage
+    let realChartData = {
+        today: new Array(12).fill(0),
+        yesterday: new Array(12).fill(0),
+        week: { labels: [], data: [] }
+    };
+    const hourlyLabels = ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'];
 
     // ✅ Fetch Real Data
     const loadDashboardData = async () => {
@@ -89,36 +104,57 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json();
 
-            // Update UI with counting animation
-            animateValue("orderCount", 0, data.totalOrders || 0, 800);
-            animateValue("revenueCount", 0, (data.totalOrders || 0) * 145, 1000, ` ${t.currency}`);
-            animateValue("avgOrderValue", 0, 145, 1200, ` ${t.currency}`);
-            animateValue("activeCustomers", 0, Math.floor((data.totalOrders || 0) * 0.4), 1400);
+            console.log("📊 Received Dashboard Data:", data);
+            realChartData = data.charts;
 
-            injectTopProducts();
-            injectActivityStream();
+            // Update UI with real data
+            animateValue("orderCount", 0, data.totalOrders || 0, 800);
+            animateValue("revenueCount", 0, data.totalRevenue || 0, 1000, ` ${t.currency}`);
+            animateValue("avgOrderValue", 0, data.avgOrderValue || 0, 1200, ` ${t.currency}`);
+            animateValue("activeCustomers", 0, data.activeCustomers || 0, 1400);
+
+            injectTopProducts(data.topProducts || []);
+            injectActivityStream(data.recentActivity || []);
+
+            // Initial Chart (Today)
+            updateDashboardChart('today');
 
         } catch (error) {
             console.error("❌ Data load error:", error);
         }
     };
 
-    const injectTopProducts = () => {
+    function updateDashboardChart(period) {
+        const chart = Chart.getChart('salesPulseChart');
+        if (!chart) return;
+
+        if (period === 'week') {
+            chart.data.labels = realChartData.week.labels;
+            chart.data.datasets[0].data = realChartData.week.data;
+        } else {
+            chart.data.labels = hourlyLabels;
+            chart.data.datasets[0].data = realChartData[period];
+        }
+        chart.update();
+    }
+
+    const injectTopProducts = (products) => {
         const container = document.getElementById("topProductsList");
         if (!container) return;
-        const mockProducts = [
-            { name: "Super Vortex Burger", sales: 840, share: 100 },
-            { name: "Cheese Master Fries", sales: 620, share: 74 },
-            { name: "Vintage Cola 500ml", sales: 410, share: 49 },
-            { name: "Crunchy Chicken Strip", sales: 210, share: 25 }
-        ];
+        
+        if (products.length === 0) {
+            container.innerHTML = `<p style="text-align:center; padding:20px; color:#6d7175;">${isAr ? 'لا توجد بيانات اليوم' : 'No data today'}</p>`;
+            return;
+        }
 
-        container.innerHTML = mockProducts.map((p, i) => `
+        const maxSales = Math.max(...products.map(p => p.sales), 1);
+
+        container.innerHTML = products.map((p, i) => `
             <div class="product-item">
                 <div class="product-rank">${i + 1}</div>
                 <span class="product-name">${p.name}</span>
                 <div class="product-bar-bg">
-                    <div class="product-bar-fill" style="width: ${p.share}%"></div>
+                    <div class="product-bar-fill" style="width: ${(p.sales / maxSales) * 100}%"></div>
                 </div>
                 <div class="product-sales">
                     <span class="product-sales-num">${p.sales} ${t.sold}</span>
@@ -127,64 +163,71 @@ document.addEventListener("DOMContentLoaded", async () => {
         `).join('');
     };
 
-    const injectStockAlerts = () => {
-        const container = document.getElementById("stockAlerts");
-        if (!container) return;
-        const mockAlerts = [
-            { name: isAr ? "كوكا كولا 500مل" : "Cola 500ml", qty: 3, min: 10, unit: isAr ? "قطعة" : "pcs", critical: true },
-            { name: isAr ? "صلصة الشيف" : "Chef Sauce", qty: 1, min: 5, unit: isAr ? "زجاجة" : "bottles", critical: true },
-            { name: isAr ? "خبز الهامبرغر" : "Burger Buns", qty: 8, min: 20, unit: isAr ? "كيس" : "bags", critical: false }
-        ].sort((a, b) => b.critical - a.critical); // Critical first
-        if (mockAlerts.length === 0) return;
-
-        const alertsHTML = mockAlerts.map(a => `
-            <div class="panel-alert-item ${a.critical ? 'critical' : ''}">
-                <div class="alert-icon-wrap">
-                    <i class="fas fa-${a.critical ? 'circle-exclamation' : 'triangle-exclamation'}"></i>
-                </div>
-                <div class="alert-body">
-                    <div class="alert-name">${a.name}</div>
-                    <div class="alert-details">
-                        <span class="alert-qty">${isAr ? 'المتبقي:' : 'Remaining:'} <strong>${a.qty} ${a.unit}</strong></span>
-                        <span class="alert-min">${isAr ? 'الحد الأدنى:' : 'Min:'} ${a.min} ${a.unit}</span>
-                    </div>
-                </div>
-                <div class="alert-actions">
-                    <a href="/products.html" class="alert-restock-btn">
-                        <i class="fas fa-plus"></i> ${isAr ? 'تعبئة مخزون' : 'Restock'}
-                    </a>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = `
-            <div class="panel-alerts-header">
-                <span><i class="fas fa-boxes-stacked"></i> ${isAr ? 'تنبيهات المخزون' : 'Stock Alerts'} <span class="alerts-count-badge">${mockAlerts.length}</span></span>
-                <a href="/products.html" class="section-link">${isAr ? 'إدارة المخزن' : 'Manage Inventory'} <i class="fas fa-arrow-left"></i></a>
-            </div>
-            <div class="panel-alerts-list">${alertsHTML}</div>
-        `;
-    };
-
-    const injectActivityStream = () => {
+    const injectActivityStream = (activities) => {
         const container = document.getElementById("recentActivityStream");
         if (!container) return;
-        const mockActivities = [
-            { id: "1048", customer: "Adham Nemr", time: isAr ? "منذ دقيقتين" : "2 mins ago", amount: "240.00" },
-            { id: "1047", customer: isAr ? "عميل نقدي" : "Walk-in Customer", time: isAr ? "منذ 12 دقيقة" : "12 mins ago", amount: "125.50" },
-            { id: "1046", customer: "Sarah Ahmed", time: isAr ? "منذ 45 دقيقة" : "45 mins ago", amount: "89.00" }
-        ];
 
-        container.innerHTML = mockActivities.map(a => `
-            <div class="activity-item">
-                <div class="activity-marker"></div>
-                <div class="activity-meta">
-                    <span class="activity-customer">${a.customer}</span>
-                    <span class="activity-time">#${a.id} • ${a.time}</span>
+        if (activities.length === 0) {
+            container.innerHTML = `<p style="text-align:center; padding:20px; color:#6d7175;">${isAr ? 'لا توجد عمليات بعد' : 'No activity yet'}</p>`;
+            return;
+        }
+
+        container.innerHTML = activities.map(a => {
+            const time = new Date(a.createdAt).toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="activity-item">
+                    <div class="activity-marker"></div>
+                    <div class="activity-meta">
+                        <span class="activity-customer">${a.customerName || (isAr ? 'عميل نقدي' : 'Cash Customer')}</span>
+                        <span class="activity-time">#${a.id} • ${time}</span>
+                    </div>
+                    <span class="activity-amount">${parseFloat(a.orderTotal).toFixed(2)} ${t.currency}</span>
                 </div>
-                <span class="activity-amount">${a.amount} ${t.currency}</span>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+    };
+
+    const injectStockAlerts = async () => {
+        const container = document.getElementById("stockAlerts");
+        if (!container) return;
+
+        try {
+            const response = await fetch('/api/analytics/low-stock', {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            if (!data.success || data.lowStock.length === 0) {
+                container.innerHTML = "";
+                return;
+            }
+
+            const alertsHTML = data.lowStock.slice(0, 3).map(a => `
+                <div class="panel-alert-item critical">
+                    <div class="alert-icon-wrap"><i class="fas fa-circle-exclamation"></i></div>
+                    <div class="alert-body">
+                        <div class="alert-name">${a.name}</div>
+                        <div class="alert-details">
+                            <span class="alert-qty">${isAr ? 'المتبقي:' : 'Remaining:'} <strong>${a.quantity}</strong></span>
+                            <span class="alert-min">${isAr ? 'الحد الأدنى:' : 'Min:'} ${a.min}</span>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <a href="/inventory.html" class="alert-restock-btn"><i class="fas fa-plus"></i> ${isAr ? 'تعبئة' : 'Restock'}</a>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="panel-alerts-header">
+                    <span><i class="fas fa-boxes-stacked"></i> ${isAr ? 'تنبيهات المخزون' : 'Stock Alerts'} <span class="alerts-count-badge">${data.lowStock.length}</span></span>
+                    <a href="/inventory.html" class="section-link">${isAr ? 'إدارة المخزن' : 'Manage Inventory'} <i class="fas fa-arrow-left"></i></a>
+                </div>
+                <div class="panel-alerts-list">${alertsHTML}</div>
+            `;
+        } catch (error) {
+            console.error("❌ Stock alerts error:", error);
+        }
     };
 
     const checkHealth = async () => {
@@ -246,20 +289,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     injectStockAlerts();
 
     // ⏱️ Time Toggle Interactivity
-    const chartDataSets = {
-        today:     [420, 650, 1200, 2800, 3400, 3100, 4200, 3800],
-        yesterday: [300, 500, 900,  2100, 2700, 2500, 3100, 2900],
-        week:      [3200, 4100, 5500, 6800, 7200, 6900, 8100, 7500]
-    };
     document.querySelectorAll('.time-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const chart = Chart.getChart('salesPulseChart');
-            if (chart) {
-                chart.data.datasets[0].data = chartDataSets[btn.dataset.period];
-                chart.update('active');
-            }
+            updateDashboardChart(btn.dataset.period);
         });
     });
 });

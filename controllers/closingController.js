@@ -239,10 +239,12 @@ exports.getMonthlySummary = async (req, res) => {
         // Use MySQL DATE() function to avoid UTC timezone offset issues
         // This ensures e.g. '2026-04-30 00:00:00 UTC' is treated as April, not March
         const whereClause = {
-            [Op.and]: [
-                sequelize.where(sequelize.fn('DATE', sequelize.col('closingDate')), { [Op.gte]: `${currentMonth}-01` }),
-                sequelize.where(sequelize.fn('DATE', sequelize.col('closingDate')), { [Op.lte]: sequelize.literal(`LAST_DAY('${currentMonth}-01')`) })
-            ]
+            closingDate: {
+                [Op.and]: [
+                    { [Op.gte]: `${currentMonth}-01` },
+                    { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
+                ]
+            }
         };
 
         const total_orders = await DailyClosing.sum("totalOrders", { where: whereClause }) || 0;
