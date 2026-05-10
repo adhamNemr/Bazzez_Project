@@ -161,7 +161,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: .5rem;
     min-width: 0;
 }
 
@@ -182,8 +182,7 @@
 .payment-selector {
     display: flex;
     gap: 1rem;
-    margin-bottom: 0.5rem;
-    padding-top: 10px;
+    /* margin-bottom: 0.5rem; */
 }
 
 .payment-btn {
@@ -210,7 +209,7 @@
 }
 
 .payment-btn:hover {
-    transform: translateY(-3px);
+    /* transform: translateY(3px); */
     border-color: var(--primary);
     color: var(--primary);
     box-shadow: var(--shadow-md);
@@ -232,7 +231,7 @@
 .category-nav {
     overflow-x: auto;
     padding: 0.75rem 0;
-    margin-bottom: 0.5rem;
+    /* margin-bottom: 0.5rem; */
     scrollbar-width: none;
 }
 .category-nav::-webkit-scrollbar { display: none; }
@@ -251,7 +250,7 @@
     background: white;
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 6.25rem;
-    font-size: clamp(0.75rem, 0.85vw, 0.95rem);
+    font-size: clamp(0.75rem, 1.85vw, 0.95rem);
     font-weight: 700;
     color: #64748b;
     cursor: pointer;
@@ -503,6 +502,7 @@
     flex-direction: column;
     overflow: hidden;
     padding: 1.5rem;
+    padding-top: 0;
 }
 
 .checkout-aside {
@@ -632,7 +632,6 @@
     justify-content: center;
     gap: 0.75rem;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 15px 35px rgba(0, 128, 96, 0.25);
 }
 
 .checkout-btn:hover {

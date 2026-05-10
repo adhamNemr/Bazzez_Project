@@ -3,513 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title-tag">إدارة المنتجات - Vortex POS</title>
+    <title>إدارة المنتجات - Vortex POS</title>
     <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./css/products.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-    <style>
-        /* Layout specifics - inherits background and fonts from common.css */
-        body[dir="rtl"], html[dir="rtl"] body {
-            padding-left: 0;
-            padding-right: 260px;
-        }
-
-        body[dir="ltr"], html[dir="ltr"] body {
-            padding-right: 0;
-            padding-left: 260px;
-        }
-
-        /* 🏔️ Fix Header to match Inventory EXACTLY */
-        #header-container .main-brand-header {
-            background: white;
-            padding: 0.75rem 2rem;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
-            border-radius: 0;
-        }
-
-        #header-container .context-pill {
-            background: var(--luxury-emerald-light, #f0fdf4);
-            color: var(--luxury-emerald, #008060);
-            border: 1px solid rgba(0, 128, 96, 0.1);
-        }
-
-        #header-container .context-pill i {
-            color: var(--luxury-emerald, #008060);
-        }
-
-        .main-content {
-            width: 100%;
-            min-height: 100vh;
-            padding: 0; /* Removed padding so header can span full width */
-        }
-
-        .container {
-            padding: 1rem 2rem; /* Moved padding here to keep content centered */
-        }
-
-        /* 🌿 Reverted to Simple UI */
-
-        /* 📊 Stats Row Styles */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 0.75rem; /* Reduced distance to toolbar */
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.25rem 1.5rem; /* More compact padding */
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 0.5rem; /* Tighter gap */
-            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-            border: 1px solid var(--luxury-border);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            min-height: 140px; /* Consistent compact height */
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--luxury-emerald);
-            opacity: 0.1;
-        }
-
-        #loc-btn-excel {
-            background: var(--luxury-emerald);
-            color: white;
-            border: none;
-            box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
-            width: 100%;
-        }
-
-        #loc-btn-excel:hover {
-            background: var(--luxury-emerald);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(0, 128, 96, 0.25);
-            filter: brightness(1.1);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
-            border-color: var(--luxury-emerald);
-        }
-
-        /* 📊 Product Sales Stats in Drawer */
-        .drawer-sales-stats {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px dashed rgba(0,0,0,0.08);
-            display: none; /* Hidden in Add Mode */
-        }
-
-        .drawer-stat-card {
-            flex: 1;
-            background: #f8fafc;
-            border: 1px solid rgba(0,0,0,0.04);
-            border-radius: 16px;
-            padding: 1.25rem 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .drawer-stat-card:hover {
-            transform: translateY(-3px);
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.04);
-        }
-
-        .drawer-stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .drawer-stat-retail .drawer-stat-icon {
-            background: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .drawer-stat-wholesale .drawer-stat-icon {
-            background: #f3e8ff;
-            color: #9333ea;
-        }
-
-        .drawer-stat-title {
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: #64748b;
-            margin-bottom: 0.25rem;
-        }
-
-        .drawer-stat-value {
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--luxury-slate);
-        }
-
-
-        /* 🎭 Side Drawer Modern Styles - Luxury Edition */
-        .side-drawer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        .side-drawer {
-            position: fixed;
-            top: 0;
-            height: 100%;
-            width: 480px;
-            background: white;
-            z-index: 1001;
-            box-shadow: -20px 0 50px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), visibility 0.5s;
-            visibility: hidden;
-            overflow: hidden;
-        }
-
-        html[dir="rtl"] .side-drawer {
-            right: 0;
-            transform: translateX(100%);
-            border-top-left-radius: 24px;
-            border-bottom-left-radius: 24px;
-        }
-        html[dir="ltr"] .side-drawer {
-            left: 0;
-            transform: translateX(-100%);
-            border-top-right-radius: 24px;
-            border-bottom-right-radius: 24px;
-        }
-
-        .side-drawer.open {
-            transform: translateX(0) !important;
-            visibility: visible !important;
-        }
-
-        .side-drawer-header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            display: flex;
-            align-items: center;
-            justify-content: center; /* 🎯 Centered Title */
-            background: linear-gradient(to bottom, #f8fafc, #ffffff);
-            position: relative;
-        }
-
-        .side-drawer-header h2 {
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: var(--luxury-slate);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .close-drawer {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #f1f5f9;
-            border: none;
-            width: 35px;
-            height: 35px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #64748b;
-            transition: all 0.3s ease;
-        }
-
-        html[dir="rtl"] .close-drawer { left: 1.5rem; }
-        html[dir="ltr"] .close-drawer { right: 1.5rem; }
-
-
-        .close-drawer:hover {
-            background: #fee2e2;
-            color: #ef4444;
-            transform: rotate(90deg);
-        }
-
-        .side-drawer-content {
-            flex: 1;
-            padding: 2.5rem 2rem;
-            overflow-y: auto;
-        }
-
-        .side-drawer-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid rgba(0,0,0,0.04);
-            display: flex;
-            gap: 1.25rem;
-            background: white;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.02);
-        }
-
-        /* 💎 Premium Form Inputs */
-        .input-group {
-            margin-bottom: 2rem;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 800;
-            color: #475569;
-            letter-spacing: 0.02em;
-        }
-
-        .input-with-icon {
-            position: relative;
-        }
-
-        .input-with-icon i {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        html[dir="rtl"] .input-with-icon i { right: 1.5rem; }
-        html[dir="ltr"] .input-with-icon i { left: 1.5rem; }
-
-        .input-with-icon input {
-            width: 100%;
-            padding: 1.1rem 1.5rem;
-            background: #f8fafc;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            font-size: 1rem;
-            font-weight: 700;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            color: var(--luxury-slate);
-        }
-
-        html[dir="rtl"] .input-with-icon input { padding-right: 3.5rem; }
-        html[dir="ltr"] .input-with-icon input { padding-left: 3.5rem; }
-
-        .input-with-icon input:focus {
-            background: white;
-            border-color: var(--luxury-emerald);
-            box-shadow: 0 10px 25px var(--luxury-emerald-light);
-            outline: none;
-        }
-
-        .input-with-icon input:focus + i {
-            color: var(--luxury-emerald);
-        }
-
-        /* 🚀 Drawer Buttons */
-        .drawer-btn {
-            flex: 1; /* Equal width buttons */
-            padding: 1.1rem;
-            border-radius: 14px;
-            font-weight: 800;
-            font-size: 1rem;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .btn-save {
-            background: var(--luxury-emerald);
-            color: white;
-            box-shadow: 0 8px 20px rgba(0, 128, 96, 0.2);
-        }
-
-        .btn-delete {
-            background: #ef4444;
-            color: white;
-            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
-        }
-
-        .drawer-btn:hover {
-            transform: translateY(-4px);
-            filter: brightness(1.05);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-        }
-
-        .btn-save:hover {
-            box-shadow: 0 12px 30px rgba(0, 128, 96, 0.3);
-        }
-
-        .btn-delete:hover {
-            background: #e11d48;
-            color: white;
-            box-shadow: 0 12px 30px rgba(225, 29, 72, 0.25);
-        }
-
-
-
-        .orders-table th, .orders-table td {
-            padding: 1.25rem 0.5rem;
-            text-align: center !important; /* Force center for all columns */
-            vertical-align: middle;
-        }
-
-        /* 📏 Balanced Column Widths (%) */
-        .orders-table th:nth-child(1), .orders-table td:nth-child(1) { width: 8%; }   /* ID */
-        .orders-table th:nth-child(2), .orders-table td:nth-child(2) { width: 27%; }  /* Name */
-        .orders-table th:nth-child(3), .orders-table td:nth-child(3) { width: 17%; }  /* Category */
-        .orders-table th:nth-child(4), .orders-table td:nth-child(4) { width: 16%; }  /* Retail */
-        .orders-table th:nth-child(5), .orders-table td:nth-child(5) { width: 16%; }  /* Wholesale */
-        .orders-table th:nth-child(6), .orders-table td:nth-child(6) { width: 16%; }  /* Sold */
-
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .stat-info span {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-info h3 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--luxury-slate);
-        }
-
-        /* 🎨 Dynamic Category Colors */
-        .cat-beef { background: #fee2e2; color: #b91c1c; }
-        .cat-chicken { background: #fef3c7; color: #b45309; }
-        .cat-drink { background: #e0f2fe; color: #0369a1; }
-        .cat-combo { background: #f3e8ff; color: #7e22ce; }
-        .cat-dessert { background: #fce7f3; color: #be185d; }
-        .cat-appetizer { background: #ecfdf5; color: #047857; }
-    </style>
-</head>
 <body>
-    <div id="sidebar-container"></div>
     
+    <div id="sidebar-container"></div>
+    <div id="header-container" data-title="إدارة المنتجات" data-icon="fa-warehouse"></div>
+
     <div class="main-content">
-        <!-- 🏗️ Dynamic Premium Header -->
-        <div id="header-container" data-title="إدارة المنتجات" data-icon="fa-box"></div>
 
         <div class="container">
-            <!-- 📊 Quick Stats Row -->
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: var(--luxury-emerald-light); color: var(--luxury-emerald);">
+
+            <!-- 📊 Quick Stats Panel -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; ">
+                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(0, 128, 96, 0.1); display: flex; align-items: center; justify-content: center; color: var(--luxury-emerald); font-size: 1.5rem;">
                         <i class="fas fa-boxes"></i>
                     </div>
-                    <div class="stat-info">
-                        <span id="loc-stat-total">Total Products</span>
-                        <h3 id="stat-total-count">0</h3>
+                    <div>
+                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-total">إجمالي المنتجات</p>
+                        <h3 id="stat-total-count" style="margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--luxury-slate);">0</h3>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+
+                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 1.5rem;">
                         <i class="fas fa-fire"></i>
                     </div>
-                    <div class="stat-info">
-                        <span id="loc-stat-best">Best Seller</span>
-                        <h3 id="stat-best-seller">---</h3>
+                    <div>
+                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-best">الأكثر مبيعاً</p>
+                        <h3 id="stat-best-seller" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--luxury-slate);">---</h3>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-                        <i class="fas fa-chart-line"></i>
+
+                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.5rem;">
+                        <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <div class="stat-info">
-                        <span id="loc-stat-sold">Total Sold</span>
-                        <h3 id="stat-total-sold">0</h3>
+                    <div>
+                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-sold">إجمالي المبيعات</p>
+                        <h3 id="stat-total-sold" style="margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--luxury-slate);">0</h3>
                     </div>
                 </div>
             </div>
 
             <!-- ✨ Optimized Toolbar -->
-            <div class="toolbar">
+            <div class="toolbar" style="background: white; border-radius: 16px;  box-shadow: var(--luxury-shadow);">
                 <form id="add-product-form">
-                    <!-- 🔍 Row 1: Search & Advanced Filtering -->
-                    <div class="search-bar-container" style="display: flex; gap: 1rem; align-items: center; background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div class="search-bar-container">
                         <div class="search-container" style="position:relative; flex:2;">
-                            <i class="fas fa-search" style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
+                            <i class="fas fa-search" style="position:absolute; right:1.25rem; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
                             <input 
                                 type="text" 
                                 id="search-bar" 
                                 class="search-bar" 
                                 placeholder="ابحث بالاسم، الفئة أو الكود..." 
                                 oninput="searchProducts()" 
-                                style="padding-right: 2.5rem; width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; height: 45px; font-weight: 500;"
+                                style="padding-right: 3rem; width: 100%;"
                             />
                         </div>
                         
-                        <div class="filter-group" style="display: flex; gap: 0.5rem; flex: 1.5;">
-                            <!-- Sort Options -->
-                            <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; height: 45px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; padding: 0 1rem; cursor: pointer; font-weight: 600; color: var(--luxury-slate);">
+                        <div class="filter-group" style="display: flex; gap: 1rem; flex: 1.5;">
+                            <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="flex: 1;">
                                 <option value="" id="loc-filter-by">تصفية حسب...</option>
                                 <option value="most-sold" id="loc-best-seller">الأكثر مبيعاً</option>
                                 <option value="highest-price" id="loc-expensive">الأعلى سعراً</option>
                                 <option value="lowest-price" id="loc-cheapest">الأقل سعراً</option>
                             </select>
 
-                            <!-- Category Filter -->
-                            <select id="category-filter" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; height: 45px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; padding: 0 1rem; cursor: pointer; font-weight: 600; color: var(--primary);">
+                            <select id="category-filter" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; border-color: var(--luxury-emerald); color: var(--luxury-emerald); font-weight: 700;">
                                 <option value="all" id="loc-all-cats">كل الفئات</option>
-                                <!-- Dynamic categories will be injected here -->
                             </select>
                         </div>
 
-                        <!-- ➕ Add Product Button -->
-                        <button type="button" id="open-add-drawer" class="main-button" style="height: 45px; min-width: 160px; background: var(--luxury-emerald); border-radius: 8px;">
+                        <button type="button" id="open-add-drawer" class="main-button" style="min-width: 180px; background: var(--luxury-emerald); box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);">
                             <i class="fas fa-plus"></i>
                             <span id="loc-btn-add-new">إضافة منتج</span>
                         </button>
@@ -517,8 +88,8 @@
                 </form>
             </div>
 
-            <!-- 📦 Products Table Card -->
-            <div class="products-card">
+            <!-- 📦 Products Table -->
+            <div class="products-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: var(--luxury-shadow);">
                 <div class="table-container">
                     <table class="orders-table">
                         <thead>
@@ -526,24 +97,19 @@
                                 <th id="loc-id">ID</th>
                                 <th id="loc-name">الاسم</th>
                                 <th id="loc-category">الفئة</th>
-                                <th id="loc-price">قطاعي</th>
+                                <th id="loc-price">السعر</th>
                                 <th id="loc-wholesale">جملة</th>
                                 <th id="loc-sold">المبيعات</th>
                             </tr>
                         </thead>
-                        <tbody id="product-table">
-                            <!-- Data will be loaded here -->
-                        </tbody>
+                        <tbody id="product-table"></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- 📥 Footer Actions -->
             <div class="footer">
-                <button onclick="exportProductsToPDF()" id="loc-btn-pdf">
-                    <i class="fas fa-file-pdf"></i> Export PDF
-                </button>
-                <button onclick="exportProductsToExcel()" id="loc-btn-excel">
+                <button onclick="exportProductsToExcel()" id="loc-btn-excel" class="main-button">
                     <i class="fas fa-file-excel"></i> Export Excel
                 </button>
             </div>
@@ -601,16 +167,16 @@
                 </div>
 
                 <!-- 📊 Sales Details Section (Visible only in Edit Mode) -->
-                <div id="drawer-sales-section" class="drawer-sales-stats">
-                    <div class="drawer-stat-card drawer-stat-retail">
-                        <div class="drawer-stat-icon"><i class="fas fa-shopping-bag"></i></div>
-                        <div class="drawer-stat-title" id="loc-retail-sales">مبيعات القطاعي</div>
-                        <div class="drawer-stat-value" id="drawer-retail-sold">0</div>
-                    </div>
-                    <div class="drawer-stat-card drawer-stat-wholesale">
-                        <div class="drawer-stat-icon"><i class="fas fa-truck-loading"></i></div>
-                        <div class="drawer-stat-title" id="loc-wholesale-sales">مبيعات الجملة</div>
-                        <div class="drawer-stat-value" id="drawer-wholesale-sold">0</div>
+                <div id="drawer-sales-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px dashed #e2e8f0; display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid #edf2f7;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;" id="loc-retail-sales">مبيعات القطاعي</p>
+                            <h4 id="drawer-retail-sold" style="margin: 0.5rem 0 0; font-size: 1.25rem; font-weight: 800; color: var(--luxury-emerald);">0</h4>
+                        </div>
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid #edf2f7;">
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;" id="loc-wholesale-sales">مبيعات الجملة</p>
+                            <h4 id="drawer-wholesale-sold" style="margin: 0.5rem 0 0; font-size: 1.25rem; font-weight: 800; color: #3b82f6;">0</h4>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -628,14 +194,13 @@
         </div>
     </div>
 
+    <script src="./js/auth.js"></script>
     <script src="./js/header-loader.js"></script>
     <script src="./js/sidebar-loader.js"></script>
     <script src="./js/product.js"></script>
-    <script src="./js/auth.js"></script>
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
 </body>
-</html>
 </html>

@@ -190,21 +190,6 @@ async function fetchProducts() {
             rawData['سراويل'] = saruwalProducts;
         }
 
-        // 🧪 Manual Category Injection: Always ensure Kids category has real test data
-        console.log("🧪 Ensuring Kids Category has valid test data...");
-        rawData['جلباب أطفالي'] = [
-            { 
-                id: 'kids-test-1',
-                name: "جلباب أطفالي مطرز", 
-                category: "جلباب أطفالي", 
-                price: 450,
-                wholesalePrice: 400,
-                variants: [
-                    { name: "أبيض", price: 450 },
-                    { name: "كريمي", price: 450 }
-                ]
-            }
-        ];
 
         allCategorizedProducts = rawData;
         
@@ -363,7 +348,7 @@ function showVariantModal(product) {
     variants.forEach(v => {
         const fName = v.name || v.color;
         if (fName && fName.trim() !== "") {
-            fabricMap[fName] = v.price || product.price;
+            fabricMap[fName] = v.price || v.cost || product.price;
         }
     });
     

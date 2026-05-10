@@ -483,12 +483,15 @@ function renderInventory(items) {
 }
 
 function updateStats(items) {
-    const lowStock = items.filter(i => i.quantity <= (i.min || 5)).length;
+    const lowStock = items.filter(i => i.quantity <= (i.min || 0)).length;
     const expiring = items.filter(i => checkIfNearExpiry(i.expiryDate)).length;
 
-    document.getElementById('stat-total-items').textContent = items.length;
-    document.getElementById('stat-low-stock').textContent = lowStock;
-    document.getElementById('stat-near-expiry').textContent = expiring;
+    const totalEl = document.getElementById('stat-total-items');
+    const lowEl   = document.getElementById('stat-low-stock');
+    const expEl   = document.getElementById('stat-near-expiry');
+    if (totalEl) totalEl.textContent = items.length;
+    if (lowEl)   lowEl.textContent   = lowStock;
+    if (expEl)   expEl.textContent   = expiring;
 }
 
 function checkIfNearExpiry(dateStr) {
@@ -549,7 +552,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
 }
 
 async function openAddModal(preExistingData = null) {
-    const isRetail = (localStorage.getItem('systemMode') || 'retail') === 'retail';
+    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
     const langT = t[currentLang];
     
     const state = preExistingData || {
@@ -661,7 +664,7 @@ async function openAddModal(preExistingData = null) {
 }
 
 async function selectItem(item, preExistingData = null) {
-    const isRetail = (localStorage.getItem('systemMode') || 'retail') === 'retail';
+    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
     const langT = t[currentLang];
 
     const state = preExistingData || {
@@ -808,6 +811,9 @@ async function handleFormSubmit(data) {
         if (res.ok) {
             Swal.fire({ icon: 'success', title: t[currentLang].msgAdded, timer: 1500, showConfirmButton: false });
             fetchInventory(true);
+        } else {
+            const err = await res.json().catch(() => ({}));
+            Swal.fire({ icon: 'error', title: t[currentLang].msgError, text: err.error || `Server: ${res.status}` });
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: t[currentLang].msgError });

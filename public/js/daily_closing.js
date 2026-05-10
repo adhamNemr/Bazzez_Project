@@ -75,12 +75,16 @@ async function handleClosing() {
 
     if (result.isConfirmed) {
         try {
+            const dateInput = document.getElementById('closing-date-input');
+            const selectedDate = dateInput ? dateInput.value : new Date().toLocaleDateString('en-CA');
+
             const response = await fetch('/api/closing/close-day', {
                 method: 'POST',
                 headers: { 
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ date: selectedDate })
             });
             const data = await response.json();
 

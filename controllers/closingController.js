@@ -28,7 +28,16 @@ exports.getDailySummary = async (req, res) => {
         const categoryStats = {};
 
         for (const order of orders) {
-            const orderDetails = JSON.parse(order.orderDetails);
+            let orderDetails = [];
+            try {
+                orderDetails = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+            } catch (e) {
+                console.error("⚠️ Malformed orderDetails in order:", order.id);
+                continue;
+            }
+
+            if (!Array.isArray(orderDetails)) continue;
+
             for (const item of orderDetails) {
                 if (!item.quantity || isNaN(item.quantity) || item.name === "تعليق") continue;
                 totalItems += item.quantity;
@@ -145,7 +154,8 @@ exports.getDailySummary = async (req, res) => {
 
 exports.closeDay = async (req, res) => {
     try {
-        const businessDate = await getActiveBusinessDate();
+        // 🎯 Priority: Date from request body (manual selection) OR current active business date
+        const businessDate = req.body.date || await getActiveBusinessDate();
 
         const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) {
@@ -171,7 +181,11 @@ exports.closeDay = async (req, res) => {
         const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
         let totalSandwiches = 0;
         for (const order of orders) {
-            const details = JSON.parse(order.orderDetails);
+            let details = [];
+            try {
+                details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+            } catch (e) { continue; }
+            if (!Array.isArray(details)) continue;
             for (const item of details) totalSandwiches += item.quantity;
         }
 
@@ -211,7 +225,11 @@ async function calculateTotalCost(businessDate) {
     const ingredientMap = {};
     const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
     for (const order of orders) {
-        const details = JSON.parse(order.orderDetails);
+        let details = [];
+        try {
+            details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+        } catch (e) { continue; }
+        if (!Array.isArray(details)) continue;
         for (const item of details) {
             const recipes = await Recipe.findAll({ where: { sandwich: item.name } });
             recipes.forEach(recipe => {

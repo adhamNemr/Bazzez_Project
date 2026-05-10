@@ -305,7 +305,10 @@ function applyTranslations() {
 
 async function fetchSettings() {
     try {
-        const response = await fetch('/api/settings');
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/settings', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         appSettings = await response.json();
         if (appSettings.vat_percent !== undefined) {
             vatRate = parseFloat(appSettings.vat_percent) / 100;
@@ -361,7 +364,10 @@ async function fetchOrders(page = 1) {
         const url = `/api/orders?page=${page}&limit=${ordersPerPage}&date=${selectedDate}&status=${activeFilter}&search=${encodeURIComponent(query)}`;
         console.log("📡 Fetching from:", url);
         
-        const response = await fetch(url);
+        const token = localStorage.getItem('token');
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         
@@ -581,9 +587,11 @@ function renderOrders(orders = []) {
         return;
     }
 
-    // 🚀 Only sort by ID if we are NOT searching. If searching, preserve server's rank.
+    // 🚀 Sort by actual creation time to handle shift resets gracefully
     const searchVal = document.getElementById('order-search')?.value.trim();
-    const ordersToRender = (searchVal && searchVal !== "") ? [...orders] : [...orders].sort((a, b) => (b.id || 0) - (a.id || 0));
+    const ordersToRender = (searchVal && searchVal !== "") 
+        ? [...orders] 
+        : [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     ordersToRender.forEach((order, index) => {
         const tr = document.createElement('tr');

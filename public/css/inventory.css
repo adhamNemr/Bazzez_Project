@@ -16,7 +16,7 @@ body {
     background-color: var(--luxury-bg);
     font-family: 'Outfit', 'Noto Sans Arabic', sans-serif;
     margin: 0;
-    padding-top: 85px; /* Space for fixed header */
+    padding-top: 85px !important; /* Space for fixed header */
     color: var(--luxury-slate);
     overflow-x: hidden;
 }

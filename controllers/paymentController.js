@@ -27,8 +27,13 @@ exports.createPayment = async (req, res) => {
                 customerAddress: order.customerAddress,
                 deliveryPrice: order.deliveryPrice,
                 orderTotal: order.orderTotal,
-                orderDetails: JSON.parse(order.orderDetails),
-                discount: order.discount,
+                orderDetails: (() => {
+                    try {
+                        const d = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+                        return Array.isArray(d) ? d : [];
+                    } catch(e) { return []; }
+                })(),
+                discount: order.discountAmount || 0,
                 orderDate: new Date().toLocaleString("en-US", { timeZone: "Africa/Cairo" }),
             };
 

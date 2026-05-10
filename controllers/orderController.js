@@ -140,15 +140,29 @@ exports.createOrder = async (req, res) => {
             });
         }
 
-        // ✅ الحصول على تاريخ العمل الحالي من الإعدادات أو التاريخ الحالي
+        // ✅ الحصول على تاريخ العمل الحالي من الإعدادات (Source of Truth)
         const { Setting } = require('../models');
-        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
-        const businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+        let activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        
+        // 🗓️ Enforce YYYY-MM-DD format strictly
+        let businessDate = activeDateSetting ? activeDateSetting.value : new Date().toISOString().split('T')[0];
 
-        // ✅ حساب الرقم التسلسلي اليومي (Daily Serial)
+        // 🕒 Smart Auto-Shift Logic: If it's past 9:00 AM and we are still on an old business day
+        const now = new Date();
+        const calendarToday = now.toISOString().split('T')[0];
+        const currentHour = now.getHours();
+
+        if (businessDate < calendarToday && currentHour >= 9) {
+            console.log(`🕒 Auto-shifting business date from ${businessDate} to ${calendarToday} (Past 9:00 AM)`);
+            businessDate = calendarToday;
+            await Setting.upsert({ key: 'active_business_date', value: calendarToday, group: 'system' });
+        }
+
+        // ✅ حساب الرقم التسلسلي اليومي (Daily Serial) - Looking at ALL orders for this business day
         const lastOrderOfDay = await Order.findOne({
             where: { businessDate: businessDate },
-            order: [['dailySerial', 'DESC']]
+            order: [['dailySerial', 'DESC']],
+            paranoid: false // Ensure we see everything
         });
         const nextSerial = lastOrderOfDay ? (Number(lastOrderOfDay.dailySerial) || 0) + 1 : 1;
 

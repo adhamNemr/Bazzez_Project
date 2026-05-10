@@ -83,9 +83,14 @@ exports.countSandwiches = (req, res) => {
         const { orderDetails } = req.body;
         if (!orderDetails) return res.json({ count: 0 });
 
-        const sandwiches = JSON.parse(orderDetails);
-        const total = sandwiches.reduce((total, sandwich) => total + sandwich.quantity, 0);
-
+        let sandwiches = [];
+        try {
+            sandwiches = typeof orderDetails === 'string' ? JSON.parse(orderDetails) : orderDetails;
+        } catch (e) { return res.json({ count: 0 }); }
+        
+        if (!Array.isArray(sandwiches)) return res.json({ count: 0 });
+        
+        const total = sandwiches.reduce((total, sandwich) => total + (Number(sandwich.quantity) || 0), 0);
         res.json({ count: total });
     } catch (error) {
         console.error("❌ خطأ في حساب السندوتشات:", error);
@@ -98,16 +103,16 @@ exports.formatOrderDetails = (req, res) => {
         const { orderDetails } = req.body;
         if (!orderDetails) return res.json({ formatted: [] });
 
-        let items;
-        const cleanedOrderDetails = orderDetails.replace(/\u200B/g, "").trim();
+        let items = [];
+        const cleanedOrderDetails = (typeof orderDetails === 'string') ? orderDetails.replace(/\u200B/g, "").trim() : orderDetails;
 
-        if (typeof cleanedOrderDetails === "string") {
-            items = JSON.parse(cleanedOrderDetails);
-        } else {
-            items = cleanedOrderDetails;
+        try {
+            items = typeof cleanedOrderDetails === "string" ? JSON.parse(cleanedOrderDetails) : cleanedOrderDetails;
+        } catch (e) {
+            return res.json({ formatted: [] });
         }
 
-        items = Array.from(items);
+        if (!Array.isArray(items)) items = [];
 
         const formatted = items.map((item) => {
             let addonsTotal = 0;
@@ -161,9 +166,14 @@ exports.cancelOrder = async (req, res) => {
         }
 
         // 🔄 استرجاع المخزون (خامات وتفريعات)
-        const orderDetails = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+        let orderItems = [];
+        try {
+            orderItems = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+        } catch (e) { orderItems = []; }
 
-        for (const item of orderDetails) {
+        if (!Array.isArray(orderItems)) orderItems = [];
+
+        for (const item of orderItems) {
             const product = await Product.findOne({ where: { name: item.name } });
             if (product) {
                 // 1. تقليل عدد مرات البيع
@@ -222,7 +232,12 @@ exports.reprintOrder = async (req, res) => {
             customerAddress: order.customerAddress,
             deliveryPrice: order.deliveryPrice,
             orderTotal: order.orderTotal,
-            orderDetails: typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails,
+            orderDetails: (() => {
+                try {
+                    const d = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+                    return Array.isArray(d) ? d : [];
+                } catch(e) { return []; }
+            })(),
             discount: order.discountAmount || 0,
             orderDate: (() => {
                 const d = new Date(order.createdAt);

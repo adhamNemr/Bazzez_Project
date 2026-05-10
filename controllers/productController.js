@@ -60,29 +60,30 @@ exports.getProductsByCategory = async (req, res) => {
 // جلب جميع المنتجات مع التصنيفات المختلفة
 exports.getAllProducts = async (req, res) => {
     try {
-        // جلب المنتجات مع بيانات المخزن (للتحقق من وجود تفريعات)
+        // جلب المنتجات
         const products = await Product.findAll({
             attributes: ['id', 'name', 'price', 'wholesalePrice', 'category', 'sold'],
-            raw: true // Use raw to simplify grouping
+            raw: true 
         });
-
+ 
         // جلب بيانات المخزن للمنتجات المتاحة
         const inventoryItems = await Inventory.findAll({
-            attributes: ['name', 'variants'],
+            attributes: ['name', 'variants', 'quantity'],
             raw: true
         });
-
-        // دمج بيانات التفريعات مع المنتجات
-        const productsWithVariants = products.map(p => {
+ 
+        // دمج بيانات التفريعات والمخزون مع المنتجات
+        const productsWithDetails = products.map(p => {
             const inv = inventoryItems.find(i => i.name === p.name);
             return {
                 ...p,
+                quantity: inv ? inv.quantity : 0,
                 variants: inv && inv.variants ? (typeof inv.variants === 'string' ? JSON.parse(inv.variants) : inv.variants) : []
             };
         });
-
-        // تقسيم المنتجات حسب التصنيف لسهولة العرض في صفحة الكاشير
-        const categorizedProducts = productsWithVariants.reduce((acc, product) => {
+ 
+        // تقسيم المنتجات حسب التصنيف
+        const categorizedProducts = productsWithDetails.reduce((acc, product) => {
             const category = product.category || 'Others';
             if (!acc[category]) {
                 acc[category] = [];
