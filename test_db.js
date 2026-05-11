@@ -1,6 +1,10 @@
-const { Product } = require('./models');
+const { Setting, DailyClosing } = require('./models');
+
 async function test() {
-  const prods = await Product.findAll();
-  console.log(prods.map(p => ({ id: p.id, name: p.name, category: p.category })));
+    const setting = await Setting.findOne({ where: { key: 'active_business_date' } });
+    console.log("Current active_business_date:", setting ? setting.value : 'None');
+    
+    const closings = await DailyClosing.findAll({ attributes: ['closingDate'] });
+    console.log("Closed days:", closings.map(c => c.closingDate).sort());
 }
-test();
+test().catch(console.error).finally(() => process.exit(0));

@@ -153,7 +153,12 @@ exports.createOrder = async (req, res) => {
         const currentHour = now.getHours();
 
         if (businessDate < calendarToday && currentHour >= 9) {
-            console.log(`🕒 Auto-shifting business date from ${businessDate} to ${calendarToday} (Past 9:00 AM)`);
+            console.log(`🕒 Auto-closing business date ${businessDate} and shifting to ${calendarToday} (Past 9:00 AM)`);
+            
+            // Auto-close the old day so orders don't mix
+            const closingController = require('./closingController');
+            await closingController.internalAutoClose(businessDate);
+            
             businessDate = calendarToday;
             await Setting.upsert({ key: 'active_business_date', value: calendarToday, group: 'system' });
         }
@@ -236,10 +241,12 @@ exports.createOrder = async (req, res) => {
                     }
                 }
 
-                // ✅ تحديث المخزون بناءً على التفريعات (الألوان والمقاسات)
-                if (item.variant) {
-                    const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
-                    if (inventoryItem && inventoryItem.variants) {
+                // ✅ تحديث المخزون للمنتج الأصلي والتفريعات (الريتيل)
+                const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
+                if (inventoryItem) {
+                    const newParentQuantity = (inventoryItem.quantity || 0) - item.quantity;
+                    
+                    if (item.variant && inventoryItem.variants) {
                         let variants = typeof inventoryItem.variants === 'string' 
                             ? JSON.parse(inventoryItem.variants) 
                             : inventoryItem.variants;
@@ -255,10 +262,11 @@ exports.createOrder = async (req, res) => {
                             return v;
                         });
 
-                        if (variantUpdated) {
-                            await inventoryItem.update({ variants: variants });
-                            console.log(`✅ تم خصم الكمية من التفريعة: ${item.variant} للمنتج: ${item.name}`);
-                        }
+                        await inventoryItem.update({ quantity: newParentQuantity, variants: variantUpdated ? variants : inventoryItem.variants });
+                        console.log(`✅ تم خصم الكمية من المنتج الأصلي والتفريعة: ${item.variant} للمنتج: ${item.name}`);
+                    } else {
+                        await inventoryItem.update({ quantity: newParentQuantity });
+                        console.log(`✅ تم خصم الكمية من المنتج الأصلي: ${item.name}`);
                     }
                 }
             }

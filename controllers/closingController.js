@@ -143,7 +143,8 @@ exports.getDailySummary = async (req, res) => {
             cardTotal: parseFloat(cardTotal.toFixed(2)),
             othersTotal: parseFloat(othersTotal.toFixed(2)),
             ordersList,
-            expensesList
+            expensesList,
+            activeBusinessDate: businessDate
         });
 
     } catch (error) {
@@ -154,22 +155,53 @@ exports.getDailySummary = async (req, res) => {
 
 exports.closeDay = async (req, res) => {
     try {
-        // 🎯 Priority: Date from request body (manual selection) OR current active business date
-        const businessDate = req.body.date || await getActiveBusinessDate();
+        const systemDate = await getActiveBusinessDate();
+        const businessDate = req.body.date || systemDate;
 
         const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) {
-            return res.status(400).json({ error: '⚠️ اليوم قد تم إغلاقه بالفعل!' });
+            return res.status(400).json({ error: `⚠️ يوم ${businessDate} قد تم إغلاقه بالفعل!` });
         }
 
-        // Re-calculate everything to be sure (using robust Order-based logic)
+        // Execute the internal close logic for the specific date
+        await exports.internalAutoClose(businessDate);
+
+        // Recalculate active_business_date based on the absolute MAX closed date
+        const maxClosingResult = await DailyClosing.findOne({
+            attributes: [[sequelize.fn('MAX', sequelize.col('closingDate')), 'maxDate']],
+            raw: true
+        });
+        
+        let nextDateStr = systemDate;
+        if (maxClosingResult && maxClosingResult.maxDate) {
+            const maxDate = new Date(maxClosingResult.maxDate);
+            maxDate.setDate(maxDate.getDate() + 1);
+            nextDateStr = maxDate.toLocaleDateString('en-CA');
+            
+            const { Setting } = require('../models');
+            await Setting.upsert({ key: 'active_business_date', value: nextDateStr, group: 'system' });
+        }
+
+        res.json({ success: true, message: `✅ تم إغلاق يوم ${businessDate} بنجاح!`, nextDate: nextDateStr });
+
+    } catch (error) {
+        console.error('❌ Close Day Error:', error);
+        res.status(500).json({ error: '⚠️ Error closing the day' });
+    }
+};
+
+// Internal function to allow auto-closing from orderController or elsewhere
+exports.internalAutoClose = async (businessDate) => {
+    try {
+        const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
+        if (existingClosing) return; // Already closed
+
         const totalOrders = await Order.count({ where: { businessDate, isCancelled: "No" } });
         const totalRevenue = await Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }) || 0;
         const totalDiscount = await Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }) || 0;
         const totalCost = await calculateTotalCost(businessDate);
         const totalExpenses = await Expense.sum('amount', { where: { date: businessDate } }) || 0;
 
-        // Calculate Digital Breakdown from Order table
         const onlinePaymentsTotal = await Order.sum('orderTotal', {
             where: { 
                 businessDate, 
@@ -204,19 +236,9 @@ exports.closeDay = async (req, res) => {
         });
 
         await Order.update({ archived: true }, { where: { businessDate } });
-        
-        const nextDate = new Date(businessDate);
-        nextDate.setDate(nextDate.getDate() + 1);
-        const nextDateStr = nextDate.toLocaleDateString('en-CA');
-        
-        const { Setting } = require('../models');
-        await Setting.upsert({ key: 'active_business_date', value: nextDateStr, group: 'system' });
-
-        res.json({ success: true, message: '✅ تم إغلاق اليوم بنجاح!', nextDate: nextDateStr });
-
-    } catch (error) {
-        console.error('❌ Close Day Error:', error);
-        res.status(500).json({ error: '⚠️ Error closing the day' });
+        console.log(`✅ System Auto-Closed Day: ${businessDate}`);
+    } catch (err) {
+        console.error(`❌ Failed to internal auto-close day ${businessDate}:`, err);
     }
 };
 
@@ -232,21 +254,42 @@ async function calculateTotalCost(businessDate) {
         if (!Array.isArray(details)) continue;
         for (const item of details) {
             const recipes = await Recipe.findAll({ where: { sandwich: item.name } });
-            recipes.forEach(recipe => {
-                const ingredient = recipe.ingredient.trim().toLowerCase();
-                const quantityUsed = recipe.amount * item.quantity;
-                ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
-            });
+            if (recipes.length > 0) {
+                recipes.forEach(recipe => {
+                    const ingredient = recipe.ingredient.trim().toLowerCase();
+                    const quantityUsed = recipe.amount * item.quantity;
+                    ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
+                });
+            } else {
+                // Retail logic: Direct cost from Inventory
+                const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
+                if (inventoryItem) {
+                    let itemCost = parseFloat(inventoryItem.cost) || 0;
+                    if (item.variant && inventoryItem.variants) {
+                        const variants = typeof inventoryItem.variants === 'string' ? JSON.parse(inventoryItem.variants) : inventoryItem.variants;
+                        const matchedVariant = variants.find(v => {
+                            const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
+                            return vLabel === item.variant || (vLabel && item.variant.startsWith(vLabel + ' '));
+                        });
+                        if (matchedVariant && matchedVariant.cost !== undefined && matchedVariant.cost !== null) {
+                            itemCost = parseFloat(matchedVariant.cost);
+                        }
+                    }
+                    totalCost += itemCost * item.quantity;
+                }
+            }
         }
     }
-    const inventoryData = await Inventory.findAll({
-        where: { name: { [Op.in]: Object.keys(ingredientMap) } },
-        attributes: ['name', 'cost']
-    });
-    inventoryData.forEach(item => {
-        const name = item.name.trim().toLowerCase();
-        if (ingredientMap[name]) totalCost += ingredientMap[name] * item.cost;
-    });
+    if (Object.keys(ingredientMap).length > 0) {
+        const inventoryData = await Inventory.findAll({
+            where: { name: { [Op.in]: Object.keys(ingredientMap) } },
+            attributes: ['name', 'cost']
+        });
+        inventoryData.forEach(item => {
+            const name = item.name.trim().toLowerCase();
+            if (ingredientMap[name]) totalCost += ingredientMap[name] * parseFloat(item.cost || 0);
+        });
+    }
     return parseFloat(totalCost.toFixed(2));
 }
 
@@ -285,10 +328,14 @@ exports.getMonthlySummary = async (req, res) => {
         const liveOrders = currentMonth === new Date().toISOString().slice(0, 7)
             ? await Order.findAll({
                 where: { 
-                    businessDate: { 
-                        [Op.startsWith]: currentMonth
+                    businessDate: {
+                        [Op.and]: [
+                            { [Op.gte]: `${currentMonth}-01` },
+                            { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
+                        ]
                     },
-                    isCancelled: "No"
+                    isCancelled: "No",
+                    archived: false
                 },
                 attributes: ['businessDate', 'orderTotal', 'payment_method'],
                 order: [['businessDate', 'ASC']]
@@ -325,13 +372,20 @@ exports.closeMonth = async (req, res) => {
             return res.status(400).json({ error: "⚠️ الشهر قد تم إغلاقه بالفعل!" });
         }
 
-        const total_orders = await DailyClosing.sum("totalOrders", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const total_revenue = await DailyClosing.sum("totalRevenue", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const total_cost = await DailyClosing.sum("totalCost", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
-        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: { closingDate: { [Op.startsWith]: currentMonth } } }) || 0;
+        const dateCondition = {
+            [Op.and]: [
+                { [Op.gte]: `${currentMonth}-01` },
+                { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
+            ]
+        };
+
+        const total_orders = await DailyClosing.sum("totalOrders", { where: { closingDate: dateCondition } }) || 0;
+        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: { closingDate: dateCondition } }) || 0;
+        const total_revenue = await DailyClosing.sum("totalRevenue", { where: { closingDate: dateCondition } }) || 0;
+        const total_cost = await DailyClosing.sum("totalCost", { where: { closingDate: dateCondition } }) || 0;
+        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: { closingDate: dateCondition } }) || 0;
+        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: { closingDate: dateCondition } }) || 0;
+        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: { closingDate: dateCondition } }) || 0;
 
         const total_earnings = parseFloat((total_revenue - total_cost - totalExpenses).toFixed(2));
 
@@ -347,9 +401,7 @@ exports.closeMonth = async (req, res) => {
             onlinePaymentsTotal
         });
 
-        // Archive daily closings for the month
-        await DailyClosing.destroy({ where: { closingDate: { [Op.startsWith]: currentMonth } } });
-        
+        // We keep DailyClosing records so the day-by-day table in the monthly report still works for past months.
         await Product.update({ sold: 0 }, { where: {} });
 
         res.json({ success: true, message: "✅ تم إغلاق الشهر بنجاح!" });

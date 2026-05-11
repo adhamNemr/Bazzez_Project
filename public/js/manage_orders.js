@@ -134,6 +134,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (dateInput) dateInput.value = todayStr;
     }
 
+    // Initialize Flatpickr
+    let fp = null;
+    if (dateInput) {
+        fp = flatpickr(dateInput, {
+            locale: isAr ? "ar" : "en",
+            dateFormat: "Y-m-d",
+            defaultDate: selectedDate,
+            disableMobile: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (!dateStr) {
+                    selectedDate = appSettings.active_business_date || todayStr;
+                    instance.setDate(selectedDate);
+                } else {
+                    selectedDate = dateStr;
+                }
+                
+                const clearBtn = document.getElementById('clear-date-btn');
+                if (selectedDate && selectedDate !== appSettings.active_business_date) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+                fetchOrders(1);
+            }
+        });
+    }
+
     // Update Label to "Business Day Total"
     const label = document.getElementById('today-total-label');
     if (label) label.textContent = isAr ? 'إجمالي طلبات وردية العمل:' : 'Business Shift Total:';
@@ -169,28 +196,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Date Filtering
-    dateInput.addEventListener('change', (e) => {
-        if (!e.target.value) {
-            selectedDate = appSettings.active_business_date || new Date().toLocaleDateString('en-CA');
-            dateInput.value = selectedDate;
-        } else {
-            selectedDate = e.target.value;
-        }
-        
-        const clearBtn = document.getElementById('clear-date-btn');
-        if (selectedDate && selectedDate !== appSettings.active_business_date) {
-            clearBtn.style.display = 'block';
-        } else {
-            clearBtn.style.display = 'none';
-        }
-        fetchOrders(1);
-    });
+    // Date Filtering was moved to Flatpickr onChange
 
     // Clear Date Filter (Back to Current Shift)
     document.getElementById('clear-date-btn').addEventListener('click', () => {
-        selectedDate = appSettings.active_business_date || new Date().toLocaleDateString('en-CA');
-        dateInput.value = selectedDate;
+        selectedDate = appSettings.active_business_date || todayStr;
+        if (fp) {
+            fp.setDate(selectedDate);
+        } else {
+            dateInput.value = selectedDate;
+        }
         document.getElementById('clear-date-btn').style.display = 'none';
         fetchOrders(1);
     });

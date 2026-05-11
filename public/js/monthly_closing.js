@@ -9,16 +9,45 @@ let currentMonthData = null;
 document.addEventListener('DOMContentLoaded', () => {
     const monthInput = document.getElementById('month-input');
 
-    // Default to current month
     const today = new Date();
     const thisMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    monthInput.value = thisMonth;
+
+    flatpickr(monthInput, {
+        locale: "ar",
+        disableMobile: true,
+        plugins: [
+            new monthSelectPlugin({
+                shorthand: true,
+                dateFormat: "Y-m",
+                altFormat: "F Y"
+            })
+        ],
+        defaultDate: thisMonth,
+        altInput: true,
+        altInputClass: "month-picker-alt-input",
+        onChange: function(selectedDates, dateStr) {
+            if(dateStr) {
+                loadMonthlySummary(dateStr);
+            }
+        }
+    });
+
+    // Style the altInput to match the inline styles of the original input
+    const altInput = document.querySelector('.month-picker-alt-input');
+    if (altInput) {
+        altInput.style.border = "1px solid #cbd5e1";
+        altInput.style.background = "#f8fafc";
+        altInput.style.color = "#0f172a";
+        altInput.style.fontWeight = "800";
+        altInput.style.fontSize = "1rem";
+        altInput.style.outline = "none";
+        altInput.style.cursor = "pointer";
+        altInput.style.padding = "0.4rem 0.8rem";
+        altInput.style.borderRadius = "8px";
+        altInput.style.textAlign = "center";
+    }
 
     loadMonthlySummary(thisMonth);
-
-    monthInput.addEventListener('change', () => {
-        loadMonthlySummary(monthInput.value);
-    });
 });
 
 // ─── Load Summary ────────────────────────────────────────────────────────────

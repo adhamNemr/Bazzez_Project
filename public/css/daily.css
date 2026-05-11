@@ -1,182 +1,319 @@
 /* 
- * Vortex POS - Daily Reports Styles
- * Monochromatic Premium Professional Theme
+ * Vortex POS - Daily Closing Styles
+ * Premium Design System — Unified with Monthly Closing
  */
 
-.container {
+/* =========================================
+   1. SYSTEM CORE (DO NOT TOUCH)
+   ========================================= */
+body {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #f8fafc;
+}
+.main-content {
+    width: 100%;
+    min-height: 100vh;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* =========================================
+   2. STANDARD HEADER OVERRIDE
+   ========================================= */
+#header-container .main-brand-header {
+    background: white;
+    padding: 0.75rem 2rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+    border-radius: 0;
+}
+#header-container .context-pill {
+    background: #f0fdf4;
+    color: #008060;
+    border: 1px solid rgba(0,128,96,0.1);
+}
+#header-container .context-pill i { color: #008060; }
+
+/* =========================================
+   3. DAILY CLOSING PAGE LAYOUT
+   ========================================= */
+.closing-page {
+    width: 100%;
     max-width: 1400px;
-    padding: 2.5rem;
+    margin: 0 auto;
+    padding: 1rem 3rem;
     display: flex;
     flex-direction: column;
-    gap: 3rem;
-    animation: fadeIn 0.4s ease-out;
+    gap: 1.8rem;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+@media (max-width: 992px) {
+    .closing-page { padding: 1.5rem; gap: 1.5rem; }
 }
 
-.header {
-    text-align: left;
-}
-
-.header h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.05em;
-}
-
-/* 🔹 Categories Grid */
-.first-categories {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2rem;
-}
-
-/* 🔹 Statistic Cards */
-.orders-summary, 
-.orders-revenue, 
-.orders-cost, 
-.orders-earnings, 
-.orders-discount, 
-.orders-online-payments {
-    background-color: var(--bg-surface);
-    border: 1px solid #e2e8f0;
-    border-radius: var(--radius-lg);
-    padding: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.5rem;
-    width: 100%;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.orders-summary:hover,
-.orders-revenue:hover,
-.orders-cost:hover,
-.orders-earnings:hover {
-    transform: translateY(-4px);
-    border-color: #cbd5e1;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-}
-
-/* 🔹 Card Titles */
-.orders, 
-.revenue, 
-.cost, 
-.earnings, 
-.discount, 
-.online-payments {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-}
-
-/* 🔹 Data Display */
-.orders-data, 
-.revenue-data, 
-.cost-data, 
-.earnings-data, 
-.discount-data, 
-.online-payments-data {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.order-item {
+/* --- Hero Card --- */
+.hero-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 20px;
+    padding: 1.8rem 2.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    padding: 0.5rem 0;
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.05);
 }
-
-.order-item span:first-child {
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--text-muted);
+.hero-card::after {
+    content: '';
+    position: absolute;
+    top: -30%; right: -5%;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(0,128,96,0.15) 0%, transparent 70%);
+    border-radius: 50%;
 }
-
-/* 🔹 Values */
-#totalOrders, 
-#totalSandwiches, 
-#total-revenue, 
-#total-cost, 
-#total-earnings, 
-#total-discount, 
-#total-online-payments {
-    color: var(--text-main);
-    font-size: 2.25rem;
+.hero-content { position: relative; z-index: 2; }
+.hero-label {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.hero-value {
+    color: white;
+    font-size: 3rem;
     font-weight: 800;
-    letter-spacing: -0.05em;
+    letter-spacing: -1px;
+    line-height: 1;
+}
+.hero-icon {
+    font-size: 4.5rem;
+    color: rgba(255,255,255,0.04);
+    z-index: 1;
+    transform: rotate(-10deg);
 }
 
-/* Specific formatting for financial health */
-#total-earnings {
-    color: var(--success);
+/* --- Stats Grid --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
 }
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .stats-grid { grid-template-columns: 1fr; } }
 
-#total-cost {
-    color: var(--text-main);
-    opacity: 0.8;
-}
-
-/* 🔹 Footer Actions */
-.footer {
+.stat-card {
+    background: white;
+    border-radius: 18px;
+    padding: 1.2rem;
     display: flex;
-    justify-content: flex-end;
-    gap: 1.5rem;
-    margin-top: 1rem;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+.stat-top { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 0.8rem;
 }
 
-.print-button, .excel-button, .close-btn {
-    padding: 1rem 2rem;
-    border-radius: var(--radius-md);
-    font-size: 0.9375rem;
-    font-weight: 700;
+.stat-icon-box {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+}
+.revenue-icon  { background: #ecfdf5; color: #059669; }
+.expenses-icon { background: #fef2f2; color: #dc2626; }
+.orders-icon   { background: #eff6ff; color: #2563eb; }
+.discount-icon { background: #fff7ed; color: #ea580c; }
+
+.stat-meta { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.stat-label  { color: #64748b; font-weight: 600; font-size: 0.95rem; }
+.stat-number { color: #0f172a; font-weight: 800; font-size: 1.5rem; margin-top: 0.3rem; }
+
+/* --- Date Picker Card --- */
+.date-picker-card {
+    border: 2px solid #008060;
+    background: #f0fdf4;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
-    border: none;
+    gap: 0.5rem;
+    padding: 1.5rem;
+}
+.date-picker-card .card-date-label {
+    font-size: 1rem;
+    color: #008060;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+.date-picker-wrapper {
+    width: 100%;
+    position: relative;
+}
+.date-picker-wrapper .calendar-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #008060;
+    pointer-events: none;
+}
+.date-picker-input {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.5rem 2.5rem 0.5rem 0.8rem;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s ease;
+    background: white;
     cursor: pointer;
-    transition: all 0.2s;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+.date-picker-input:focus {
+    border-color: #008060;
+    box-shadow: 0 0 0 4px rgba(0, 128, 96, 0.1);
 }
 
-.print-button { 
-    background-color: var(--primary); 
-    color: white; 
-}
-
-.excel-button { 
-    background-color: var(--bg-surface); 
-    color: var(--text-main);
+/* --- Flatpickr Customization --- */
+.flatpickr-calendar {
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     border: 1px solid #e2e8f0;
+    font-family: 'Cairo', sans-serif;
+}
+.flatpickr-day.selected {
+    background: #008060 !important;
+    border-color: #008060 !important;
+}
+.flatpickr-months {
+    padding: 15px 0 !important;
+    height: 70px !important;
+}
+.flatpickr-month {
+    height: 60px !important;
+}
+.flatpickr-current-month {
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+    font-size: 1.2rem !important;
+    font-weight: 800 !important;
+    padding: 5px 10px !important;
+}
+.flatpickr-weekdays {
+    margin-top: 15px !important;
 }
 
-.close-btn { 
-    background-color: #fef2f2; 
-    color: #ef4444; 
+/* --- Detail Cards --- */
+.details-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
 }
+@media (max-width: 992px) { .details-split { grid-template-columns: 1fr; } }
 
-.print-button:hover { 
-    background-color: var(--primary-hover); 
+.detail-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
 }
+.card-heading {
+    margin: 0 0 1.5rem 0;
+    color: #0f172a;
+    font-size: 1.1rem;
+    font-weight: 800;
+    display: flex; align-items: center; gap: 0.8rem;
+}
+.card-heading::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: #008060;
+    border-radius: 10px;
+}
+.data-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.data-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.8rem; background: #f8fafc;
+    border-radius: 14px; border: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+.data-item:hover { border-color: #e2e8f0; background: #fff; }
+.data-left { display: flex; align-items: center; gap: 1rem; }
+.item-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.icon-cash    { background: #dcfce7; color: #16a34a; }
+.icon-digital { background: #eff6ff; color: #2563eb; }
+.icon-avg     { background: #fdf2f8; color: #db2777; }
+.icon-items   { background: #f1f5f9; color: #475569; }
+.icon-orders  { background: #eff6ff; color: #2563eb; }
 
-.excel-button:hover { 
-    background-color: #f8fafc; 
-}
+.data-label { color: #475569; font-weight: 700; font-size: 0.95rem; }
+.data-value { color: #0f172a; font-weight: 800; font-size: 1.1rem; }
 
-.close-btn:hover { 
-    background-color: #fee2e2; 
+.total-item {
+    background: #f1f5f9;
+    padding: 1rem !important;
+    border-radius: 14px;
+    margin-top: 0.5rem;
+    border: 2px dashed #008060 !important;
 }
+.total-item .data-label { color: #0f172a; font-size: 1rem; }
+.highlight { color: #008060; font-size: 1.4rem !important; }
 
-/* 🔹 Responsive */
-@media (max-width: 768px) {
-    .container { padding: 1.5rem; }
-    .first-categories { grid-template-columns: 1fr; }
-    .footer { flex-direction: column; }
+/* --- Actions --- */
+.action-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-top: 1rem;
+    width: 100%;
 }
+@media (max-width: 768px) { .action-section { grid-template-columns: 1fr; } }
+
+.btn-primary {
+    background: #008060;
+    color: white; border: none;
+    padding: 1.1rem; border-radius: 18px;
+    font-size: 1.1rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(0, 128, 96, 0.3);
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+}
+.btn-primary:hover { transform: translateY(-3px); background: #006c50; }
+
+.btn-secondary {
+    background: white; color: #0f172a;
+    border: 2px solid #e2e8f0;
+    padding: 1.1rem; border-radius: 18px;
+    font-size: 1.1rem; font-weight: 800; cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+}
+.btn-secondary:hover { transform: translateY(-3px); background: #f8fafc; border-color: #cbd5e1; }

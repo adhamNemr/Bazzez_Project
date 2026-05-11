@@ -4,21 +4,33 @@
 
 const fmt = (n) => `${Number(parseFloat(n || 0).toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2})} ج.م`;
 
+let fp;
 document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('closing-date-input');
     
-    // Set default to today (in local-compatible format for input type date)
-    const today = new Date().toLocaleDateString('en-CA');
-    if (dateInput) {
-        dateInput.value = today;
-        dateInput.addEventListener('change', () => loadDailySummary(dateInput.value));
-    }
+    // Initialize Flatpickr
+    fp = flatpickr("#closing-date-input", {
+        locale: "ar",
+        dateFormat: "Y-m-d",
+        defaultDate: new Date().toLocaleDateString('en-CA'),
+        onChange: function(selectedDates, dateStr) {
+            loadDailySummary(dateStr);
+        }
+    });
 
-    loadDailySummary(today);
+    // Fallback initial call using strictly YYYY-MM-DD format
+    const month = String(fp.currentMonth + 1).padStart(2, '0');
+    const day = String(fp.now.getDate()).padStart(2, '0');
+    loadDailySummary(`${fp.currentYear}-${month}-${day}`);
 });
 let currentClosingData = null;
 
 async function loadDailySummary(date) {
+    // Show immediate feedback
+    const heroDate = document.getElementById('current-business-date');
+    const initialDate = date || new Date().toLocaleDateString('en-CA');
+    if (heroDate) heroDate.textContent = initialDate;
+
     try {
         const url = date ? `/api/closing/daily-summary?date=${date}` : '/api/closing/daily-summary';
         const response = await fetch(url, {
@@ -31,6 +43,19 @@ async function loadDailySummary(date) {
             Swal.fire('خطأ', data.error, 'error');
             return;
         }
+
+        // Only sync UI datepicker if we loaded without a specific date (initial load)
+        if (!date && fp && data.activeBusinessDate) {
+            fp.setDate(data.activeBusinessDate, false);
+        }
+
+        // Update indicators
+        const heroDate = document.getElementById('current-business-date');
+        
+        // Use the passed 'date' if available, otherwise fallback to the active business date
+        const displayDate = date || data.activeBusinessDate || new Date().toLocaleDateString('en-CA');
+        
+        if (heroDate) heroDate.textContent = displayDate;
 
         // Update UI
         document.getElementById('stat-revenue').textContent = fmt(data.totalRevenue);
@@ -49,42 +74,51 @@ async function loadDailySummary(date) {
         document.getElementById('stat-items-count').textContent = data.totalItems;
         document.getElementById('stat-top-product').textContent = data.topProduct || "لا يوجد";
         
-        // Show current date in Hero Label
-        const dateEl = document.getElementById('current-business-date');
-        if (dateEl) {
-            const displayDate = date ? new Date(date).toLocaleDateString('ar-EG') : new Date().toLocaleDateString('ar-EG');
-            dateEl.textContent = displayDate;
-        }
+
 
     } catch (err) {
         console.error('Failed to load daily summary:', err);
+        Swal.fire('خطأ', 'تعذر الاتصال بالسيرفر. يرجى التحقق من اتصالك بالإنترنت.', 'error');
     }
 }
 
 async function handleClosing() {
+    const businessDate = document.getElementById('current-business-date').textContent;
+
     const result = await Swal.fire({
-        title: 'إغلاق الوردية واعتماد اليوم؟',
-        text: 'سيتم ترحيل البيانات للأرشيف وتغيير تاريخ العمل لليوم التالي. تأكد من مطابقة الخزنة!',
+        title: `<span style="font-weight: 800; font-size: 1.5rem; color: #0f172a;">إغلاق وردية يوم ${businessDate}؟</span>`,
+        html: `
+            <div style="text-align: center; margin-top: 1rem;">
+                <p style="color: #64748b; font-size: 1rem; margin-bottom: 1.5rem;">
+                    سيتم اعتماد كافة البيانات وترحيلها للأرشيف. <br>
+                    سيتحول تاريخ العمل تلقائياً لليوم التالي.
+                </p>
+                <div style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px; padding: 1rem; color: #166534; font-weight: 700;">
+                    تأكد من مطابقة المبالغ النقدية في الدرج قبل التأكيد!
+                </div>
+            </div>
+        `,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#10b981',
+        confirmButtonColor: '#008060',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'نعم، إغلاق اليوم',
-        cancelButtonText: 'إلغاء'
+        confirmButtonText: 'نعم، إغلاق الوردية الآن',
+        cancelButtonText: 'إلغاء',
+        customClass: {
+            popup: 'premium-swal-popup',
+            title: 'premium-swal-title'
+        }
     });
 
     if (result.isConfirmed) {
         try {
-            const dateInput = document.getElementById('closing-date-input');
-            const selectedDate = dateInput ? dateInput.value : new Date().toLocaleDateString('en-CA');
-
             const response = await fetch('/api/closing/close-day', {
                 method: 'POST',
                 headers: { 
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ date: selectedDate })
+                body: JSON.stringify({ date: businessDate })
             });
             const data = await response.json();
 

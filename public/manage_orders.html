@@ -6,7 +6,10 @@
     <title>إدارة الطلبات - Vortex POS</title>
     <link rel="stylesheet" href="./css/common.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
     <script>
         // 🚀 Blocking Script to prevent Layout Shift (FOUC/FOWD)
         (function() {
@@ -738,7 +741,7 @@
 
                     <div class="date-filter-container">
                         <i class="fas fa-calendar-alt" style="color: var(--primary); font-size: 0.9rem;"></i>
-                        <input type="date" class="date-input" id="date-filter">
+                        <input type="text" class="date-input" id="date-filter" placeholder="اختر التاريخ" readonly>
                         <button class="btn-clear-date" id="clear-date-btn" title="الرجوع لطلبات اليوم">
                             <i class="fas fa-times-circle"></i>
                         </button>

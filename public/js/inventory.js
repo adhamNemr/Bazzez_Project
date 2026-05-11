@@ -289,6 +289,7 @@ function renderInventory(items) {
             </td>
             <td style="opacity: 0.6;">${formattedMin}</td>
             <td style="opacity: ${hasVariants ? '0.3' : '1'};">${hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
+            <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: #008060; font-weight: 700;">${hasVariants ? '---' : parseFloat(item.price || item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
             <td style="font-weight: 800; color: var(--luxury-emerald);">${totalValue.toFixed(2)} <small>EGP</small></td>
             <td style="font-size: 0.85rem; opacity: 0.6;">${formatDate(latestUpdateDate)}</td>
             ${!isRetail ? `
@@ -430,7 +431,8 @@ function renderInventory(items) {
                     <td style="opacity: 0.6; font-size: 0.85rem;">${isAr ? 'خامة' : 'Fabric'}</td>
                     <td><span class="${isLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${variantQty}</span></td>
                     <td style="opacity: 0.6; font-size: 0.9rem;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
-                    <td style="font-size: 0.9rem;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                    <td style="font-size: 0.9rem; color: #008060; font-weight: 700;">${parseFloat(variant.price || variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                    <td style="font-size: 0.9rem; color: #ca8a04;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
                     <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
                     <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
                     ${!isRetail ? `<td>---</td>` : ''}
@@ -526,9 +528,15 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
                         <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
                     </div>
                 </div>
-                <div>
-                    <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                    <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.cost !== undefined ? initialData.cost : ''}" placeholder="0.00" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:5px; color: #008060;">${isAr ? '💰 سعر البيع' : '💰 Selling Price'}</label>
+                        <input id="v-price" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0; border-color: #008060;" value="${initialData && initialData.price !== undefined ? initialData.price : (initialData?.cost || '')}" placeholder="0.00" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                    </div>
+                    <div>
+                        <label style="display:block; font-weight:700; margin-bottom:5px; color: #ca8a04;">${isAr ? '📦 سعر التكلفة' : '📦 Cost Price'}</label>
+                        <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.cost !== undefined ? initialData.cost : ''}" placeholder="0.00" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                    </div>
                 </div>
             </div>
         `,
@@ -539,12 +547,16 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
         preConfirm: () => {
             const name = document.getElementById('v-name').value.trim();
             if (!name) return Swal.showValidationMessage(isAr ? 'يرجى إدخال الاسم' : 'Name is required');
+            const price = parseFloat(document.getElementById('v-price').value) || 0;
+            const cost = parseFloat(document.getElementById('v-cost').value) || 0;
+            if (price <= 0) return Swal.showValidationMessage(isAr ? 'يرجى إدخال سعر البيع' : 'Selling price is required');
             return {
                 name,
-                color: name, 
+                color: name,
                 quantity: parseFloat(document.getElementById('v-qty').value) || 0,
                 min: parseFloat(document.getElementById('v-min').value) || 0,
-                cost: parseFloat(document.getElementById('v-cost').value) || 0
+                price,
+                cost
             };
         }
     });
