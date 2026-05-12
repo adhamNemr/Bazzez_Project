@@ -141,26 +141,13 @@ exports.createOrder = async (req, res) => {
         }
 
         // ✅ الحصول على تاريخ العمل الحالي من الإعدادات (Source of Truth)
-        const { Setting } = require('../models');
-        let activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        const closingController = require('./closingController');
+        let businessDate = await closingController.checkAndPerformAutoShift();
         
-        // 🗓️ Enforce YYYY-MM-DD format strictly
-        let businessDate = activeDateSetting ? activeDateSetting.value : new Date().toISOString().split('T')[0];
-
-        // 🕒 Smart Auto-Shift Logic: If it's past 9:00 AM and we are still on an old business day
-        const now = new Date();
-        const calendarToday = now.toISOString().split('T')[0];
-        const currentHour = now.getHours();
-
-        if (businessDate < calendarToday && currentHour >= 9) {
-            console.log(`🕒 Auto-closing business date ${businessDate} and shifting to ${calendarToday} (Past 9:00 AM)`);
-            
-            // Auto-close the old day so orders don't mix
-            const closingController = require('./closingController');
-            await closingController.internalAutoClose(businessDate);
-            
-            businessDate = calendarToday;
-            await Setting.upsert({ key: 'active_business_date', value: calendarToday, group: 'system' });
+        if (!businessDate) {
+            const { Setting } = require('../models');
+            let activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+            businessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
         }
 
         // ✅ حساب الرقم التسلسلي اليومي (Daily Serial) - Looking at ALL orders for this business day

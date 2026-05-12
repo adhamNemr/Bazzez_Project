@@ -3,10 +3,45 @@ const { Op } = require('sequelize');
 
 // Helper to get active business date
 async function getActiveBusinessDate() {
+    const businessDate = await exports.checkAndPerformAutoShift();
+    if (businessDate) return businessDate;
+    
+    // Fallback if shift failed or returned null
     const { Setting } = require('../models');
     const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
     return activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 }
+
+// ✅ Centralized Smart Auto-Shift Logic
+exports.checkAndPerformAutoShift = async () => {
+    try {
+        const { Setting } = require('../models');
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
+        
+        if (!activeDateSetting) return null;
+
+        const businessDate = activeDateSetting.value;
+        const now = new Date();
+        const calendarToday = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const currentHour = now.getHours();
+
+        // If it's past 9:00 AM and we are still on an old business day
+        if (businessDate < calendarToday && currentHour >= 9) {
+            console.log(`🕒 [Auto-Shift] Closing business date ${businessDate} and shifting to ${calendarToday}`);
+            
+            // Auto-close the old day
+            await exports.internalAutoClose(businessDate);
+            
+            // Update the setting
+            await Setting.upsert({ key: 'active_business_date', value: calendarToday, group: 'system' });
+            return calendarToday;
+        }
+        return businessDate;
+    } catch (err) {
+        console.error('❌ Error in checkAndPerformAutoShift:', err);
+        return null;
+    }
+};
 
 exports.getDailySummary = async (req, res) => {
     try {

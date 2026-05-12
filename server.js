@@ -27,6 +27,7 @@ const analyticsRoutes = require("./routes/analytics");
 const commentRoutes = require('./routes/comment');
 const expenseRoutes = require("./routes/expenses");
 const settingsRoutes = require("./routes/settings");
+const merchantsRoutes = require("./routes/merchants");
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/comments', commentRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/merchants", merchantsRoutes);
 
 // ✅ Auth & Login
 app.use("/login", loginRoutes);

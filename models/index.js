@@ -16,6 +16,8 @@ const DiscountCode = require("./DiscountCode"); // تأكد أن الاسم مت
 const Comment = require("./Comment")(sequelize, DataTypes);
 const Expense = require("./Expense")(sequelize, DataTypes);
 const Setting = require("./Setting")(sequelize, DataTypes);
+const Merchant = require("./Merchant")(sequelize, DataTypes);
+const MerchantTransaction = require("./MerchantTransaction")(sequelize, DataTypes);
 
 // ✅ العلاقات بين الجداول
 Product.hasMany(Sale, { foreignKey: "product_id" });
@@ -29,6 +31,9 @@ OrderDetail.belongsTo(Order, { foreignKey: "orderId" });
 
 Product.hasMany(OrderDetail, { foreignKey: "productId" });
 OrderDetail.belongsTo(Product, { foreignKey: "productId" });
+
+Merchant.hasMany(MerchantTransaction, { foreignKey: "merchantId", as: "transactions", onDelete: 'CASCADE' });
+MerchantTransaction.belongsTo(Merchant, { foreignKey: "merchantId", as: "merchant" });
 
 // ✅ تصدير الموديلات
 module.exports = {
@@ -48,4 +53,6 @@ module.exports = {
     Comment,
     Expense,
     Setting,
+    Merchant,
+    MerchantTransaction
 };

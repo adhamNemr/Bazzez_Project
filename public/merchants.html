@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابات الجملة والتجار | Vortex POS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/merchants.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <main class="main-content">
+        <!-- 🏗️ Standard System Header -->
+        <div id="header-container" data-title="حسابات الجملة" data-icon="fa-handshake"></div>
+
+        <div class="container">
+            <!-- 📊 Summary Stats (Sticky) -->
+            <div class="sticky-top-section" id="sticky-top">
+                <div class="stats-grid merchants-summary">
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon-box expenses-icon"><i class="fas fa-truck-loading"></i></div>
+                            <div class="stat-meta">
+                                <span class="stat-label">إجمالي مديونية الموردين</span>
+                                <span class="stat-number" id="total-supplier-debt">0.00 ج.م</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <div class="stat-icon-box revenue-icon"><i class="fas fa-store"></i></div>
+                            <div class="stat-meta">
+                                <span class="stat-label">إجمالي مستحقات الجملة</span>
+                                <span class="stat-number" id="total-client-credit">0.00 ج.م</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Card -->
+                    <div class="stat-card action-card" onclick="openMerchantModal()">
+                        <div class="stat-top">
+                            <div class="stat-icon-box add-icon"><i class="fas fa-plus-circle"></i></div>
+                            <div class="stat-meta">
+                                <span class="stat-label">إضافة جهة جديدة</span>
+                                <span class="stat-number">مورد أو عميل</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🎯 Unified Toolbar: Search + Filter + Action Bar -->
+                <div class="unified-toolbar" id="unified-toolbar">
+                    <!-- Row 1: Search + Filter (always visible) -->
+                    <div class="toolbar-row-main">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input 
+                                type="text" 
+                                id="merchant-search" 
+                                placeholder="بحث عن اسم أو رقم تليفون..." 
+                                onkeyup="filterMerchants()"
+                            />
+                        </div>
+                        <div class="filter-box">
+                            <select id="merchant-filter" onchange="switchTab(this.value)">
+                                <option value="supplier">الموردين</option>
+                                <option value="wholesale_client">عملاء الجملة</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Action Bar (Always visible) -->
+                    <div id="abar-content" class="toolbar-row-actions">
+                        <div class="abar-info">
+                            <div class="abar-name">
+                                <i class="fas fa-building"></i>
+                                <span id="abar-name-text">---</span>
+                            </div>
+                            <div class="abar-stats">
+                                <div class="abar-stat">
+                                    <span class="abar-stat-label">المبلغ كامل</span>
+                                    <span class="abar-stat-val red" id="abar-total-invoices">0</span>
+                                </div>
+                                <div class="abar-stat-divider"></div>
+                                <div class="abar-stat">
+                                    <span class="abar-stat-label">المدفوع</span>
+                                    <span class="abar-stat-val green" id="abar-total-paid">0</span>
+                                </div>
+                                <div class="abar-stat-divider"></div>
+                                <div class="abar-stat">
+                                    <span class="abar-stat-label">المتبقي</span>
+                                    <span class="abar-stat-val bold" id="abar-remaining">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="abar-actions">
+                            <div class="abar-payment-group">
+                                <input 
+                                    type="text" 
+                                    inputmode="decimal"
+                                    id="abar-payment-input" 
+                                    class="abar-payment-input" 
+                                    placeholder="دفعة سريعة..." 
+                                />
+                                <button class="abar-btn-pay" onclick="quickPayment()">
+                                    <i class="fas fa-check-circle"></i> سداد
+                                </button>
+                            </div>
+                            
+                            <div class="abar-actions-divider"></div>
+                            
+                            <button class="abar-btn-primary invoice" onclick="openTransactionModal('invoice')">
+                                <i class="fas fa-plus-circle"></i> فاتورة
+                            </button>
+                            
+                            <button class="abar-btn-primary payment" onclick="openTransactionModal('payment')">
+                                <i class="fas fa-hand-holding-usd"></i> سداد
+                            </button>
+
+                            <button class="abar-btn-ledger" onclick="toggleLedgerDrawer()">
+                                <i class="fas fa-history"></i> السجل
+                            </button>
+                            
+                            <button class="abar-btn-edit" onclick="editSelectedMerchant()" title="تعديل البيانات">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📦 Merchants Table Card -->
+            <div class="table-card">
+                <div class="table-container">
+                    <table class="merchants-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: right;">الاسم</th>
+                                <th>المبلغ كامل</th>
+                                <th>المدفوع</th>
+                                <th>المتبقي</th>
+                                <th>الحالة</th>
+                                <th>آخر حركة</th>
+                                <th style="width: 80px;">إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="merchants-list">
+                            <!-- Data populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 📥 Full-Width Export Button (Detached) -->
+            <button class="btn-full-export" onclick="exportMerchants()">
+                <i class="fas fa-file-excel"></i> تصدير كافة البيانات إلى اكسيل
+            </button>
+        </div>
+    </main>
+
+    <!-- Merchant Modal -->
+    <div id="merchant-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">إضافة جهة جديدة</h3>
+                <button class="close-btn" onclick="closeModal('merchant-modal')">&times;</button>
+            </div>
+            <form id="merchant-form">
+                <input type="hidden" id="merchant-id">
+                <div class="form-group">
+                    <label>الاسم</label>
+                    <input type="text" id="merchant-name" required placeholder="مثلاً: شركة الهدى للتوريدات">
+                </div>
+                <div class="form-group">
+                    <label>رقم التليفون</label>
+                    <input type="text" id="merchant-phone" placeholder="اختياري">
+                </div>
+                <div class="form-group" id="type-group">
+                    <label>النوع</label>
+                    <select id="merchant-type">
+                        <option value="supplier">مورد (بشتري منه)</option>
+                        <option value="wholesale_client">عميل جملة (ببيع له)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="initial-balance-group">
+                    <label>الرصيد الافتتاحي (ج.م) <span style="color:#94a3b8; font-weight:500;">— اختياري</span></label>
+                    <input type="text" inputmode="decimal" id="merchant-initial-balance" placeholder="0.00 — المبلغ المستحق حالياً">
+                    <small style="color:#94a3b8; display:block; margin-top:5px;">لو في مبلغ متراكم قبل البدء، ادخله هنا وهيتسجل كـ "رصيد افتتاحي" تلقائياً</small>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea id="merchant-notes" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeModal('merchant-modal')">إلغاء</button>
+                    <button type="submit" class="btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="trans-modal-title">إضافة حركة مالية</h3>
+                <button class="close-btn" onclick="closeModal('transaction-modal')">&times;</button>
+            </div>
+            <form id="transaction-form">
+                <input type="hidden" id="trans-type">
+                <div class="form-group">
+                    <label>التاريخ</label>
+                    <input type="date" id="trans-date" required>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ (ج.م)</label>
+                    <input type="text" inputmode="decimal" id="trans-amount" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>البيان / ملاحظات</label>
+                    <input type="text" id="trans-notes" placeholder="مثلاً: فاتورة لحم 20 كيلو">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeModal('transaction-modal')">إلغاء</button>
+                    <button type="submit" class="btn-primary" id="trans-submit-btn">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 📄 Ledger Side Drawer (Modern Timeline) -->
+    <div id="ledger-drawer" class="ledger-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title-group">
+                <h3 id="active-merchant-name-drawer">كشف الحساب</h3>
+                <p id="active-merchant-phone-drawer">---</p>
+            </div>
+            <button class="drawer-close-btn" onclick="toggleLedgerDrawer()">&times;</button>
+        </div>
+
+        <div class="drawer-body">
+            <div class="drawer-summary">
+                <div class="d-stat-item balance">
+                    <span class="d-stat-label">الرصيد المتبقي حالياً</span>
+                    <span class="d-stat-value" id="active-merchant-balance-drawer">0</span>
+                </div>
+                <div class="d-stat-row">
+                    <div class="d-stat-item">
+                        <span class="d-stat-label">المبلغ كامل</span>
+                        <span class="d-stat-value" id="ledger-total-invoices-drawer">0</span>
+                    </div>
+                    <div class="d-stat-item">
+                        <span class="d-stat-label">إجمالي المدفوع</span>
+                        <span class="d-stat-value" id="ledger-total-payments-drawer">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drawer-section-title">
+                <span>سجل الحركات المالية</span>
+                <div class="title-line"></div>
+            </div>
+
+            <div class="timeline-container">
+                <div id="transactions-list-timeline" class="timeline-list"></div>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <button class="btn-drawer-print" onclick="exportLedger()">
+                <i class="fas fa-print"></i> طباعة كشف الحساب
+            </button>
+        </div>
+    </div>
+    <div id="drawer-overlay" class="drawer-overlay" onclick="toggleLedgerDrawer()"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/merchants.js"></script>
+</body>
+</html>
