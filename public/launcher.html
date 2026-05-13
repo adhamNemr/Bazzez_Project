@@ -83,10 +83,10 @@
 
         .hub-item {
             background: #ffffff;
-            /* Force 6 columns on large screens while staying flexible */
-            width: calc(16.66% - 1vw); 
-            height: 25vh; /* Fixed height relative to viewport to prevent overflow */
-            padding: 1vh 0.5rem;
+            /* Force 5 columns for a balanced 5-5-5 layout */
+            width: calc(20% - 1.5vw); 
+            height: 26vh; 
+            padding: 1.5vh 0.5rem;
             border-radius: 1.5rem;
             text-align: center;
             text-decoration: none;
@@ -102,10 +102,10 @@
         }
 
         .icon-bg {
-            width: clamp(3rem, 5.5vh, 6rem);
-            height: clamp(3rem, 5.5vh, 6rem);
+            width: clamp(4rem, 8vh, 8rem);
+            height: clamp(4rem, 8vh, 8rem);
             background: #f8fafc;
-            border-radius: 1.25rem;
+            border-radius: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -113,16 +113,16 @@
         }
 
         .hub-item i {
-            font-size: clamp(1.4rem, 2.5vh, 2.5rem);
+            font-size: clamp(2rem, 3.5vh, 3rem);
             color: #475569;
             transition: all 0.4s ease;
         }
 
         .hub-item span {
             font-weight: 800;
-            font-size: clamp(0.8rem, 1vh, 1.1rem);
+            font-size: clamp(1.1rem, 1.2vh, 1.3rem);
             color: #1e293b;
-            margin-top: 0.2vh;
+            margin-top: 0.5vh;
             white-space: nowrap;
         }
 

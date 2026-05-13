@@ -14,7 +14,10 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: "recipes",
-        timestamps: false
+        timestamps: false,
+        indexes: [
+            { fields: ['sandwich'] }
+        ]
     });
 
     return Recipe;

@@ -31,6 +31,11 @@ async function loadDailySummary(date) {
     const initialDate = date || new Date().toLocaleDateString('en-CA');
     if (heroDate) heroDate.textContent = initialDate;
 
+    // Visual loading state
+    const container = document.querySelector('.daily-stats-container') || document.body;
+    container.style.opacity = '0.5';
+    container.style.pointerEvents = 'none';
+
     try {
         const url = date ? `/api/closing/daily-summary?date=${date}` : '/api/closing/daily-summary';
         const response = await fetch(url, {
@@ -50,14 +55,10 @@ async function loadDailySummary(date) {
         }
 
         // Update indicators
-        const heroDate = document.getElementById('current-business-date');
-        
-        // Use the passed 'date' if available, otherwise fallback to the active business date
         const displayDate = date || data.activeBusinessDate || new Date().toLocaleDateString('en-CA');
-        
         if (heroDate) heroDate.textContent = displayDate;
 
-        // Update UI
+        // Update UI with animation/feedback
         document.getElementById('stat-revenue').textContent = fmt(data.totalRevenue);
         document.getElementById('stat-expenses').textContent = fmt(data.totalExpenses);
         document.getElementById('stat-profit').textContent = fmt(data.totalEarnings);
@@ -73,12 +74,13 @@ async function loadDailySummary(date) {
         // Sales Metrics
         document.getElementById('stat-items-count').textContent = data.totalItems;
         document.getElementById('stat-top-product').textContent = data.topProduct || "لا يوجد";
-        
-
 
     } catch (err) {
         console.error('Failed to load daily summary:', err);
         Swal.fire('خطأ', 'تعذر الاتصال بالسيرفر. يرجى التحقق من اتصالك بالإنترنت.', 'error');
+    } finally {
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'all';
     }
 }
 

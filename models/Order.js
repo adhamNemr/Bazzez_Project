@@ -69,7 +69,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         }
     }, {
-        timestamps: false  // ✅ تعطيل `createdAt` و `updatedAt` لأن `updatedAt` غير موجود
+        timestamps: false,  // ✅ تعطيل `createdAt` و `updatedAt` لأن `updatedAt` غير موجود
+        indexes: [
+            { fields: ['businessDate'] },
+            { fields: ['createdAt'] },
+            { fields: ['archived'] },
+            { fields: ['isCancelled'] }
+        ]
     });
 
     return Order;

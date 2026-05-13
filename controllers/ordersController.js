@@ -55,15 +55,18 @@ exports.fetchOrders = async (req, res) => {
             offset: offset
         });
 
-        // 📊 Unified Count Calculation
+        // 📊 Unified Count Calculation - Optimizing latency by running queries concurrently
         const countsWhere = { businessDate: filterDate };
-        const counts = {
-            all: await Order.count({ where: countsWhere }),
-            paid: await Order.count({ where: { ...countsWhere, payment_status: 'Paid', isCancelled: { [Op.ne]: 'Yes' } } }),
-            pending: await Order.count({ where: { ...countsWhere, payment_status: 'Pending', isCancelled: { [Op.ne]: 'Yes' } } }),
-            cancelled: await Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } }),
-            today: await Order.count({ where: { businessDate: activeBusinessDate } }) // ✅ Total for current active day
-        };
+        
+        const [all, paid, pending, cancelled, todayCount] = await Promise.all([
+            Order.count({ where: countsWhere }),
+            Order.count({ where: { ...countsWhere, payment_status: 'Paid', isCancelled: { [Op.ne]: 'Yes' } } }),
+            Order.count({ where: { ...countsWhere, payment_status: 'Pending', isCancelled: { [Op.ne]: 'Yes' } } }),
+            Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } }),
+            Order.count({ where: { businessDate: activeBusinessDate } })
+        ]);
+
+        const counts = { all, paid, pending, cancelled, today: todayCount };
 
         res.json({
             orders: rows,

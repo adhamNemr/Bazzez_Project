@@ -1,11 +1,11 @@
-const { Inventory } = require("../models");
+const { Inventory, sequelize } = require("../models");
 const { Op } = require("sequelize");
 const moment = require("moment");
 
 // ✅ جلب جميع عناصر المخزون
 const getAllInventory = async (req, res) => {
     try {
-        const inventory = await Inventory.findAll();
+        const inventory = await Inventory.findAll({ raw: true });
         res.json(inventory);
     } catch (error) {
         console.error("❌ خطأ أثناء جلب المخزون:", error);
@@ -91,10 +91,9 @@ const deleteInventoryItem = async (req, res) => {
 // ✅ تنبيه عند المخزون المنخفض
 const getLowStockAlerts = async (req, res) => {
     try {
-        const minStockThreshold = 10; // الحد الأدنى الافتراضي
         const lowStockItems = await Inventory.findAll({
             where: {
-                quantity: { [Op.lt]: minStockThreshold }
+                quantity: { [Op.lte]: sequelize.col('min') }
             }
         });
         res.json(lowStockItems);

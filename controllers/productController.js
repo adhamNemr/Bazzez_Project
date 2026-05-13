@@ -72,9 +72,13 @@ exports.getAllProducts = async (req, res) => {
             raw: true
         });
  
-        // دمج بيانات التفريعات والمخزون مع المنتجات
+        const inventoryMap = {};
+        for (const inv of inventoryItems) {
+            inventoryMap[inv.name] = inv;
+        }
+
         const productsWithDetails = products.map(p => {
-            const inv = inventoryItems.find(i => i.name === p.name);
+            const inv = inventoryMap[p.name];
             return {
                 ...p,
                 quantity: inv ? inv.quantity : 0,

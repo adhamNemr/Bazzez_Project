@@ -6,17 +6,24 @@ exports.getMerchants = async (req, res) => {
         const whereClause = type ? { type } : {};
         const merchants = await Merchant.findAll({ where: whereClause, order: [['name', 'ASC']] });
 
-        // Enrich each merchant with transaction totals
-        const enriched = await Promise.all(merchants.map(async m => {
-            const [result] = await MerchantTransaction.findAll({
-                where: { merchantId: m.id },
-                attributes: [
-                    [sequelize.literal("SUM(CASE WHEN type = 'payment' THEN amount ELSE 0 END)"), 'totalPayments'],
-                ],
-                raw: true
-            });
-            
-            const totalPayments = parseFloat(result?.totalPayments || 0);
+        // Enrich each merchant with transaction totals in ONE query to avoid N+1 problem
+        const totals = await MerchantTransaction.findAll({
+            attributes: [
+                'merchantId',
+                [sequelize.literal("SUM(CASE WHEN type = 'payment' THEN amount ELSE 0 END)"), 'totalPayments'],
+            ],
+            group: ['merchantId'],
+            raw: true
+        });
+
+        // Convert totals array to a lookup map for fast O(1) access
+        const totalsMap = {};
+        totals.forEach(t => {
+            totalsMap[t.merchantId] = parseFloat(t.totalPayments || 0);
+        });
+
+        const enriched = merchants.map(m => {
+            const totalPayments = totalsMap[m.id] || 0;
             const balance = parseFloat(m.balance || 0);
             
             return {
@@ -24,7 +31,7 @@ exports.getMerchants = async (req, res) => {
                 totalPayments: totalPayments,
                 totalInvoices: balance + totalPayments, // المبلغ كامل = المتبقي + المدفوع
             };
-        }));
+        });
 
         res.json(enriched);
     } catch (err) {
@@ -79,18 +86,27 @@ exports.updateMerchant = async (req, res) => {
 };
 
 exports.deleteMerchant = async (req, res) => {
+    const t = await sequelize.transaction();
     try {
         const { id } = req.params;
-        // Check if there are transactions
-        const count = await MerchantTransaction.count({ where: { merchantId: id } });
-        if (count > 0) {
-            return res.status(400).json({ error: 'لا يمكن الحذف لوجود حركات مالية مسجلة' });
+
+        // Force delete all associated transactions first to maintain integrity
+        await MerchantTransaction.destroy({ where: { merchantId: id }, transaction: t });
+        
+        // Delete the merchant itself
+        const deletedCount = await Merchant.destroy({ where: { id }, transaction: t });
+
+        if (deletedCount === 0) {
+            await t.rollback();
+            return res.status(404).json({ error: 'العميل/المورد غير موجود' });
         }
-        await Merchant.destroy({ where: { id } });
-        res.json({ success: true, message: 'تم الحذف بنجاح' });
+
+        await t.commit();
+        res.json({ success: true, message: 'تم الحذف بنجاح مع كافة البيانات المرتبطة' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'فشل الحذف' });
+        await t.rollback();
+        console.error('❌ Deletion Error:', err);
+        res.status(500).json({ error: 'فشل الحذف. قد تكون هناك بيانات مرتبطة في أقسام أخرى.' });
     }
 };
 
@@ -118,7 +134,10 @@ exports.addTransaction = async (req, res) => {
 
         if (!amount || amount <= 0) return res.status(400).json({ error: 'المبلغ غير صحيح' });
 
-        const merchant = await Merchant.findByPk(merchantId, { transaction: t });
+        const merchant = await Merchant.findByPk(merchantId, { 
+            transaction: t,
+            lock: t.LOCK.UPDATE 
+        });
         if (!merchant) throw new Error('التاجر غير موجود');
 
         const transaction = await MerchantTransaction.create({
@@ -156,7 +175,10 @@ exports.deleteTransaction = async (req, res) => {
         const transaction = await MerchantTransaction.findByPk(id, { transaction: t });
         if (!transaction) throw new Error('الحركة غير موجودة');
 
-        const merchant = await Merchant.findByPk(transaction.merchantId, { transaction: t });
+        const merchant = await Merchant.findByPk(transaction.merchantId, { 
+            transaction: t,
+            lock: t.LOCK.UPDATE
+        });
         
         // Reverse the balance
         const numericAmount = parseFloat(transaction.amount);
@@ -187,7 +209,10 @@ exports.updateTransaction = async (req, res) => {
         const transaction = await MerchantTransaction.findByPk(id, { transaction: t });
         if (!transaction) return res.status(404).json({ error: 'الحركة غير موجودة' });
 
-        const merchant = await Merchant.findByPk(transaction.merchantId, { transaction: t });
+        const merchant = await Merchant.findByPk(transaction.merchantId, { 
+            transaction: t,
+            lock: t.LOCK.UPDATE
+        });
         
         // 1. Reverse old amount
         const oldAmount = parseFloat(transaction.amount);

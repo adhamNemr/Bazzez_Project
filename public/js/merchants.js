@@ -396,14 +396,33 @@ async function deleteTransaction(id) {
 }
 
 async function deleteMerchant(id, name) {
-    const r = await Swal.fire({ title: `حذف "${name}"؟`, icon: 'warning', showCancelButton: true,
-        confirmButtonColor: '#dc2626', confirmButtonText: 'احذف', cancelButtonText: 'إلغاء' });
+    const r = await Swal.fire({ 
+        title: `حذف "${name}"؟`, 
+        text: "تحذير: سيتم حذف كافة الحركات المالية والفواتير المسجلة لهذا الاسم نهائياً ولا يمكن الرجوع عنها!",
+        icon: 'warning', 
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626', 
+        confirmButtonText: 'نعم، احذف الكل', 
+        cancelButtonText: 'إلغاء' 
+    });
+
     if (r.isConfirmed) {
         try {
             const res = await fetch(`/api/merchants/${id}`, { method: 'DELETE' });
-            if (res.ok) { showToast('تم الحذف', 'success'); fetchMerchants(); updateSummary(); resetActionBar(); }
-            else showToast((await res.json()).error || 'فشل', 'error');
-        } catch { showToast('خطأ', 'error'); }
+            const data = await res.json();
+            
+            if (res.ok) { 
+                showToast('✅ تم الحذف بنجاح', 'success'); 
+                fetchMerchants(); 
+                updateSummary(); 
+                resetActionBar(); 
+            } else {
+                showToast(data.error || 'فشل الحذف', 'error');
+            }
+        } catch (err) { 
+            console.error('Delete Error:', err);
+            showToast('حدث خطأ في الاتصال بالسيرفر', 'error'); 
+        }
     }
 }
 

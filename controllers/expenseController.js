@@ -22,51 +22,43 @@ const expenseSchema = Joi.object({
 exports.getAllExpenses = async (req, res) => {
     try {
         const { Setting } = require('../models');
-        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
-        const activeBusinessDate = activeDateSetting
-            ? activeDateSetting.value
-            : new Date().toLocaleDateString('en-CA');
+        
+        // 🚀 تشغيل استعلام الإعدادات بالتوازي
+        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' }, raw: true });
+        const activeBusinessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 
-        // Allow overriding date via query param
-        const filterDate = (req.query.date && req.query.date !== 'undefined')
-            ? req.query.date
-            : activeBusinessDate;
+        const filterDate = (req.query.date && req.query.date !== 'undefined') ? req.query.date : activeBusinessDate;
+        const [year, month] = filterDate.split('-');
+        const firstDay = `${year}-${month}-01`;
+        const lastDay = new Date(parseInt(year), parseInt(month), 0).toLocaleDateString('en-CA');
 
         const where = {};
-
         if (req.query.all !== 'true') {
             where.date = filterDate;
         }
 
-        const expenses = await Expense.findAll({
-            where,
-            order: [['date', 'DESC'], ['createdAt', 'DESC']]
-        });
+        // 🚀 جلب كل البيانات المطلوبة في وقت واحد (Parallel Queries)
+        const [expenses, todayExpenses, monthExpenses] = await Promise.all([
+            Expense.findAll({ where, order: [['date', 'DESC'], ['createdAt', 'DESC']], raw: true }),
+            Expense.findAll({ where: { date: filterDate }, raw: true }),
+            Expense.findAll({ where: { date: { [Op.between]: [firstDay, lastDay] } }, raw: true })
+        ]);
 
-        // Also return summary stats for the current business date
-        const todayExpenses = await Expense.findAll({ where: { date: filterDate } });
-        const todayTotal = todayExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
-        const cashTotal = todayExpenses.filter(e => e.payment_method === 'cash').reduce((s, e) => s + parseFloat(e.amount), 0);
-        const cardTotal = todayExpenses.filter(e => e.payment_method === 'card').reduce((s, e) => s + parseFloat(e.amount), 0);
-        const vcashTotal = todayExpenses.filter(e => e.payment_method === 'vcash').reduce((s, e) => s + parseFloat(e.amount), 0);
-        const instapayTotal = todayExpenses.filter(e => e.payment_method === 'instapay').reduce((s, e) => s + parseFloat(e.amount), 0);
-
-        // Month total — use Op.between to avoid Moment.js DATEONLY warning
-        const [year, month] = filterDate.split('-');
-        const firstDay = `${year}-${month}-01`;
-        const lastDay = new Date(parseInt(year), parseInt(month), 0).toLocaleDateString('en-CA'); // last day of month
-        const monthExpenses = await Expense.findAll({
-            where: { date: { [Op.between]: [firstDay, lastDay] } }
-        });
-        const monthTotal = monthExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
+        // 💰 حساب الإحصائيات من البيانات المجلوبة فعلياً
+        const todayTotal = todayExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+        const cashTotal = todayExpenses.filter(e => e.payment_method === 'cash').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+        const cardTotal = todayExpenses.filter(e => e.payment_method === 'card').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+        const vcashTotal = todayExpenses.filter(e => e.payment_method === 'vcash').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+        const instapayTotal = todayExpenses.filter(e => e.payment_method === 'instapay').reduce((s, e) => s + parseFloat(e.amount || 0), 0);
+        const monthTotal = monthExpenses.reduce((s, e) => s + parseFloat(e.amount || 0), 0);
 
         res.json({
             expenses,
             stats: {
-                activeBusinessDate: activeBusinessDate, // The TRUE business date from settings
-                filteredDate: filterDate,               // The date actually being viewed
-                todayTotal,
-                monthTotal,
+                activeBusinessDate,
+                filteredDate: filterDate,
+                todayTotal: parseFloat(todayTotal.toFixed(2)),
+                monthTotal: parseFloat(monthTotal.toFixed(2)),
                 byMethod: { cash: cashTotal, card: cardTotal, vcash: vcashTotal, instapay: instapayTotal }
             }
         });

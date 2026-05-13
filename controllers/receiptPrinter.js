@@ -6,7 +6,8 @@ const branding = require('../config/branding');
 const { Setting } = require('../models');
 const { fixArabic } = require('../utils/arabicHelper');
 
-const ARABIC_FONT = '/System/Library/Fonts/Supplemental/Arial.ttf';
+const ARABIC_FONT = path.join(__dirname, '../assets/fonts/Tahoma.ttf');
+const ARABIC_FONT_BOLD = path.join(__dirname, '../assets/fonts/Tahoma Bold.ttf');
 
 /**
  * Helper to fetch settings from DB
@@ -82,127 +83,123 @@ async function printReceipt(orderData) {
  */
 function generatePDF(orderData, subtotal, deliveryPrice, discount, calculatedTotal, storeConfig) {
     try {
-        const doc = new PDFDocument({ size: [226, 600], margin: 15 }); // 80mm
+        const doc = new PDFDocument({ size: [226, 600], margin: 5 }); // 80mm with minimal margin
         const receiptPath = path.join(__dirname, `receipt_${orderData.id}.pdf`);
         const writeStream = fs.createWriteStream(receiptPath);
 
         doc.pipe(writeStream);
 
-        // Load Font
-        if (fs.existsSync(ARABIC_FONT)) {
+        // --- Branding & Header ---
+        if (fs.existsSync(ARABIC_FONT_BOLD)) {
+            doc.font(ARABIC_FONT_BOLD);
+        } else if (fs.existsSync(ARABIC_FONT)) {
             doc.font(ARABIC_FONT);
         }
 
-        // Branding
-        doc.fontSize(18).text(fixArabic(storeConfig.restaurantName), { align: 'center' });
-        doc.fontSize(22).text(`#${orderData.id}`, { align: 'center' });
-        doc.fontSize(8).text('V O R T E X  P O S', { align: 'center', opacity: 0.5 });
+        const pageWidth = 226;
+        const leftX = 5;
+        const rightX = 221;
+        const centerX = pageWidth / 2;
+
+        doc.fontSize(22).text(fixArabic("دار الفاروق"), { align: 'center' });
+        doc.fontSize(14).text(fixArabic(storeConfig.restaurantName), { align: 'center' });
+        doc.moveDown(0.2);
+        doc.fontSize(32).text(`#${orderData.id}`, { align: 'center' });
+        doc.fontSize(8).text('V O R T E X  P O S', { align: 'center', opacity: 0.3 });
         doc.moveDown(0.4);
-        doc.lineWidth(1.5).moveTo(15, doc.y).lineTo(211, doc.y).stroke();
+        
+        doc.lineWidth(1.5).moveTo(leftX, doc.y).lineTo(rightX, doc.y).stroke();
         doc.moveDown(0.6);
 
-        // Improved Info logic
-        const cleanValue = (val, forbiddenKeywords = []) => {
-            let trimmed = val?.trim() || "";
-            if (!trimmed) return "-";
-            const isForbidden = forbiddenKeywords.some(k => trimmed.includes(k));
-            if (isForbidden) return "-";
-            if (["0000000000", "0", "--", "Store", "Local"].includes(trimmed)) return "-";
-            return trimmed;
-        };
-
-        const cName = cleanValue(orderData.customerName, ["تيك أوي", "نقدي", "Guest"]);
-        const cPhone = cleanValue(orderData.customerPhone);
-        const cAddress = cleanValue(orderData.customerAddress);
-
-        // Grid-like rows: Both columns align towards the center line
-        const startY = doc.y;
-        doc.fontSize(9);
+        // --- Info Section ---
+        doc.fontSize(10);
+        const infoY = doc.y;
+        doc.text(fixArabic(`التاريخ: ${orderData.orderDate}`), leftX, infoY, { align: 'right', width: pageWidth - 10 });
+        doc.moveDown(0.3);
         
-        // Row 1
-        doc.text(fixArabic(`العميل: ${cName}`), 15, startY, { width: 98, align: 'left' }); // Ends at center
-        doc.text(fixArabic(`التاريخ: ${orderData.orderDate}`), 113, startY, { width: 98, align: 'right' }); // Starts at center
-        doc.moveDown(0.6);
-
-        // Row 2
-        const nextY = doc.y;
-        doc.text(fixArabic(`الهاتف: ${cPhone}`), 15, nextY, { width: 98, align: 'left' });
-        doc.text(fixArabic(`العنوان: ${cAddress}`), 113, nextY, { width: 98, align: 'right' });
+        const cleanName = (val) => (val?.includes("تيك أوي") || val?.includes("--") || !val) ? "--" : val;
+        doc.text(fixArabic(`العميل: ${cleanName(orderData.customerName)}`), leftX, doc.y, { align: 'right', width: pageWidth - 10 });
         
-        doc.moveDown(0.2);
-        doc.lineWidth(0.5).dash(1.5, { space: 1.5 }).moveTo(15, doc.y).lineTo(211, doc.y).stroke().undash();
-        doc.moveDown(0.4);
+        if (orderData.customerPhone && orderData.customerPhone !== "0000000000") {
+            doc.moveDown(0.3);
+            doc.text(fixArabic(`الهاتف: ${orderData.customerPhone}`), leftX, doc.y, { align: 'right', width: pageWidth - 10 });
+        }
 
-        // Items Header: Boxed with lines
-        doc.moveDown(0.2);
-        doc.lineWidth(0.5).moveTo(15, doc.y).lineTo(211, doc.y).stroke();
-        doc.moveDown(0.2);
-        doc.fontSize(10).text(fixArabic('الصنف                                 الكمية         السعر'), { align: 'right' });
-        doc.moveDown(0.2);
-        doc.lineWidth(0.5).moveTo(15, doc.y).lineTo(211, doc.y).stroke();
-        doc.moveDown(0.2);
+        doc.moveDown(0.5);
+        doc.lineWidth(0.5).dash(3, { space: 2 }).moveTo(leftX, doc.y).lineTo(rightX, doc.y).stroke().undash();
+        doc.moveDown(0.5);
+
+        // --- Table Header (FULL WIDTH) ---
+        const colPriceX = 5;    // Left
+        const colQtyX = 85;     // Center-Left
+        const colItemX = 120;   // Right
+
+        doc.fontSize(11);
+        const hY = doc.y;
+        doc.text(fixArabic('السعر'), colPriceX, hY, { width: 70, align: 'left' });
+        doc.text(fixArabic('الكمية'), colQtyX, hY, { width: 35, align: 'center' });
+        doc.text(fixArabic('الصنف'), colItemX, hY, { width: 101, align: 'right' });
         
-        // Items List
-        doc.moveDown(0.2);
+        doc.moveDown(0.3);
+        doc.lineWidth(0.8).moveTo(leftX, doc.y).lineTo(rightX, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        // --- Items List ---
         orderData.orderDetails?.forEach(item => {
-            let addonsTotal = 0;
-            let commentsToPrint = [];
+            const curY = doc.y;
+            const priceVal = ((parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 1)).toFixed(2);
+            
+            doc.fontSize(11);
+            doc.text(`${priceVal}`, colPriceX, curY, { width: 75, align: 'left' });
+            doc.text(`x${item.quantity}`, colQtyX, curY, { width: 35, align: 'center' });
+            doc.text(fixArabic(item.name), colItemX, curY, { width: 101, align: 'right' });
 
             if (item.comments && item.comments.length > 0) {
                 item.comments.forEach(c => {
-                    const addonPrice = parseFloat(c.price || 0);
-                    
-                    if (addonPrice < 0 && storeConfig.showDiscount === 'no') return;
-                    if (addonPrice > 0) addonsTotal += addonPrice;
-                    
-                    if (storeConfig.showComments !== 'no') {
-                        commentsToPrint.push(`${c.text} ${addonPrice > 0 ? '(+'+addonPrice+')' : ''}`);
-                    }
+                    doc.moveDown(0.1);
+                    const txt = c.price > 0 ? `${c.text} (+${c.price})` : c.text;
+                    doc.fontSize(9).text(fixArabic(`└─ ${txt}`), colItemX, doc.y, { width: 101, align: 'right', color: '#555555' });
                 });
             }
-
-            const finalPrice = ((parseFloat(item.price) + addonsTotal) * item.quantity).toFixed(2);
-            doc.fontSize(10).text(`${finalPrice} ${storeConfig.currency}     x${item.quantity}     ${fixArabic(item.name)}`, { align: 'right' });
-
-            commentsToPrint.forEach(c => {
-                doc.fontSize(8).text(fixArabic(`  └─ ${c}`), { align: 'right', color: '#666666' });
-            });
-            doc.moveDown(0.2);
+            doc.moveDown(0.5);
         });
-        
-        doc.fontSize(9).text('==========================================');
 
-        // Totals Section
-        doc.moveDown(0.4);
-        doc.lineWidth(0.5).moveTo(15, doc.y).lineTo(211, doc.y).stroke();
-        doc.moveDown(0.4);
-
-        doc.fontSize(8); // Smaller sub-totals
-        doc.text(fixArabic(`المجموع: ${subtotal.toFixed(2)}`), { align: 'right' });
-        if (deliveryPrice > 0) doc.text(fixArabic(`التوصيل: ${deliveryPrice.toFixed(2)}`), { align: 'right' });
-        if (discount > 0 && storeConfig.showDiscount !== 'no') {
-            doc.text(fixArabic(`الخصم: -${discount.toFixed(2)}`), { align: 'right' });
-        }
-        
-        doc.moveDown(0.4);
-        doc.lineWidth(0.5).dash(1.5, { space: 1.5 }).moveTo(15, doc.y).lineTo(211, doc.y).stroke().undash();
-        doc.moveDown(0.4);
-
-        // Grand Total: Centered
-        doc.fontSize(11).text(fixArabic(`الإجمالي النهائي: ${calculatedTotal.toFixed(2)} ${storeConfig.currency}`), { align: 'center' });
-
-        // Footer Section
+        doc.lineWidth(0.8).moveTo(leftX, doc.y).lineTo(rightX, doc.y).stroke();
         doc.moveDown(0.8);
-        doc.lineWidth(0.5).moveTo(15, doc.y).lineTo(211, doc.y).stroke();
+
+        // --- Totals Section (Clearer & More Spacious) ---
+        doc.fontSize(10);
+        const drawTotalRow = (label, value) => {
+            doc.text(fixArabic(label), centerX, doc.y, { width: centerX - 5, align: 'right' });
+            doc.text(value, leftX, doc.y - 10, { width: centerX - 5, align: 'left' });
+            doc.moveDown(0.3);
+        };
+
+        drawTotalRow('الإجمالي الفرعي:', subtotal.toFixed(2));
+        if (deliveryPrice > 0) drawTotalRow('خدمة التوصيل:', deliveryPrice.toFixed(2));
+        if (discount > 0) drawTotalRow('الخصم:', `-${discount.toFixed(2)}`);
+
+        doc.moveDown(0.4);
+        doc.lineWidth(1.5).moveTo(leftX + 20, doc.y).lineTo(rightX - 20, doc.y).stroke();
         doc.moveDown(0.6);
-        
-        doc.fontSize(9).text(fixArabic(`رقم التواصل: ${storeConfig.hotline}`), { align: 'center' });
-        doc.fontSize(7).text(fixArabic(storeConfig.footerMessage), { align: 'center' });
-        doc.moveDown(0.3);
-        doc.fontSize(6).text(`Vortex POS - ${new Date().toLocaleDateString()}`, { align: 'center', opacity: 0.2 });
+
+        // --- GRAND TOTAL (HERO SECTION) ---
+        doc.fontSize(16).text(fixArabic('الإجمالي الكلي'), { align: 'center' });
+        doc.moveDown(0.2);
+        doc.fontSize(24).text(`${calculatedTotal.toFixed(2)} ${storeConfig.currency}`, { align: 'center', underline: true });
+
+        // --- Footer ---
+        doc.moveDown(1.2);
+        doc.lineWidth(0.5).dash(1, { space: 1 }).moveTo(leftX, doc.y).lineTo(rightX, doc.y).stroke().undash();
+        doc.moveDown(0.6);
+
+        doc.fontSize(12).text(fixArabic(storeConfig.hotline), { align: 'center' });
+        doc.fontSize(9).text(fixArabic(storeConfig.footerMessage), { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(7).text(`Vortex POS - ${new Date().toLocaleString('ar-EG')}`, { align: 'center', opacity: 0.2 });
 
         doc.end();
-        console.log(`✅ PDF Generated: receipt_${orderData.id}.pdf`);
+        console.log(`✅ Professional Receipt #${orderData.id} Generated with Arabic Fonts.`);
     } catch (error) {
         console.error('❌ PDF Generation Error:', error);
     }

@@ -178,10 +178,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Search Filtering
+    // 🕒 Optimized Search: Debounced to avoid hammering the server
+    let searchTimeout;
     const searchInput = document.getElementById('order-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            // 🌍 Auto-convert Arabic numerals to English in real-time
+            clearTimeout(searchTimeout);
             const arabicMap = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
             const originalValue = e.target.value;
             const normalizedValue = originalValue.replace(/[٠-٩]/g, d => arabicMap[d]);
@@ -190,9 +192,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 e.target.value = normalizedValue;
             }
 
-            const searchIcon = document.querySelector('.search-container i');
-            if (searchIcon) searchIcon.className = 'fas fa-spinner fa-spin';
-            fetchOrders(1);
+            searchTimeout = setTimeout(() => {
+                const searchIcon = document.querySelector('.search-container i');
+                if (searchIcon) searchIcon.className = 'fas fa-spinner fa-spin';
+                fetchOrders(1);
+            }, 400);
         });
     }
 
@@ -268,7 +272,7 @@ function applyTranslations() {
     
     const sideHeaders = document.querySelectorAll('.info-card h4');
     if (sideHeaders.length >= 3) {
-        sideHeaders[0].innerHTML = `<i class="fas fa-utensils"></i> ${t.sidebarItems}`;
+        sideHeaders[0].innerHTML = `<i class="fas fa-box"></i> ${t.sidebarItems}`;
         sideHeaders[1].innerHTML = `<i class="fas fa-user-circle"></i> ${t.sidebarCustomer}`;
         sideHeaders[2].innerHTML = `<i class="fas fa-credit-card"></i> ${t.sidebarPayment}`;
     }
@@ -608,15 +612,9 @@ function renderOrders(orders = []) {
         ? [...orders] 
         : [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    ordersToRender.forEach((order, index) => {
-        const tr = document.createElement('tr');
-        tr.className = 'fade-in';
-        tr.style.animationDelay = `${index * 0.05}s`;
-        
+    // 🚀 Optimization: Batch all rows into a single string to minimize layout thrashing
+    const rowsHtml = ordersToRender.map((order, index) => {
         const displaySerial = order.dailySerial || order.id;
-        
-        tr.onclick = () => openSidebar(order, displaySerial);
-
         const createdAt = order.createdAt ? new Date(order.createdAt) : (order.businessDate ? new Date(order.businessDate) : new Date());
         const dateMain = createdAt.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const dateSub = createdAt.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' });
@@ -625,44 +623,55 @@ function renderOrders(orders = []) {
         const isPaid = order.payment_status === 'Paid';
         const isDelivery = parseFloat(order.deliveryPrice) > 0;
 
-        tr.innerHTML = `
-            <td><span class="order-id">#${displaySerial}</span></td>
-            <td>
-                <div class="order-date-cell">
-                    <span class="date-main">${dateMain}</span>
-                    <span class="date-sub">${dateSub}</span>
-                </div>
-            </td>
-            <td>
-                <div class="customer-info">
-                    <div style="font-weight:600">${order.customerName || t.cashCustomer}</div>
-                    <div style="font-size:0.75rem; color:#6d7175">${order.customerPhone || ''}</div>
-                </div>
-            </td>
-            <td style="text-align: center;">
-                <span style="font-weight:700; font-size: 1.1rem; color: var(--text-main);">${parseFloat(order.orderTotal).toFixed(2)}</span>
-                <small style="font-size: 0.7rem; opacity: 0.6; font-weight: 600;">EGP</small>
-            </td>
-            <td>
-                <span class="status-badge status-completed">
-                    <i class="fas fa-check-circle"></i>
-                    ${isPaid ? t.paidStatus : t.pendingStatus}
-                </span>
-            </td>
-            <td>
-                <span class="status-badge ${isDelivery ? 'status-pending' : 'status-completed'}">
-                    <i class="fas ${isDelivery ? 'fa-truck' : 'fa-store'}"></i>
-                    ${isDelivery ? t.deliveryStatus : t.inStoreStatus}
-                </span>
-            </td>
-            <td>
-                <span class="status-badge ${isCancelled ? 'status-cancelled' : 'status-completed'}">
-                    <i class="fas ${isCancelled ? 'fa-times-circle' : 'fa-play-circle'}"></i>
-                    ${isCancelled ? t.cancelledStatus : t.activeStatus}
-                </span>
-            </td>
+        return `
+            <tr class="fade-in" style="animation-delay: ${index * 0.05}s" data-index="${index}">
+                <td><span class="order-id">#${displaySerial}</span></td>
+                <td>
+                    <div class="order-date-cell">
+                        <span class="date-main">${dateMain}</span>
+                        <span class="date-sub">${dateSub}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="customer-info">
+                        <div style="font-weight:600">${order.customerName || t.cashCustomer}</div>
+                        <div style="font-size:0.75rem; color:#6d7175">${order.customerPhone || ''}</div>
+                    </div>
+                </td>
+                <td style="text-align: center;">
+                    <span style="font-weight:700; font-size: 1.1rem; color: var(--text-main);">${parseFloat(order.orderTotal).toFixed(2)}</span>
+                    <small style="font-size: 0.7rem; opacity: 0.6; font-weight: 600;">EGP</small>
+                </td>
+                <td>
+                    <span class="status-badge status-completed">
+                        <i class="fas fa-check-circle"></i>
+                        ${isPaid ? t.paidStatus : t.pendingStatus}
+                    </span>
+                </td>
+                <td>
+                    <span class="status-badge ${isDelivery ? 'status-pending' : 'status-completed'}">
+                        <i class="fas ${isDelivery ? 'fa-truck' : 'fa-store'}"></i>
+                        ${isDelivery ? t.deliveryStatus : t.inStoreStatus}
+                    </span>
+                </td>
+                <td>
+                    <span class="status-badge ${isCancelled ? 'status-cancelled' : 'status-completed'}">
+                        <i class="fas ${isCancelled ? 'fa-times-circle' : 'fa-play-circle'}"></i>
+                        ${isCancelled ? t.cancelledStatus : t.activeStatus}
+                    </span>
+                </td>
+            </tr>
         `;
-        tbody.appendChild(tr);
+    }).join('');
+
+    tbody.innerHTML = rowsHtml;
+
+    // Attach click events to the new rows
+    tbody.querySelectorAll('tr').forEach(tr => {
+        const idx = tr.dataset.index;
+        const order = ordersToRender[idx];
+        const displaySerial = order.dailySerial || order.id;
+        tr.onclick = () => openSidebar(order, displaySerial);
     });
 }
 
@@ -807,6 +816,9 @@ async function loadOrderItems(orderDetails) {
                     <div class="item-main">
                         <div class="item-qty">${item.quantity}</div>
                         <div style="font-weight:700; color: var(--text-main); font-size: 1rem;">${item.name}</div>
+                        ${item.variant ? `<div style="font-size: 0.85rem; color: #6d7175; font-weight: 600; margin-top: 2px; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block;">
+                            <i class="fas fa-tags" style="font-size: 0.7rem; opacity: 0.6;"></i> ${item.variant}
+                        </div>` : ''}
                     </div>
                     <span style="font-weight:800; color: var(--text-main); font-size: 1.05rem;">
                         ${(parseFloat(item.price) * item.quantity).toFixed(2)}

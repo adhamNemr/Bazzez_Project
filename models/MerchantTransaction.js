@@ -23,7 +23,11 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: "merchant_transactions",
-        timestamps: true
+        timestamps: true,
+        indexes: [
+            { fields: ['merchantId'] },
+            { fields: ['date'] }
+        ]
     });
 
     return MerchantTransaction;

@@ -1,53 +1,92 @@
-const { Order, Setting, Customer, sequelize, Op } = require('../models');
+const { Order, Setting, Customer, sequelize } = require('../models');
+const { Op } = require('sequelize');
 const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
 
 // ✅ الدالة لجلب بيانات الـ Dashboard (بيانات حقيقية من Supabase)
 exports.getDashboardData = async (req, res) => {
     try {
-        const { Setting, Order, Customer } = require('../models');
+        const { Setting, Order } = require('../models');
         const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
         const today = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
 
         console.log("📊 Fetching Dashboard Data for date:", today);
 
-        // 1️⃣ إجمالي الطلبات
-        const totalOrders = await Order.count({ where: { businessDate: today, isCancelled: "No" } });
+        // 🚀 Parallel Execution Strategy: Fetch counts, sums, and lists concurrently
+        const [
+            totalOrders,
+            revenueResult,
+            activeCustomers,
+            recentActivity,
+            todayOrders,
+            yesterdayOrders,
+            weekRevenues
+        ] = await Promise.all([
+            // 1. Total Orders
+            Order.count({ where: { businessDate: today, isCancelled: "No" } }),
+            // 2. Revenue Sum
+            Order.findAll({
+                attributes: [[sequelize.fn('SUM', sequelize.col('orderTotal')), 'total']],
+                where: { businessDate: today, isCancelled: "No" },
+                raw: true
+            }),
+            // 3. Unique Customers
+            Order.count({
+                distinct: true,
+                col: 'customerId',
+                where: { businessDate: today, isCancelled: "No" }
+            }),
+            // 4. Recent Activity
+            Order.findAll({
+                where: { businessDate: today, isCancelled: "No" },
+                order: [['id', 'DESC']],
+                limit: 5,
+                attributes: ['dailySerial', 'customerName', 'orderTotal', 'createdAt'],
+                raw: true
+            }),
+            // 5. Today's Data (for Chart & Top Products)
+            Order.findAll({
+                where: { businessDate: today, isCancelled: "No" },
+                attributes: ['orderTotal', 'createdAt', 'orderDetails'],
+                raw: true
+            }),
+            // 6. Yesterday's Data
+            Order.findAll({
+                where: { 
+                    businessDate: new Date(new Date(today).getTime() - 86400000).toLocaleDateString('en-CA'), 
+                    isCancelled: "No" 
+                },
+                attributes: ['orderTotal', 'createdAt'],
+                raw: true
+            }),
+            // 7. Weekly Summary
+            Order.findAll({
+                attributes: [
+                    'businessDate',
+                    [sequelize.fn('SUM', sequelize.col('orderTotal')), 'total']
+                ],
+                where: {
+                    businessDate: { [Op.gte]: new Date(new Date(today).getTime() - (6 * 86400000)).toLocaleDateString('en-CA') },
+                    isCancelled: "No"
+                },
+                group: ['businessDate'],
+                raw: true
+            })
+        ]);
 
-        // 2️⃣ إجمالي المبيعات
-        const totalRevenueResult = await Order.findAll({
-            attributes: [[sequelize.fn('SUM', sequelize.col('orderTotal')), 'total']],
-            where: { businessDate: today, isCancelled: "No" },
-            raw: true
-        });
-        const totalRevenue = parseFloat(totalRevenueResult[0]?.total || 0);
-
-        // 3️⃣ متوسط قيمة الفاتورة
+        const totalRevenue = parseFloat(revenueResult[0]?.total || 0);
         const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0;
 
-        // 4️⃣ عدد العملاء النشطين اليوم
-        const activeCustomers = await Order.count({
-            distinct: true,
-            col: 'customerId',
-            where: { businessDate: today, isCancelled: "No" }
-        });
-
-        // 5️⃣ آخر 5 عمليات (تستخدم dailySerial بدل الـ ID العام)
-        const recentActivity = await Order.findAll({
-            where: { businessDate: today, isCancelled: "No" },
-            order: [['id', 'DESC']],
-            limit: 5,
-            attributes: ['dailySerial', 'customerName', 'orderTotal', 'createdAt'],
-            raw: true
-        });
-
-        // 6️⃣ أكثر المنتجات طلباً اليوم
-        const orders = await Order.findAll({
-            where: { businessDate: today, isCancelled: "No" },
-            attributes: ['orderDetails']
-        });
-
+        // 📊 Single Pass Processing for Today's Data (Hourly + Top Products)
+        const todayChart = new Array(12).fill(0);
         const productMap = {};
-        orders.forEach(o => {
+        
+        todayOrders.forEach(o => {
+            // Hourly Chart logic
+            const hour = new Date(o.createdAt).getHours();
+            const idx = Math.floor(hour / 2);
+            if (idx >= 0 && idx < 12) todayChart[idx] += parseFloat(o.orderTotal || 0);
+
+            // Top Products logic
             try {
                 const items = typeof o.orderDetails === 'string' ? JSON.parse(o.orderDetails) : o.orderDetails;
                 if (Array.isArray(items)) {
@@ -55,7 +94,7 @@ exports.getDashboardData = async (req, res) => {
                         productMap[item.name] = (productMap[item.name] || 0) + (item.quantity || 1);
                     });
                 }
-            } catch (e) { }
+            } catch (e) {}
         });
 
         const topProducts = Object.entries(productMap)
@@ -63,47 +102,26 @@ exports.getDashboardData = async (req, res) => {
             .slice(0, 4)
             .map(([name, qty]) => ({ name, sales: qty }));
 
-        // 7️⃣ بيانات الرسم البياني الحقيقية (اليوم، أمس، الأسبوع)
-        
-        // دالة مساعدة لحساب مبيعات الساعات (24 ساعة - كل ساعتين نقطة)
-        const getHourlyData = async (date) => {
-            const data = new Array(12).fill(0); // 12 نقطة تغطي 24 ساعة
-            const orders = await Order.findAll({
-                where: { businessDate: date, isCancelled: "No" },
-                attributes: ['orderTotal', 'createdAt'],
-                raw: true
-            });
-            orders.forEach(o => {
-                const hour = new Date(o.createdAt).getHours();
-                let index = Math.floor(hour / 2); // من 0 لـ 11
-                if (index >= 0 && index < 12) data[index] += parseFloat(o.orderTotal || 0);
-            });
-            return data;
-        };
+        // 📊 Yesterday's Chart
+        const yesterdayChart = new Array(12).fill(0);
+        yesterdayOrders.forEach(o => {
+            const hour = new Date(o.createdAt).getHours();
+            const idx = Math.floor(hour / 2);
+            if (idx >= 0 && idx < 12) yesterdayChart[idx] += parseFloat(o.orderTotal || 0);
+        });
 
-        const todayChart = await getHourlyData(today);
-        
-        // حساب تاريخ أمس
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayStr = yesterdayDate.toLocaleDateString('en-CA');
-        const yesterdayChart = await getHourlyData(yesterdayStr);
+        // 📊 Weekly Chart Summary
+        const revenueMap = {};
+        weekRevenues.forEach(r => revenueMap[r.businessDate] = parseFloat(r.total || 0));
 
-        // حساب بيانات الأسبوع (آخر 7 أيام)
         const weekLabels = [];
         const weekData = [];
         for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
+            const d = new Date(new Date(today).getTime() - (i * 86400000));
             const dStr = d.toLocaleDateString('en-CA');
             const dayName = d.toLocaleDateString('ar-EG', { weekday: 'short' });
-            
-            const dayRevenue = await Order.sum('orderTotal', { 
-                where: { businessDate: dStr, isCancelled: "No" } 
-            }) || 0;
-            
             weekLabels.push(dayName);
-            weekData.push(parseFloat(dayRevenue.toFixed(2)));
+            weekData.push(parseFloat((revenueMap[dStr] || 0).toFixed(2)));
         }
 
         res.json({
@@ -111,7 +129,7 @@ exports.getDashboardData = async (req, res) => {
             totalRevenue: parseFloat(totalRevenue.toFixed(2)),
             avgOrderValue: parseFloat(avgOrderValue),
             activeCustomers,
-            recentActivity: recentActivity.map(a => ({...a, id: a.dailySerial})), // تبديل الـ ID بالرقم اليومي للعرض
+            recentActivity: recentActivity.map(a => ({...a, id: a.dailySerial})),
             topProducts,
             charts: {
                 today: todayChart,

@@ -185,7 +185,6 @@ function fetchInventory(force = false) {
 
 function renderInventory(items) {
     const tableBody = document.getElementById('product-table');
-    tableBody.innerHTML = '';
     const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
 
     const expiryHeader = document.getElementById('loc-expiry');
@@ -207,52 +206,42 @@ function renderInventory(items) {
         return;
     }
 
-    items.forEach(item => {
-        const row = document.createElement('tr');
+    // 🚀 Performance Optimization: Use a single string join to minimize DOM reflows
+    const tableRows = items.map(item => {
         const hasVariants = item.variants && item.variants.length > 0;
         
-        // 📊 Aggregate Data for Parent (Level 1)
         let totalQty = parseFloat(item.quantity || 0);
         let totalMin = parseFloat(item.min || 0);
-        let totalValue = totalQty * parseFloat(item.cost || 0);
+        let totalValue = 0;
         let latestUpdateDate = item.updatedAt || item.createdAt || new Date().toISOString();
-
         let hasLowStockVariant = false;
 
         if (hasVariants) {
             const variantsSum = item.variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
-            // If parent has a defined quantity greater than the sum of variants, use it as the "Master Bulk Quantity"
             totalQty = parseFloat(item.quantity || 0) > variantsSum ? parseFloat(item.quantity) : variantsSum;
-            
             totalMin = item.variants.reduce((sum, v) => sum + parseFloat(v.min || 0), 0);
             
-            // Calculate value based on which quantity we are using
             if (totalQty > variantsSum) {
                 totalValue = totalQty * parseFloat(item.cost || 0);
             } else {
                 totalValue = item.variants.reduce((sum, v) => sum + (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)), 0);
             }
             
-            // Find the most recent update across all variants and check for low stock
             item.variants.forEach(v => {
                 const vDate = v.updatedAt || v.createdAt;
-                if (vDate && new Date(vDate) > new Date(latestUpdateDate)) {
-                    latestUpdateDate = vDate;
-                }
-                // ✅ Only flag low stock if the minimum threshold is explicitly set (> 0)
+                if (vDate && new Date(vDate) > new Date(latestUpdateDate)) latestUpdateDate = vDate;
                 const vMin = parseFloat(v.min || 0);
                 const vQty = parseFloat(v.quantity || 0);
-                if (vMin > 0 && vQty <= vMin) {
-                    hasLowStockVariant = true;
-                }
+                if (vMin > 0 && vQty <= vMin) hasLowStockVariant = true;
             });
+        } else {
+            totalValue = totalQty * parseFloat(item.cost || 0);
         }
 
         const isLow = totalQty <= totalMin || hasLowStockVariant;
         const isNearExpiry = !isRetail && checkIfNearExpiry(item.expiryDate);
         const formattedQty = isRetail ? Math.round(totalQty) : totalQty.toFixed(2);
         
-        // 🏗️ Build Parent Row
         let toggleIconHTML = hasVariants 
             ? `<i class="fas fa-chevron-left toggle-icon" style="cursor:pointer; margin-left:8px; color:var(--luxury-emerald); transition: transform 0.3s; width: 15px; text-align: center;"></i>` 
             : `<span style="display:inline-block; width:23px;"></span>`;
@@ -268,220 +257,151 @@ function renderInventory(items) {
         const expiryWarningHTML = isNearExpiry ? `<i class="fas fa-exclamation-circle expiry-pulse" title="${isAr ? 'قرب الانتهاء' : 'Expiring Soon'}"></i>` : '';
 
         const editParentBtnHTML = hasVariants ? `
-            <button class="edit-parent-btn" style="background: rgba(16, 185, 129, 0.1); border: none; padding: 5px 10px; border-radius: 8px; color: var(--luxury-emerald); cursor: pointer; transition: 0.3s; margin-${isAr ? 'right' : 'left'}: 10px;" title="${isAr ? 'تعديل بيانات المنتج الأساسي' : 'Edit Main Product'}">
+            <button class="edit-parent-btn" data-id="${item.id}" style="background: rgba(16, 185, 129, 0.1); border: none; padding: 5px 10px; border-radius: 8px; color: var(--luxury-emerald); cursor: pointer; transition: 0.3s; margin-${isAr ? 'right' : 'left'}: 10px;">
                 <i class="fas fa-edit"></i>
             </button>
         ` : '';
 
-        row.innerHTML = `
-            <td style="opacity: 0.5;">
-                ${toggleIconHTML}
-                #${item.id}
-            </td>
-            <td style="font-weight: 800; color: var(--luxury-emerald);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>${item.name} ${expiryWarningHTML}</span>
-                    ${editParentBtnHTML}
-                </div>
-            </td>
-            <td>
-                <span class="${isLow ? 'badge-low' : 'badge-ok'}">${formattedQty}</span>
-            </td>
-            <td style="opacity: 0.6;">${formattedMin}</td>
-            <td style="opacity: ${hasVariants ? '0.3' : '1'};">${hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
-            <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: #008060; font-weight: 700;">${hasVariants ? '---' : parseFloat(item.price || item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
-            <td style="font-weight: 800; color: var(--luxury-emerald);">${totalValue.toFixed(2)} <small>EGP</small></td>
-            <td style="font-size: 0.85rem; opacity: 0.6;">${formatDate(latestUpdateDate)}</td>
-            ${!isRetail ? `
-            <td style="font-size: 0.85rem; font-weight: 700; color: ${isNearExpiry ? '#ef4444' : 'inherit'};">
-                ${formatDate(item.expiryDate)}
-            </td>` : ''}
+        // 🏗️ Build Parent Row HTML
+        let rowHtml = `
+            <tr class="${hasVariants ? 'parent-row' : ''} ${isNearExpiry ? 'row-near-expiry' : ''}" data-id="${item.id}" style="${hasVariants ? 'cursor:pointer;' : ''}">
+                <td style="opacity: 0.5;">${toggleIconHTML} #${item.id}</td>
+                <td style="font-weight: 800; color: var(--luxury-emerald);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${item.name} ${expiryWarningHTML}</span>
+                        ${editParentBtnHTML}
+                    </div>
+                </td>
+                <td><span class="${isLow ? 'badge-low' : 'badge-ok'}">${formattedQty}</span></td>
+                <td style="opacity: 0.6;">${formattedMin}</td>
+                <td style="opacity: ${hasVariants ? '0.3' : '1'};">${hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
+                <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: #008060; font-weight: 700;">${hasVariants ? '---' : parseFloat(item.price || item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
+                <td style="font-weight: 800; color: var(--luxury-emerald);">${totalValue.toFixed(2)} <small>EGP</small></td>
+                <td style="font-size: 0.85rem; opacity: 0.6;">${formatDate(latestUpdateDate)}</td>
+                ${!isRetail ? `<td style="font-size: 0.85rem; font-weight: 700; color: ${isNearExpiry ? '#ef4444' : 'inherit'};">${formatDate(item.expiryDate)}</td>` : ''}
+            </tr>
         `;
 
-        // 🎨 Styling Parent Row
-        if (hasVariants) {
-            row.style.cursor = 'pointer';
-            row.classList.add('parent-row');
-            
-            // Attach event to the edit button
-            const editBtn = row.querySelector('.edit-parent-btn');
-            if (editBtn) {
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent row toggle
-                    selectItem(item);
-                });
-            }
-        } else {
-            row.addEventListener('click', () => selectItem(item));
-        }
-
-        if (isNearExpiry) {
-            row.classList.add('row-near-expiry');
-        }
-
-        tableBody.appendChild(row);
-
-        // 🌿 Build 3-Level Tree (Product -> Color -> Size)
+        // 🏗️ Build Child Rows (Variants)
         if (hasVariants) {
             const langT = t[currentLang];
-            const groupedByColor = {};
-            item.variants.forEach(v => {
-                // 🎨 Robust Color Extraction: Prioritize 'color' field, then clean 'name'
-                let colorKey = v.color || v.name || langT.other;
-                
-                // If the name is something like "Red - S", we only want "Red" for grouping
-                if (!v.color && v.name && v.name.includes('-')) {
-                    colorKey = v.name.split('-')[0].trim();
-                } else if (!v.color && v.name && v.name.includes('(')) {
-                    colorKey = v.name.split('(')[0].trim();
-                }
-                
-                if (!groupedByColor[colorKey]) groupedByColor[colorKey] = [];
-                groupedByColor[colorKey].push(v);
-            });
-
             const colorGroupBaseClass = `color-group-${item.id}`;
-            let isParentExpanded = false;
-
-            // 🟢 Level 1 Click (Expand/Collapse Colors)
-            row.addEventListener('click', () => {
-                // 🛑 Accordion Behavior: Close other expanded parents before expanding this one
-                if (!isParentExpanded) {
-                    const otherExpandedParents = document.querySelectorAll('.parent-row.expanded-row');
-                    otherExpandedParents.forEach(otherParent => {
-                        if (otherParent !== row) {
-                            otherParent.click(); // Trigger collapse safely
-                        }
-                    });
-                }
-
-                isParentExpanded = !isParentExpanded;
-                
-                // Track expansion to pause auto-refresh and apply highlight
-                if (isParentExpanded) {
-                    row.classList.add('expanded-row', 'tree-node-expanded');
-                } else {
-                    row.classList.remove('expanded-row', 'tree-node-expanded');
-                }
-
-                const icon = row.querySelector('.toggle-icon');
-                if (icon) {
-                    icon.style.transform = isParentExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
-                }
-                
-                const colorRows = document.querySelectorAll(`.${colorGroupBaseClass}`);
-                
-                if (isParentExpanded) {
-                    colorRows.forEach(cRow => {
-                        cRow.style.display = 'table-row';
-                        cRow.classList.add('closing'); // Initial compressed state
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                cRow.classList.remove('closing'); // Expand smoothly
-                            });
-                        });
-                    });
-                } else {
-                    colorRows.forEach(cRow => {
-                        cRow.classList.add('closing'); // Compress smoothly
-                        setTimeout(() => {
-                            if (cRow.classList.contains('closing')) {
-                                cRow.style.display = 'none';
-                                cRow.classList.remove('closing');
-                            }
-                        }, 200); // Wait for fast transition
-                        
-                        // Auto-collapse Level 3 if Level 1 is collapsed
-                        const cIcon = cRow.querySelector('.color-toggle-icon');
-                        if (cIcon) cIcon.style.transform = 'rotate(0deg)';
-                        cRow.dataset.expanded = 'false';
-                        cRow.classList.remove('expanded-row', 'tree-node-expanded');
-                        
-                        const sizeRows = document.querySelectorAll(`.size-group-${item.id}-${cRow.dataset.colorId}`);
-                        sizeRows.forEach(sRow => {
-                            if (sRow.style.display !== 'none') {
-                                sRow.classList.add('closing');
-                                setTimeout(() => {
-                                    if (sRow.classList.contains('closing')) {
-                                        sRow.style.display = 'none';
-                                        sRow.classList.remove('closing');
-                                    }
-                                }, 200);
-                            }
-                        });
-                    });
-                }
-            });
-
-            // 🟢 Level 2: Render Color/Fabric Rows
-            item.variants.forEach((variant, index) => {
-                const colorRow = document.createElement('tr');
-                colorRow.className = `${colorGroupBaseClass} tree-child-row tree-level-2`;
-                colorRow.style.display = 'none';
-                colorRow.style.cursor = 'pointer';
-
+            
+            item.variants.forEach((variant, vIdx) => {
                 const variantQty = isRetail ? Math.round(variant.quantity) : parseFloat(variant.quantity).toFixed(2);
-                const isLow = variant.quantity <= (variant.min || 0);
+                const isVLow = variant.quantity <= (variant.min || 0);
                 const branchIcon = isAr ? '<i class="fas fa-level-down-alt fa-rotate-90" style="margin-left: 10px; color:#cbd5e1;"></i>' : '<i class="fas fa-level-up-alt fa-rotate-90" style="margin-right: 10px; color:#cbd5e1;"></i>';
 
-                colorRow.innerHTML = `
-                    <td style="padding-${isAr ? 'right' : 'left'}: 2.5rem; font-weight: 700; color: #475569;">
-                        ${branchIcon} <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${variant.name || variant.color}
-                    </td>
-                    <td style="opacity: 0.6; font-size: 0.85rem;">${isAr ? 'خامة' : 'Fabric'}</td>
-                    <td><span class="${isLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${variantQty}</span></td>
-                    <td style="opacity: 0.6; font-size: 0.9rem;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
-                    <td style="font-size: 0.9rem; color: #008060; font-weight: 700;">${parseFloat(variant.price || variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
-                    <td style="font-size: 0.9rem; color: #ca8a04;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
-                    <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
-                    <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
-                    ${!isRetail ? `<td>---</td>` : ''}
+                rowHtml += `
+                    <tr class="${colorGroupBaseClass} tree-child-row tree-level-2" data-pid="${item.id}" data-vidx="${vIdx}" style="display: none; cursor: pointer;">
+                        <td style="padding-${isAr ? 'right' : 'left'}: 2.5rem; font-weight: 700; color: #475569;">
+                            ${branchIcon} <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${variant.name || variant.color}
+                        </td>
+                        <td style="opacity: 0.6; font-size: 0.85rem;">${isAr ? 'خامة' : 'Fabric'}</td>
+                        <td><span class="${isVLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${variantQty}</span></td>
+                        <td style="opacity: 0.6; font-size: 0.9rem;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
+                        <td style="font-size: 0.9rem; color: #008060; font-weight: 700;">${parseFloat(variant.price || variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                        <td style="font-size: 0.9rem; color: #ca8a04;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                        <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
+                        <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
+                        ${!isRetail ? `<td>---</td>` : ''}
+                    </tr>
                 `;
-
-                // Edit variant
-                colorRow.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const updatedVariant = await openVariantEntryModal(isAr, langT, variant);
-                    if (updatedVariant) {
-                        const updatedVariants = [...item.variants];
-                        updatedVariants[index] = updatedVariant;
-                        handleEdit(item.id, { ...item, variants: updatedVariants });
-                    }
-                });
-
-                tableBody.appendChild(colorRow);
             });
 
-            // ➕ Level 2: Add New Variant
-            const addColorRow = document.createElement('tr');
-            addColorRow.className = `${colorGroupBaseClass} child-row tree-child-row tree-level-2 add-action-row`;
-            addColorRow.style.display = 'none';
-            addColorRow.style.cursor = 'pointer';
-            addColorRow.innerHTML = `
-                <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem;">
-                    <i class="fas fa-plus-circle"></i> ${isAr ? 'إضافة خامة/لون جديد' : 'Add new fabric/color'}
-                </td>
+            // Add Variant Row
+            rowHtml += `
+                <tr class="${colorGroupBaseClass} child-row tree-child-row tree-level-2 add-action-row" data-pid="${item.id}" data-action="add-variant" style="display: none; cursor: pointer;">
+                    <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem;">
+                        <i class="fas fa-plus-circle"></i> ${isAr ? 'إضافة خامة/لون جديد' : 'Add new fabric/color'}
+                    </td>
+                </tr>
             `;
-            addColorRow.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const newVariant = await openVariantEntryModal(isAr, langT, { cost: item.cost });
-                if (newVariant) {
-                    const updatedVariants = [...(item.variants || []), newVariant];
-                    handleEdit(item.id, { ...item, variants: updatedVariants });
-                }
+        }
+
+        return rowHtml;
+    }).join('');
+
+    tableBody.innerHTML = tableRows + `
+        <tr style="height: 30px; border: none;"><td colspan="${isRetail ? 7 : 8}" style="border:none;"></td></tr>
+        <tr style="height: 30px; border: none;"><td colspan="${isRetail ? 7 : 8}" style="border:none;"></td></tr>
+    `;
+
+    // ⚡ Attach Event Listeners to the newly created DOM elements
+    attachInventoryListeners();
+}
+
+function attachInventoryListeners() {
+    const tableBody = document.getElementById('product-table');
+    
+    // 🟢 Level 1: Parent Rows & Expansion
+    tableBody.querySelectorAll('.parent-row').forEach(row => {
+        const id = row.dataset.id;
+        const item = allInventory.find(i => i.id == id);
+        if (!item) return;
+
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('.edit-parent-btn')) return; // Handled separately
+
+            const isExpanded = row.classList.contains('expanded-row');
+            
+            // Accordion: Close others
+            if (!isExpanded) {
+                tableBody.querySelectorAll('.parent-row.expanded-row').forEach(other => {
+                    if (other !== row) other.click();
+                });
+            }
+
+            row.classList.toggle('expanded-row');
+            row.classList.toggle('tree-node-expanded');
+            
+            const icon = row.querySelector('.toggle-icon');
+            if (icon) icon.style.transform = !isExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
+
+            const children = tableBody.querySelectorAll(`.color-group-${id}`);
+            children.forEach(c => {
+                c.style.display = !isExpanded ? 'table-row' : 'none';
             });
-            tableBody.appendChild(addColorRow);
+        });
+
+        const editBtn = row.querySelector('.edit-parent-btn');
+        if (editBtn) {
+            editBtn.onclick = (e) => { e.stopPropagation(); selectItem(item); };
         }
     });
 
-    // 🏁 Add two empty spacer rows at the bottom for better visual breathing room
-    for (let i = 0; i < 2; i++) {
-        const spacerRow = document.createElement('tr');
-        spacerRow.style.height = '30px';
-        spacerRow.style.border = 'none';
-        spacerRow.innerHTML = `<td colspan="${isRetail ? 7 : 8}" style="border:none;"></td>`;
-        tableBody.appendChild(spacerRow);
-    }
+    // Handle Simple Rows (No Variants)
+    tableBody.querySelectorAll('tr:not(.parent-row):not(.tree-child-row)').forEach(row => {
+        if (row.dataset.id) {
+            const item = allInventory.find(i => i.id == row.dataset.id);
+            if (item) row.onclick = () => selectItem(item);
+        }
+    });
+
+    // 🟢 Level 2: Variant Interactions
+    tableBody.querySelectorAll('.tree-child-row').forEach(row => {
+        const pid = row.dataset.pid;
+        const vidx = row.dataset.vidx;
+        const action = row.dataset.action;
+        const item = allInventory.find(i => i.id == pid);
+        if (!item) return;
+
+        row.onclick = async (e) => {
+            e.stopPropagation();
+            if (action === 'add-variant') {
+                const newV = await openVariantEntryModal(isAr, t[currentLang], { cost: item.cost });
+                if (newV) handleEdit(item.id, { ...item, variants: [...(item.variants || []), newV] });
+            } else if (vidx !== undefined) {
+                const variant = item.variants[vidx];
+                const updated = await openVariantEntryModal(isAr, t[currentLang], variant);
+                if (updated) {
+                    const newVs = [...item.variants];
+                    newVs[vidx] = updated;
+                    handleEdit(item.id, { ...item, variants: newVs });
+                }
+            }
+        };
+    });
 }
 
 function updateStats(items) {

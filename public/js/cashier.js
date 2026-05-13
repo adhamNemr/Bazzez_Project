@@ -77,20 +77,24 @@ const submitButton = document.getElementById('submit-order');
 const suggestionsBox = document.getElementById("suggestions");
 
 // --- 1. Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
-    applyTranslations();
-    initUser();
-    initDelivery();
-    fetchProducts();
+document.addEventListener('DOMContentLoaded', async () => {
+    // 🚀 Parallel Boot: Do everything at once
+    Promise.all([
+        applyTranslations(),
+        initUser(),
+        initDelivery(),
+        fetchProducts()
+    ]);
+    
     setupEventListeners();
     
-    // Clean up empty sidebar space
+    // Clean up empty sidebar space fast
     setTimeout(() => {
         const sidebar = document.getElementById('sidebar-container');
         if (sidebar && sidebar.innerHTML.trim() === '') {
             sidebar.style.display = 'none';
         }
-    }, 500);
+    }, 50);
 });
 
 function applyTranslations() {
@@ -99,27 +103,27 @@ function applyTranslations() {
     document.documentElement.dir = isAr ? 'rtl' : 'ltr';
     document.documentElement.lang = currentLang;
 
-    // Static Texts
-    const updateLoc = (id, text) => {
+    const locIds = [
+        ['loc-header-pill', langT.headerPill],
+        ['loc-home', langT.home],
+        ['loc-cash', langT.cash],
+        ['loc-card', langT.card],
+        ['loc-instapay', langT.instapay],
+        ['loc-vcash', langT.vcash],
+        ['loc-cart-summary', langT.cartSummary],
+        ['loc-empty-cart', langT.emptyCart],
+        ['loc-subtotal', langT.subtotal],
+        ['loc-delivery', langT.delivery],
+        ['loc-discount', langT.discount],
+        ['loc-total', langT.total],
+        ['loc-checkout', langT.checkout]
+    ];
+
+    locIds.forEach(([id, text]) => {
         const el = document.getElementById(id);
         if(el) el.textContent = text;
-    };
+    });
 
-    updateLoc('loc-header-pill', langT.headerPill);
-    updateLoc('loc-home', langT.home);
-    updateLoc('loc-cash', langT.cash);
-    updateLoc('loc-card', langT.card);
-    updateLoc('loc-instapay', langT.instapay);
-    updateLoc('loc-vcash', langT.vcash);
-    updateLoc('loc-cart-summary', langT.cartSummary);
-    updateLoc('loc-empty-cart', langT.emptyCart);
-    updateLoc('loc-subtotal', langT.subtotal);
-    updateLoc('loc-delivery', langT.delivery);
-    updateLoc('loc-discount', langT.discount);
-    updateLoc('loc-total', langT.total);
-    updateLoc('loc-checkout', langT.checkout);
-
-    // Placeholders
     if(nameInput) nameInput.placeholder = langT.searchCustomer;
     if(phoneInput) {
         phoneInput.placeholder = langT.phonePlaceholder;
@@ -138,17 +142,18 @@ function initUser() {
 }
 
 function initDelivery() {
-    if (deliveryPriceSelect) {
-        deliveryPriceSelect.innerHTML = `<option value="0">${t[currentLang].selectDelivery}</option>`;
-        for (let i = 5; i <= 100; i += 5) {
-            const option = document.createElement('option');
-            option.value = i;
-            option.textContent = `${i} EGP`;
-            option.dir = 'ltr';
-            deliveryPriceSelect.appendChild(option);
-        }
-        deliveryPriceSelect.addEventListener('change', renderOrderSummary);
+    if (!deliveryPriceSelect) return;
+    deliveryPriceSelect.innerHTML = `<option value="0">${t[currentLang].selectDelivery}</option>`;
+    const fragment = document.createDocumentFragment();
+    for (let i = 5; i <= 100; i += 5) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i} EGP`;
+        option.dir = 'ltr';
+        fragment.appendChild(option);
     }
+    deliveryPriceSelect.appendChild(fragment);
+    deliveryPriceSelect.addEventListener('change', renderOrderSummary);
 }
 
 // --- 2. Data Fetching ---
@@ -167,15 +172,19 @@ async function fetchProducts() {
                 .then(() => window.location.href = "/index.html");
                 return;
             }
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.message || `Server responded with ${response.status}`);
+            throw new Error(`Server error: ${response.status}`);
         }
         
         const rawData = await response.json();
         
-        // 🧪 Manual Category Override: Move 'سروال الامثل' to its own category
+        // 🧪 Sort products alphabetically within each category for consistency
+        for (const cat in rawData) {
+            rawData[cat].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+        }
+
+        // Optimized Category Override (Single Pass)
         let saruwalProducts = [];
-        Object.keys(rawData).forEach(cat => {
+        for (const cat in rawData) {
             rawData[cat] = rawData[cat].filter(p => {
                 if (p.name === 'سروال الامثل') {
                     p.category = 'سراويل';
@@ -184,45 +193,30 @@ async function fetchProducts() {
                 }
                 return true;
             });
-        });
-        
-        if (saruwalProducts.length > 0) {
-            rawData['سراويل'] = saruwalProducts;
         }
-
+        if (saruwalProducts.length > 0) rawData['سراويل'] = saruwalProducts;
 
         allCategorizedProducts = rawData;
-        
         renderCategories();
         
         const categories = Object.keys(allCategorizedProducts);
-        if (categories.length > 0) {
-            showCategory(categories[0]);
-        } else {
+        if (categories.length > 0) showCategory(categories[0]);
+        else {
              menuItemsContainer.innerHTML = `<div class="empty-state">
                 <i class="fas fa-box-open" style="font-size:2.5rem; margin-bottom:1rem; opacity:0.5;"></i>
                 <p>${isAr ? 'لا يوجد منتجات متاحة حالياً' : 'No products available'}</p>
-                <small>${isAr ? 'أضف منتجات من صفحة المخزن لتظهر هنا' : 'Add products from inventory to see them here'}</small>
              </div>`;
         }
-
     } catch (error) {
         console.error("❌ Error loading products:", error);
-        menuItemsContainer.innerHTML = `<div class="empty-state">
-            <i class="fas fa-exclamation-triangle" style="font-size:2rem; margin-bottom:1rem; color:#f59e0b;"></i>
-            <p>${isAr ? 'عذراً، فشل الاتصال بالسيرفر' : 'Connection failed'}</p>
-            <small style="margin-top:10px; font-size:0.8rem; opacity:0.6;">${error.message}</small>
-            <button onclick="fetchProducts()" class="btn-primary" style="margin-top:20px; padding:10px 20px; border-radius:10px; border:none; cursor:pointer;">${isAr ? 'إعادة المحاولة' : 'Retry'}</button>
-        </div>`;
+        menuItemsContainer.innerHTML = `<div class="empty-state"><p>${isAr ? 'فشل الاتصال' : 'Connection failed'}</p></div>`;
     }
 }
 
 function renderCategories() {
     if (!categoryPillsContainer) return;
-    categoryPillsContainer.innerHTML = '';
-    
+    const fragment = document.createDocumentFragment();
     const categories = Object.keys(allCategorizedProducts);
-    if (categories.length === 0) return;
 
     categories.forEach(cat => {
         const btn = document.createElement('button');
@@ -230,52 +224,48 @@ function renderCategories() {
         btn.textContent = cat;
         btn.dataset.category = cat;
         btn.onclick = () => showCategory(cat);
-        categoryPillsContainer.appendChild(btn);
+        fragment.appendChild(btn);
     });
+
+    categoryPillsContainer.innerHTML = '';
+    categoryPillsContainer.appendChild(fragment);
 }
 
 function showCategory(category) {
-    // Update active pill UI
-    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    const activePill = document.querySelector(`.pill[data-category="${category}"]`);
-    if (activePill) activePill.classList.add('active');
+    document.querySelectorAll('.pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.category === category);
+    });
 
     const products = allCategorizedProducts[category] || [];
-    menuItemsContainer.innerHTML = '';
-
     if (products.length === 0) {
-        menuItemsContainer.innerHTML = `<div class="empty-state">${isAr ? 'لا توجد منتجات في هذا القسم' : 'No products in this category'}</div>`;
+        menuItemsContainer.innerHTML = `<div class="empty-state">${isAr ? 'لا توجد منتجات' : 'No products'}</div>`;
         return;
     }
 
+    const fragment = document.createDocumentFragment();
     products.forEach(product => {
         const variants = product.variants || [];
         const hasVariants = variants.length > 0;
         const sizes = getSizesForCategory(product.category, product.name);
-        
-        // ⚡ Total Simplicity Check: 1 Fabric & 1 Size (One Size)
         const isSuperSimple = variants.length === 1 && sizes.length === 1 && sizes[0] === 'مقاس واحد';
 
         const card = document.createElement('div');
         card.className = 'menu-item animate-fade-in';
         card.onclick = () => {
-            console.log("🖱️ Item Clicked:", product.name, "Has Variants:", hasVariants, "Is Super Simple:", isSuperSimple);
             if (isSuperSimple) {
-                // Add directly with the only available variant and size
-                const singleVariant = variants[0];
-                addVariantToOrder(product.name, singleVariant.price, singleVariant.name || singleVariant.color, sizes[0]);
+                addVariantToOrder(product.name, variants[0].price, variants[0].name || variants[0].color, sizes[0]);
             } else if (hasVariants) {
                 showVariantModal(product);
             } else {
                 addToOrder(product.name, product.price);
             }
         };
-        card.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>${parseFloat(product.price).toFixed(2)} <small>EGP</small></p>
-        `;
-        menuItemsContainer.appendChild(card);
+        card.innerHTML = `<h3>${product.name}</h3><p>${parseFloat(product.price).toFixed(2)} <small>EGP</small></p>`;
+        fragment.appendChild(card);
     });
+
+    menuItemsContainer.innerHTML = '';
+    menuItemsContainer.appendChild(fragment);
 }
 
 function getSizesForCategory(category, productName) {
@@ -635,21 +625,18 @@ function renderOrderSummary() {
             </div>
         `;
     } else {
-        items.forEach(name => {
+        // 🚀 Optimization: Batch all rows into a single fragment string to minimize reflows
+        const rowsHtml = items.map(name => {
             const item = currentOrder[name];
             const cost = item.price * item.quantity;
             subtotal += cost;
             itemCount += item.quantity;
 
-            // Handle comments/add-ons
-            let commentsHtml = '';
-            item.comment.forEach((c, idx) => {
+            let commentsHtml = item.comment.map((c, idx) => {
                 const addPrice = parseFloat(c.price) || 0;
-                
                 if (c.isDiscount) {
                     totalDiscount += Math.abs(addPrice) * item.quantity;
-                    // 🔴 Render discount badge in red
-                    commentsHtml += `
+                    return `
                         <div style="display: inline-flex; align-items: center; background: rgba(239,68,68,0.1); color: #ef4444; padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
                             <i class="fas fa-tag"></i>
                             <span>${c.text} (${addPrice.toFixed(2)} EGP)</span>
@@ -658,40 +645,40 @@ function renderOrderSummary() {
                     `;
                 } else {
                     subtotal += addPrice * item.quantity;
-                    // 🟢 Render add-on badge in green
-                    commentsHtml += `
+                    return `
                         <div style="display: inline-flex; align-items: center; background: rgba(0, 128, 96, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; gap: 8px;">
                             <span>${c.text} ${addPrice > 0 ? `(+${addPrice})` : ''}</span>
                             <button onclick="removeComment('${name}', ${idx})" style="background:none; border:none; color:inherit; cursor:pointer; font-size:0.8rem;"><i class="fas fa-times-circle"></i></button>
                         </div>
                     `;
                 }
-            });
+            }).join('');
 
-            const row = document.createElement('div');
-            row.className = 'order-row';
-            row.innerHTML = `
-                <div class="order-info">
-                    <span class="order-item-name">${name}</span>
-                    <span class="order-price">${cost.toFixed(2)}</span>
-                </div>
-                <div class="order-actions-row">
-                    <div class="order-actions">
-                        <button onclick="updateQty('${name}', -1)"><i class="fas fa-minus"></i></button>
-                        <span style="font-weight: 800; min-width: 20px; text-align: center;">${item.quantity}</span>
-                        <button onclick="updateQty('${name}', 1)"><i class="fas fa-plus"></i></button>
+            return `
+                <div class="order-row animate-fade-in">
+                    <div class="order-info">
+                        <span class="order-item-name">${name}</span>
+                        <span class="order-price">${cost.toFixed(2)}</span>
                     </div>
-                    <div class="row-tools" style="display: flex; gap: 10px;">
-                        <button onclick="openCommentCard('${name}')" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-comment-medical"></i></button>
-                        <button onclick="updateQty('${name}', -${item.quantity})" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                    <div class="order-actions-row">
+                        <div class="order-actions">
+                            <button onclick="updateQty('${name}', -1)"><i class="fas fa-minus"></i></button>
+                            <span style="font-weight: 800; min-width: 20px; text-align: center;">${item.quantity}</span>
+                            <button onclick="updateQty('${name}', 1)"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="row-tools" style="display: flex; gap: 10px;">
+                            <button onclick="openCommentCard('${name}')" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-comment-medical"></i></button>
+                            <button onclick="updateQty('${name}', -${item.quantity})" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                        </div>
                     </div>
-                </div>
-                <div class="comments-container" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
-                    ${commentsHtml}
+                    <div class="comments-container" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                        ${commentsHtml}
+                    </div>
                 </div>
             `;
-            orderSummary.appendChild(row);
-        });
+        }).join('');
+
+        orderSummary.innerHTML = rowsHtml;
     }
 
     const delivery = parseFloat(deliveryPriceSelect.value) || 0;
@@ -899,13 +886,13 @@ async function submitOrder() {
         comments: currentOrder[key].comment
     }));
 
-    // Auto-fetch best discount
-    const discountCode = await getBestDiscountCode(orderDetails);
+    // Skip discount fetch for now (System core version)
+    const discountCode = null; // await getBestDiscountCode(orderDetails);
 
     const orderData = {
         customer: {
-            name: nameInput.value || (isAr ? 'عميل تيك أواي' : 'Walk-in'),
-            phone: phoneInput.value || '0000000000',
+            name: nameInput.value || "--",
+            phone: phoneInput.value || "0000000000",
             address: 'Store'
         },
         orderDetails,
@@ -960,33 +947,38 @@ function setPaymentMethod(method) {
 }
 
 // --- 5. Customer Search ---
-phoneInput.addEventListener('input', async () => {
+let searchTimeout;
+phoneInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
     const phone = phoneInput.value.trim();
     if (phone.length < 3) {
         suggestionsBox.style.display = 'none';
         return;
     }
 
-    try {
-        const res = await fetch(`/api/customers/${phone}`);
-        const data = await res.json();
-        suggestionsBox.innerHTML = '';
-        
-        if (data.length > 0) {
-            data.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.textContent = `${c.name} (${c.phone})`;
-                div.onclick = () => {
-                    nameInput.value = c.name;
-                    phoneInput.value = c.phone;
-                    suggestionsBox.style.display = 'none';
-                };
-                suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.style.display = 'block';
-        }
-    } catch (e) { console.error(e); }
+    // 🕒 Debounce for 400ms to avoid flooding the server
+    searchTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/customers/${phone}`);
+            const data = await res.json();
+            suggestionsBox.innerHTML = '';
+            
+            if (data.length > 0) {
+                data.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = `${c.name} (${c.phone})`;
+                    div.onclick = () => {
+                        nameInput.value = c.name;
+                        phoneInput.value = c.phone;
+                        suggestionsBox.style.display = 'none';
+                    };
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            }
+        } catch (e) { console.error(e); }
+    }, 400);
 });
 
 function setupEventListeners() {

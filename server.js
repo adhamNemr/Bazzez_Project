@@ -88,6 +88,25 @@ sequelize
         console.log("✅ Column 'variants' added to 'inventory' table.");
       }
 
+      // ✅ Ensure Performance Indexes exist in PostgreSQL
+      console.log("⚡ Ensuring Database Indexes exist for optimal performance...");
+      try {
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_businessDate ON "Orders" ("businessDate")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON "Orders" ("createdAt")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_isCancelled ON "Orders" ("isCancelled")`);
+        
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_merchantId ON merchant_transactions ("merchantId")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_date ON merchant_transactions ("date")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_recipes_sandwich ON recipes ("sandwich")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_qty ON inventory ("quantity")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_min ON inventory ("min")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_expiry ON inventory ("expiryDate")`);
+        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses ("date")`);
+        console.log("✅ Performance Indexes applied successfully.");
+      } catch (indexErr) {
+        console.error("⚠️ Note: Could not create indexes automatically. They might already exist.", indexErr.message);
+      }
+
       // ✅ Seed Default Settings if empty
       const settingsCount = await Setting.count();
       if (settingsCount === 0) {

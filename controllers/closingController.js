@@ -47,42 +47,66 @@ exports.getDailySummary = async (req, res) => {
     try {
         const businessDate = req.query.date || await getActiveBusinessDate();
 
-        // 🟢 Total Orders
-        const totalOrders = await Order.count({
-            where: { businessDate, isCancelled: "No" }
-        });
-
-        // 🟢 Total Sandwiches
-        const orders = await Order.findAll({
-            where: { businessDate, isCancelled: "No" },
-            attributes: ['orderDetails']
-        });
+        // 🟢 Execute independent aggregations in parallel
+        const [
+            totalOrders,
+            ordersData,
+            totalRevenue,
+            totalDiscount,
+            totalExpenses,
+            activeOrders,
+            ordersList,
+            expensesList,
+            totalCost
+        ] = await Promise.all([
+            Order.count({ where: { businessDate, isCancelled: "No" } }),
+            Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'], raw: true }),
+            Order.sum('orderTotal', { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            Order.sum('discountAmount', { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            Expense.sum('amount', { where: { date: businessDate } }).then(v => v || 0),
+            Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderTotal', 'payment_method'], raw: true }),
+            Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['id', 'customerName', 'orderTotal', 'payment_method', 'createdAt'], order: [['createdAt', 'ASC']], raw: true }),
+            Expense.findAll({ where: { date: businessDate }, attributes: ['description', 'category', 'amount'], order: [['createdAt', 'ASC']], raw: true }),
+            calculateTotalCost(businessDate)
+        ]);
 
         let totalItems = 0;
         const productStats = {};
         const categoryStats = {};
+        const productNamesInOrders = new Set();
 
-        for (const order of orders) {
-            let orderDetails = [];
+        // First pass: aggregate product counts and identify needed product data
+        for (const order of ordersData) {
+            let details = [];
             try {
-                orderDetails = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
-            } catch (e) {
-                console.error("⚠️ Malformed orderDetails in order:", order.id);
-                continue;
-            }
+                details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+            } catch (e) { continue; }
 
-            if (!Array.isArray(orderDetails)) continue;
+            if (!Array.isArray(details)) continue;
 
-            for (const item of orderDetails) {
+            for (const item of details) {
                 if (!item.quantity || isNaN(item.quantity) || item.name === "تعليق") continue;
                 totalItems += item.quantity;
                 productStats[item.name] = (productStats[item.name] || 0) + item.quantity;
-                
-                // Track category
-                const product = await Product.findOne({ where: { name: item.name } });
-                if (product && product.category) {
-                    categoryStats[product.category] = (categoryStats[product.category] || 0) + item.quantity;
-                }
+                productNamesInOrders.add(item.name);
+            }
+        }
+
+        // Batch fetch product categories to avoid N+1 queries
+        const productsInfo = await Product.findAll({
+            where: { name: Array.from(productNamesInOrders) },
+            attributes: ['name', 'category'],
+            raw: true
+        });
+
+        const productToCategoryMap = {};
+        productsInfo.forEach(p => { productToCategoryMap[p.name] = p.category; });
+
+        // Aggregate category stats
+        for (const [name, qty] of Object.entries(productStats)) {
+            const cat = productToCategoryMap[name];
+            if (cat) {
+                categoryStats[cat] = (categoryStats[cat] || 0) + qty;
             }
         }
 
@@ -104,36 +128,8 @@ exports.getDailySummary = async (req, res) => {
             }
         }
 
-        // 🟢 Total Ingredient Costs
-        const totalCost = await calculateTotalCost(businessDate);
-
-        // 🟢 Total Revenue
-        const totalRevenue = await Order.sum('orderTotal', {
-            where: { businessDate, isCancelled: "No" }
-        }) || 0;
-
-        // 🟢 Total Discounts
-        const totalDiscount = await Order.sum('discountAmount', {
-            where: { businessDate, isCancelled: "No" }
-        }) || 0;
-
-        // 🔴 NEW: Total Daily Expenses
-        const totalExpenses = await Expense.sum('amount', {
-            where: { date: businessDate }
-        }) || 0;
-
-        // 💰 Calculate Breakdown (In-Memory for maximum accuracy)
-        const activeOrders = await Order.findAll({
-            where: { businessDate, isCancelled: "No" },
-            attributes: ['orderTotal', 'payment_method']
-        });
-
-        let cashTotal = 0;
-        let instaPayTotal = 0;
-        let vcashTotal = 0;
-        let cardTotal = 0;
-        let othersTotal = 0;
-
+        // 💰 Calculate Breakdown
+        let cashTotal = 0, instaPayTotal = 0, vcashTotal = 0, cardTotal = 0, othersTotal = 0;
         activeOrders.forEach(o => {
             const amount = parseFloat(o.orderTotal) || 0;
             const method = (o.payment_method || '').toLowerCase();
@@ -144,22 +140,7 @@ exports.getDailySummary = async (req, res) => {
             else othersTotal += amount;
         });
 
-        // 💰 Net Earnings (Revenue - Cost - Expenses)
         const totalEarnings = parseFloat((totalRevenue - totalCost - totalExpenses).toFixed(2));
-
-        // 📜 Get Detailed Orders List
-        const ordersList = await Order.findAll({
-            where: { businessDate, isCancelled: "No" },
-            attributes: ['id', 'customerName', 'orderTotal', 'payment_method', 'createdAt'],
-            order: [['createdAt', 'ASC']]
-        });
-
-        // 📜 Get Detailed Expenses List
-        const expensesList = await Expense.findAll({
-            where: { date: businessDate },
-            attributes: ['description', 'category', 'amount'],
-            order: [['createdAt', 'ASC']]
-        });
 
         res.json({ 
             totalOrders, 
@@ -280,15 +261,34 @@ exports.internalAutoClose = async (businessDate) => {
 async function calculateTotalCost(businessDate) {
     let totalCost = 0;
     const ingredientMap = {};
-    const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
+    
+    // ✅ Pre-fetch all recipes and inventory to memory (O(1) Dictionary Lookup)
+    const [allRecipes, allInventory, orders] = await Promise.all([
+        Recipe.findAll({ raw: true }),
+        Inventory.findAll({ raw: true }),
+        Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'], raw: true })
+    ]);
+
+    const recipeMap = {};
+    allRecipes.forEach(r => {
+        if (!recipeMap[r.sandwich]) recipeMap[r.sandwich] = [];
+        recipeMap[r.sandwich].push(r);
+    });
+
+    const inventoryMap = {};
+    allInventory.forEach(inv => {
+        inventoryMap[inv.name] = inv;
+    });
+
     for (const order of orders) {
         let details = [];
         try {
             details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
         } catch (e) { continue; }
         if (!Array.isArray(details)) continue;
+
         for (const item of details) {
-            const recipes = await Recipe.findAll({ where: { sandwich: item.name } });
+            const recipes = recipeMap[item.name] || [];
             if (recipes.length > 0) {
                 recipes.forEach(recipe => {
                     const ingredient = recipe.ingredient.trim().toLowerCase();
@@ -296,8 +296,8 @@ async function calculateTotalCost(businessDate) {
                     ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
                 });
             } else {
-                // Retail logic: Direct cost from Inventory
-                const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
+                // Retail logic: Direct cost from Inventory dictionary
+                const inventoryItem = inventoryMap[item.name];
                 if (inventoryItem) {
                     let itemCost = parseFloat(inventoryItem.cost) || 0;
                     if (item.variant && inventoryItem.variants) {
@@ -315,16 +315,14 @@ async function calculateTotalCost(businessDate) {
             }
         }
     }
+
     if (Object.keys(ingredientMap).length > 0) {
-        const inventoryData = await Inventory.findAll({
-            where: { name: { [Op.in]: Object.keys(ingredientMap) } },
-            attributes: ['name', 'cost']
-        });
-        inventoryData.forEach(item => {
+        allInventory.forEach(item => {
             const name = item.name.trim().toLowerCase();
             if (ingredientMap[name]) totalCost += ingredientMap[name] * parseFloat(item.cost || 0);
         });
     }
+    
     return parseFloat(totalCost.toFixed(2));
 }
 
