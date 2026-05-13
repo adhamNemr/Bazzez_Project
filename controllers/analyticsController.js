@@ -68,9 +68,10 @@ exports.getAnalytics = async (req, res) => {
                 [Sequelize.fn('COUNT', Sequelize.col('Order.id')), 'ordersCount']
             ],
             where: { customerId: { [Op.ne]: null } },
-            group: ['customerId', 'Customer.id'],
+            group: ['customerId', 'customer_info.id'],
             include: [{ 
                 model: Customer, 
+                as: 'customer_info',
                 attributes: ['name'] 
             }],
             order: [[Sequelize.literal('"ordersCount"'), 'DESC']],
@@ -82,7 +83,7 @@ exports.getAnalytics = async (req, res) => {
         // 🔹 تنسيق بيانات العملاء للعرض
         const formattedTopCustomers = topCustomers.map(c => ({
             id: c.customerId,
-            name: c.Customer?.name || "عميل مجهول",
+            name: c.customer_info?.name || "عميل مجهول",
             ordersCount: parseInt(c.ordersCount) || 0
         }));
 

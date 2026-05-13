@@ -301,6 +301,7 @@
         }
         .btn-secondary:hover { transform: translateY(-3px); background: #f8fafc; border-color: #cbd5e1; }
     </style>
+    <script src="./js/auth-wrapper.js"></script>
 </head>
 <body>
     <main class="main-content">
@@ -317,17 +318,17 @@
                 </div>
             </div>
 
-            <!-- Hero Card -->
+            <!-- Hero Revenue Card (Swapped from Profit) -->
             <div class="hero-card">
                 <div class="hero-content">
-                    <div class="hero-label">صافي الربح الشهري — <span id="current-month-display">--</span></div>
-                    <div class="hero-value" id="stat-profit">0.00 EGP</div>
+                    <div class="hero-label">إجمالي المبيعات الشهرية — <span id="current-month-display">--</span></div>
+                    <div class="hero-value" id="stat-revenue">0.00 EGP</div>
                     <div class="live-badge" id="live-badge" style="display:none;">
                         <span class="live-dot"></span>
                         <span id="live-text">أوردرات اليوم لم تُقفَّل بعد</span>
                     </div>
                 </div>
-                <div class="hero-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="hero-icon"><i class="fas fa-cash-register"></i></div>
             </div>
 
             <!-- Stats Grid (4 cards) -->
@@ -364,10 +365,10 @@
 
                 <div class="stat-card">
                     <div class="stat-top">
-                        <div class="stat-icon-box revenue-icon"><i class="fas fa-cash-register"></i></div>
+                        <div class="stat-icon-box revenue-icon"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-meta">
-                            <span class="stat-label">إجمالي المبيعات</span>
-                            <span class="stat-number" id="stat-revenue">0.00 EGP</span>
+                            <span class="stat-label">صافي الربح الشهري</span>
+                            <span class="stat-number" id="stat-profit">0.00 EGP</span>
                         </div>
                     </div>
                 </div>

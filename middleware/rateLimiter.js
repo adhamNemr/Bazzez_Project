@@ -9,6 +9,7 @@ const rateLimiter = (options = {}) => {
     const { windowMinutes = 1, maxRequests = 10, keyPrefix = 'rl' } = options;
 
     return async (req, res, next) => {
+        if (process.env.NODE_ENV === 'test') return next();
         const ip = req.ip || req.connection.remoteAddress;
         const key = `${keyPrefix}:${req.path}:${ip}`;
         

@@ -1,9 +1,9 @@
 const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
-const User = require("./User");
+const User = require("./User")(sequelize, DataTypes);
 const Customer = require("./Customer")(sequelize, DataTypes);
-const Product = require("./Products"); // ✅ تم التعديل هنا
+const Product = require("./Products")(sequelize, DataTypes);
 const Order = require("./Order")(sequelize, DataTypes);
 const OrderDetail = require("./OrderDetail")(sequelize, DataTypes);
 const Sale = require("./Sale")(sequelize, DataTypes);
@@ -11,8 +11,8 @@ const Inventory = require("./Inventory")(sequelize, DataTypes);
 const Recipe = require("./Recipe")(sequelize, DataTypes);
 const DailyClosing = require('./DailyClosing')(sequelize, DataTypes);
 const MonthlyClosing = require('./MonthlyClosing')(sequelize, DataTypes);
-const Payment = require('./Payments'); 
-const DiscountCode = require("./DiscountCode"); // تأكد أن الاسم متطابق
+const Payment = require('./Payments')(sequelize, DataTypes);
+const DiscountCode = require("./DiscountCode")(sequelize, DataTypes);
 const Comment = require("./Comment")(sequelize, DataTypes);
 const Expense = require("./Expense")(sequelize, DataTypes);
 const Setting = require("./Setting")(sequelize, DataTypes);

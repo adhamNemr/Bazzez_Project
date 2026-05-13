@@ -10,8 +10,6 @@ const sanitizeInput = (req, res, next) => {
         return val
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#x27;')
             .replace(/javascript:/gi, '')
             .trim();
     };

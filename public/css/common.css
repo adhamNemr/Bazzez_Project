@@ -401,7 +401,12 @@ tr:hover td {
 }
 
 /* ✨ Premium SweetAlert2 Global Override */
+.swal2-container {
+    z-index: 200000 !important;
+}
+
 .swal2-popup {
+    z-index: 200000 !important;
     font-family: 'Inter', 'Noto Sans Arabic', sans-serif !important;
     border-radius: 24px !important;
     padding: 2.5rem !important;

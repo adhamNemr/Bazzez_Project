@@ -18,6 +18,7 @@
             document.documentElement.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
         })();
     </script>
+    <script src="./js/auth-wrapper.js"></script>
 </head>
 <body>
     <main class="main-content">
@@ -25,13 +26,13 @@
 
         <div class="closing-page">
 
-            <!-- Hero Profit Card -->
+            <!-- Hero Revenue Card (Swapped from Profit) -->
             <div class="hero-card">
                 <div class="hero-content">
-                    <div class="hero-label">صافي الربح النهائي — <span id="current-business-date"></span></div>
-                    <div class="hero-value" id="stat-profit">0.00 EGP</div>
+                    <div class="hero-label">إجمالي المبيعات — <span id="current-business-date"></span></div>
+                    <div class="hero-value" id="stat-revenue">0.00 EGP</div>
                 </div>
-                <div class="hero-icon"><i class="fas fa-wallet"></i></div>
+                <div class="hero-icon"><i class="fas fa-cash-register"></i></div>
             </div>
 
             <!-- Stats Grid (4 Cards) -->
@@ -67,10 +68,10 @@
 
                 <div class="stat-card">
                     <div class="stat-top">
-                        <div class="stat-icon-box revenue-icon"><i class="fas fa-cash-register"></i></div>
+                        <div class="stat-icon-box revenue-icon"><i class="fas fa-wallet"></i></div>
                         <div class="stat-meta">
-                            <span class="stat-label">إجمالي المبيعات</span>
-                            <span class="stat-number" id="stat-revenue">0.00 EGP</span>
+                            <span class="stat-label">صافي الربح النهائي</span>
+                            <span class="stat-number" id="stat-profit">0.00 EGP</span>
                         </div>
                     </div>
                 </div>

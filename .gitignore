@@ -15,3 +15,8 @@ scratch/
 backup_pro_version/
 *.bak
 temp/
+
+# Generated Receipts
+controllers/receipt_*.pdf
+*.pdf
+receipts/

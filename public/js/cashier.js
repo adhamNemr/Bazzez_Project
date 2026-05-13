@@ -729,7 +729,7 @@ function openCommentCard(itemName) {
                 </h4>
                 <textarea id="customComment" 
                     style="width: 100%; height: 80px; padding: 12px; border-radius: 14px; border: 2px solid #f1f5f9; font-family: inherit; font-size: 0.95rem; transition: 0.3s; resize: none;"
-                    placeholder="${isAr ? 'مثال: بدون بصل، زيادة صوص...' : 'Ex: No onions, extra sauce...'}"></textarea>
+                    placeholder="${isAr ? 'ملاحظة هامة  ...' : 'any notes ...'}"></textarea>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">

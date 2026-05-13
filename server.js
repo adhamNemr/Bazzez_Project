@@ -39,7 +39,7 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors());
-app.use(bodyParser.json({ limit: '10kb' })); // Body size limit
+app.use(bodyParser.json({ limit: '1mb' })); // Increased limit for orderDetails
 app.use(sanitizeInput); // Global XSS Protection
 
 // 🚦 Global API Rate Limiter (100 requests per minute)
@@ -83,64 +83,103 @@ console.log("🔑 JWT Secret Loaded");
 
 const { Setting } = require("./models");
 
-sequelize
-  .authenticate()
-  .then(async () => {
-    console.log("✅ Connected to the database successfully!");
-    try {
-      await sequelize.sync(); // Sync all models for Supabase fresh start
-      
-      // ✅ Check and add 'variants' column to 'inventory' table if missing (DB Agnostic)
-      const tableInfo = await sequelize.getQueryInterface().describeTable('inventory');
-      if (!tableInfo.variants) {
-        await sequelize.query('ALTER TABLE inventory ADD COLUMN variants JSON NULL');
-        console.log("✅ Column 'variants' added to 'inventory' table.");
-      }
-
-      // ✅ Ensure Performance Indexes exist in PostgreSQL
-      console.log("⚡ Ensuring Database Indexes exist for optimal performance...");
+if (process.env.NODE_ENV !== 'test') {
+  sequelize
+    .authenticate()
+    .then(async () => {
+      console.log("✅ Connected to the database successfully!");
       try {
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_businessDate ON "Orders" ("businessDate")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON "Orders" ("createdAt")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_isCancelled ON "Orders" ("isCancelled")`);
+        await sequelize.sync(); // Sync all models for Supabase fresh start
         
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_merchantId ON merchant_transactions ("merchantId")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_date ON merchant_transactions ("date")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_recipes_sandwich ON recipes ("sandwich")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_qty ON inventory ("quantity")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_min ON inventory ("min")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_expiry ON inventory ("expiryDate")`);
-        await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses ("date")`);
-        console.log("✅ Performance Indexes applied successfully.");
-      } catch (indexErr) {
-        console.error("⚠️ Note: Could not create indexes automatically. They might already exist.", indexErr.message);
+        // ✅ Check and add 'variants' column to 'inventory' table if missing (DB Agnostic)
+        const tableInfo = await sequelize.getQueryInterface().describeTable('inventory');
+        if (!tableInfo.variants) {
+          await sequelize.query('ALTER TABLE inventory ADD COLUMN variants JSON NULL');
+          console.log("✅ Column 'variants' added to 'inventory' table.");
+        }
+
+        // ✅ Ensure 'audit_logs' table exists and has 'meta' column
+        try {
+          const auditLogsTableInfo = await sequelize.getQueryInterface().describeTable('audit_logs');
+          if (!auditLogsTableInfo.meta) {
+            await sequelize.query('ALTER TABLE audit_logs ADD COLUMN meta JSONB NULL');
+            console.log("✅ Column 'meta' added to 'audit_logs' table.");
+          }
+        } catch (auditErr) {
+          console.log("⚠️ audit_logs table check failed, attempting to sync...");
+          await sequelize.sync(); 
+        }
+
+        // ✅ Ensure 'rate_limit_logs' table exists (PostgreSQL specific)
+        try {
+          await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS rate_limit_logs (
+              "key" TEXT NOT NULL,
+              "windowStart" TIMESTAMP WITH TIME ZONE NOT NULL,
+              "count" INTEGER DEFAULT 1,
+              "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+              "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+              PRIMARY KEY ("key", "windowStart")
+            )
+          `);
+          console.log("✅ Table 'rate_limit_logs' verified/created.");
+        } catch (rateErr) {
+          console.error("⚠️ Failed to ensure rate_limit_logs table:", rateErr.message);
+        }
+
+        // ✅ Ensure Performance Indexes exist in PostgreSQL
+        console.log("⚡ Ensuring Database Indexes exist for optimal performance...");
+        try {
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_businessDate ON "Orders" ("businessDate")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON "Orders" ("createdAt")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_isCancelled ON "Orders" ("isCancelled")`);
+          
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_merchantId ON merchant_transactions ("merchantId")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_date ON merchant_transactions ("date")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_recipes_sandwich ON recipes ("sandwich")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_qty ON inventory ("quantity")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_min ON inventory ("min")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_expiry ON inventory ("expiryDate")`);
+          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses ("date")`);
+          console.log("✅ Performance Indexes applied successfully.");
+        } catch (indexErr) {
+          console.error("⚠️ Note: Could not create indexes automatically. They might already exist.", indexErr.message);
+        }
+
+        // ✅ Seed Default Settings if empty
+        const settingsCount = await Setting.count();
+        if (settingsCount === 0) {
+          console.log("🌱 Seeding default settings...");
+          await Setting.bulkCreate([
+            { key: 'store_name', value: 'Vortex POS', group: 'general' },
+            { key: 'vat_percent', value: '0', group: 'finance' },
+            { key: 'currency', value: 'EGP', group: 'finance' },
+            { key: 'active_business_date', value: new Date().toLocaleDateString('en-CA'), group: 'system' }
+          ]);
+          console.log("✅ Default settings seeded.");
+        }
+
+        console.log("✅ Settings table synced");
+      } catch (err) {
+        console.error("⚠️ Error during DB initialization:", err);
       }
+    })
+    .catch((err) => console.error("⚠️ Error connecting to the database:", err));
+}
 
-      // ✅ Seed Default Settings if empty
-      const settingsCount = await Setting.count();
-      if (settingsCount === 0) {
-        console.log("🌱 Seeding default settings...");
-        await Setting.bulkCreate([
-          { key: 'store_name', value: 'Vortex POS', group: 'general' },
-          { key: 'vat_percent', value: '0', group: 'finance' },
-          { key: 'currency', value: 'EGP', group: 'finance' },
-          { key: 'active_business_date', value: new Date().toLocaleDateString('en-CA'), group: 'system' }
-        ]);
-        console.log("✅ Default settings seeded.");
-      }
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 8083;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    
+    // 💾 Start Auto Backup (Runs every 12 hours)
+    startAutoBackup(12);
 
-      console.log("✅ Settings table synced");
-    } catch (err) {
-      console.error("⚠️ Error during DB initialization:", err);
-    }
-  })
-  .catch((err) => console.error("⚠️ Error connecting to the database:", err));
+    // 🕒 Start Auto Shift Check (Runs on startup and every 1 hour)
+    const { checkAndPerformAutoShift } = require('./controllers/closingController');
+    checkAndPerformAutoShift(); // Initial check
+    setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
+  });
+}
 
-  // 💾 Start Auto Backup (Runs every 12 hours)
-  startAutoBackup(12);
-
-  // 🕒 Start Auto Shift Check (Runs on startup and every 1 hour)
-  const { checkAndPerformAutoShift } = require('./controllers/closingController');
-  checkAndPerformAutoShift(); // Initial check
-  setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
-});
+module.exports = app;

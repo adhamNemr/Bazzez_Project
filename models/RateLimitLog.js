@@ -13,8 +13,8 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 1
         }
     }, {
-        tableName: 'rate_limit_log',
-        timestamps: false
+        tableName: 'rate_limit_logs',
+        timestamps: true
     });
 
     return RateLimitLog;

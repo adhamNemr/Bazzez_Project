@@ -1,6 +1,9 @@
-# 📦 Vortex POS - Full Project Code Review
+# 📦 Vortex POS - Full Project Code Review (REVISED)
+Generated on: Wed May 13 06:04:58 EEST 2026
+Note: This version includes all security and performance fixes recommended in the previous review.
 
-========== ./add_missing_column.js ==========
+## File: ./add_missing_column.js
+```javascript
 const { sequelize } = require('./models');
 
 async function fixTable() {
@@ -23,8 +26,10 @@ async function fixTable() {
 }
 
 fixTable();
+```
 
-========== ./config/branding.js ==========
+## File: ./config/branding.js
+```javascript
 /**
  * Project Branding Configuration
  * Centralizing values for easy customization by the buyer.
@@ -40,29 +45,26 @@ module.exports = {
         characterSet: 'PC864_ARABIC' // Trying Arabic code page
     }
 };
+```
 
-========== ./config/db.js ==========
+## File: ./config/db.js
+```javascript
 const { Sequelize } = require('sequelize');
 require("dotenv").config();
 
-// بيانات الاتصال السحابية مثبتة لضمان عمل النسخة الـ Portable
-const DB_USER = 'postgres.glvqdcucqgshdkotmwfs';
-const DB_PASSWORD = encodeURIComponent('MARWANroma77@#$');
-const DB_HOST = 'aws-0-eu-west-1.pooler.supabase.com';
-const DB_PORT = '6543';
-const DB_NAME = 'postgres';
-
-const connectionString = `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?pgbouncer=true`;
-
-const sequelize = new Sequelize(connectionString, {
-    dialect: 'postgres',
-    dialectOptions: {
-        ssl: {
-            require: true,
-            rejectUnauthorized: false
-        }
-    },
-    logging: false
+const sequelize = new Sequelize(process.env.DATABASE_URL || {
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  },
+  logging: false
 });
 
 sequelize.authenticate()
@@ -72,8 +74,10 @@ sequelize.authenticate()
     });
 
 module.exports = sequelize;
+```
 
-========== ./config/permissions.js ==========
+## File: ./config/permissions.js
+```javascript
 // 🛡️ Vortex POS - Fine-grained Permissions Configuration
 // Based on Claude's recommendations for professional RBAC
 
@@ -171,8 +175,10 @@ const ROLES = {
 };
 
 module.exports = { PERMISSIONS, ROLES };
+```
 
-========== ./controllers/analyticsController.js ==========
+## File: ./controllers/analyticsController.js
+```javascript
 const { Order, Customer, Product, Inventory } = require("../models");
 const { Op, Sequelize } = require("sequelize");
 const moment = require("moment");
@@ -188,41 +194,40 @@ exports.getAnalytics = async (req, res) => {
         // 🔹 إجمالي الإيرادات
         const totalRevenue = (await Order.sum("orderTotal")) || 0;
 
-        // 🔹 جلب الطلبات خلال آخر 7 أيام
-        const recentOrders = await Order.findAll({
-            attributes: ["orderDetails", "createdAt", "orderTotal"],
+        // 🔹 جلب إحصائيات الإيرادات لكل يوم (آخر 7 أيام) باستخدام GROUP BY
+        const revenueByDay = await Order.findAll({
+            attributes: [
+                [Sequelize.fn('DATE', Sequelize.col('createdAt')), 'date'],
+                [Sequelize.fn('COUNT', Sequelize.col('id')), 'orders'],
+                [Sequelize.fn('SUM', Sequelize.col('orderTotal')), 'revenue']
+            ],
             where: {
                 createdAt: { [Op.gte]: Sequelize.literal("CURRENT_DATE - INTERVAL '7 days'") },
+                isCancelled: 'No'
             },
+            group: [Sequelize.fn('DATE', Sequelize.col('createdAt'))],
+            order: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'ASC']],
+            raw: true
         });
 
+        // 🔹 تحويل النتائج لتنسيق العرض المطلوب
         const last7Days = [];
-        const ordersPerDay = {};
-        const revenuePerDay = {};
-
+        const revenueMap = Object.fromEntries(revenueByDay.map(d => [d.date, d]));
+        
         for (let i = 6; i >= 0; i--) {
             const date = new Date();
             date.setDate(date.getDate() - i);
             const formattedDate = date.toISOString().split("T")[0];
-
-            last7Days.push({ date: formattedDate, orders: 0, revenue: 0 });
-            ordersPerDay[formattedDate] = 0;
-            revenuePerDay[formattedDate] = 0;
+            const dayData = revenueMap[formattedDate] || { orders: 0, revenue: 0 };
+            
+            last7Days.push({ 
+                date: formattedDate, 
+                orders: parseInt(dayData.orders) || 0, 
+                revenue: parseFloat(dayData.revenue) || 0 
+            });
         }
 
-        // 🔹 حساب الطلبات والإيرادات لكل يوم
-        recentOrders.forEach(order => {
-            const date = order.createdAt.toISOString().split("T")[0];
-            ordersPerDay[date] = (ordersPerDay[date] || 0) + 1;
-            revenuePerDay[date] = (revenuePerDay[date] || 0) + parseFloat(order.orderTotal);
-        });
-
-        last7Days.forEach(day => {
-            day.orders = ordersPerDay[day.date] || 0;
-            day.revenue = revenuePerDay[day.date] || 0;
-        });
-
-        // ✅ جلب المنتجات الأكثر والأقل طلبًا من قاعدة البيانات
+        // ✅ جلب المنتجات الأكثر والأقل طلبًا (كما هي)
         const topProducts = await Product.findAll({
             attributes: ['name', 'sold'],
             order: [["sold", "DESC"]],
@@ -237,29 +242,30 @@ exports.getAnalytics = async (req, res) => {
             raw: true
         });
 
-        // 🔹 تحليل العملاء الأكثر طلبًا
-        const customerOrders = await Order.findAll({ attributes: ["customerId"] });
-        const customerCounts = {};
-
-        customerOrders.forEach(order => {
-            if (order.customerId) {
-                customerCounts[order.customerId] = (customerCounts[order.customerId] || 0) + 1;
-            }
+        // ✅ جلب العملاء الأكثر طلبًا باستخدام GROUP BY (حل مشكلة N+1)
+        const topCustomers = await Order.findAll({
+            attributes: [
+                'customerId',
+                [Sequelize.fn('COUNT', Sequelize.col('Order.id')), 'ordersCount']
+            ],
+            where: { customerId: { [Op.ne]: null } },
+            group: ['customerId', 'Customer.id'],
+            include: [{ 
+                model: Customer, 
+                attributes: ['name'] 
+            }],
+            order: [[Sequelize.literal('"ordersCount"'), 'DESC']],
+            limit: 5,
+            raw: true,
+            nest: true
         });
 
-        // ✅ جلب بيانات العملاء الأكثر طلبًا
-        const topCustomers = await Customer.findAll({
-            where: { id: { [Op.in]: Object.keys(customerCounts).map(id => Number(id)) } },
-            attributes: ["id", "name"],
-            raw: true
-        });
-
-        // ✅ إضافة عدد الطلبات لكل عميل وترتيبهم
-        topCustomers.forEach(customer => {
-            customer.ordersCount = customerCounts[customer.id] || 0;
-        });
-
-        topCustomers.sort((a, b) => b.ordersCount - a.ordersCount);
+        // 🔹 تنسيق بيانات العملاء للعرض
+        const formattedTopCustomers = topCustomers.map(c => ({
+            id: c.customerId,
+            name: c.Customer?.name || "عميل مجهول",
+            ordersCount: parseInt(c.ordersCount) || 0
+        }));
 
         res.json({
             totalOrders,
@@ -267,7 +273,7 @@ exports.getAnalytics = async (req, res) => {
             last7Days,
             topProducts,
             leastProducts,
-            topCustomers,
+            topCustomers: formattedTopCustomers,
         });
 
     } catch (error) {
@@ -340,8 +346,10 @@ exports.getStockForecast = async (req, res) => {
         console.error("❌ خطأ في `getStockForecast`:", error);
         res.status(500).json({ success: false, message: 'خطأ في التوقعات المستقبلية للمخزون', error: error.message });
     }
-};
-========== ./controllers/authController.js ==========
+};```
+
+## File: ./controllers/authController.js
+```javascript
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { User } = require("../models");
@@ -368,10 +376,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "❌ اسم المستخدم أو كلمة المرور غير صحيحة." });
         }
 
-        // إنشاء التوكن مع تضمين دور المستخدم
+        // 🔐 Generate JWT Token using ENV secret
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role }, 
-            'mySuperSecretKey123', 
+            process.env.JWT_SECRET || 'fallback_secret_for_dev', 
             { expiresIn: "7d" }
         );
 
@@ -413,8 +421,10 @@ exports.logout = async (req, res) => {
     }
 };
 
+```
 
-========== ./controllers/closingController.js ==========
+## File: ./controllers/closingController.js
+```javascript
 const { Order, Recipe, Inventory, DailyClosing, MonthlyClosing, sequelize, Payment, Product, Expense } = require('../models');
 const { Op } = require('sequelize');
 
@@ -629,19 +639,28 @@ exports.internalAutoClose = async (businessDate) => {
         const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) return; // Already closed
 
-        const totalOrders = await Order.count({ where: { businessDate, isCancelled: "No" } });
-        const totalRevenue = await Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }) || 0;
-        const totalDiscount = await Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }) || 0;
-        const totalCost = await calculateTotalCost(businessDate);
-        const totalExpenses = await Expense.sum('amount', { where: { date: businessDate } }) || 0;
-
-        const onlinePaymentsTotal = await Order.sum('orderTotal', {
-            where: { 
-                businessDate, 
-                isCancelled: "No",
-                payment_method: { [Op.ne]: "cash" }
-            }
-        }) || 0;
+        // 🟢 Parallelize data fetching for auto-close
+        const [
+            totalOrders,
+            totalRevenue,
+            totalDiscount,
+            totalCost,
+            totalExpenses,
+            onlinePaymentsTotal
+        ] = await Promise.all([
+            Order.count({ where: { businessDate, isCancelled: "No" } }),
+            Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            calculateTotalCost(businessDate),
+            Expense.sum('amount', { where: { date: businessDate } }).then(v => v || 0),
+            Order.sum('orderTotal', {
+                where: { 
+                    businessDate, 
+                    isCancelled: "No",
+                    payment_method: { [Op.ne]: "cash" }
+                }
+            }).then(v => v || 0)
+        ]);
 
         const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
         let totalSandwiches = 0;
@@ -758,13 +777,24 @@ exports.getMonthlySummary = async (req, res) => {
             }
         };
 
-        const total_orders = await DailyClosing.sum("totalOrders", { where: whereClause }) || 0;
-        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: whereClause }) || 0;
-        const total_revenue = await DailyClosing.sum("totalRevenue", { where: whereClause }) || 0;
-        const total_cost = await DailyClosing.sum("totalCost", { where: whereClause }) || 0;
-        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: whereClause }) || 0;
-        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: whereClause }) || 0;
-        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: whereClause }) || 0;
+        // 🟢 Parallelize monthly aggregations
+        const [
+            total_orders,
+            total_sandwiches,
+            total_revenue,
+            total_cost,
+            totalExpenses,
+            totalDiscount,
+            onlinePaymentsTotal
+        ] = await Promise.all([
+            DailyClosing.sum("totalOrders", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalSandwiches", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalRevenue", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalCost", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalExpenses", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalDiscount", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("onlinePaymentsTotal", { where: whereClause }).then(v => v || 0)
+        ]);
 
         const total_earnings = parseFloat((total_revenue - total_cost - totalExpenses).toFixed(2));
 
@@ -860,8 +890,10 @@ exports.closeMonth = async (req, res) => {
         console.error("❌ Close Month Error:", error);
         res.status(500).json({ error: "⚠️ Error closing month" });
     }
-};
-========== ./controllers/commentController.js ==========
+};```
+
+## File: ./controllers/commentController.js
+```javascript
 const { Comment } = require('../models');
 
 // ✅ إضافة تعليق جديد
@@ -918,8 +950,10 @@ module.exports = {
     addComment,
     getPopularComments,
     deleteComment
-};
-========== ./controllers/customerController.js ==========
+};```
+
+## File: ./controllers/customerController.js
+```javascript
 const { Customer } = require('../models/index');
 const { Op } = require('sequelize');
 
@@ -1106,8 +1140,10 @@ exports.getCustomerPhones = async (req, res) => {
         console.error('❌ خطأ أثناء جلب أرقام العملاء:', error);
         res.status(500).json({ message: '⚠️ خطأ في السيرفر', error });
     }
-};
-========== ./controllers/dashboardController.js ==========
+};```
+
+## File: ./controllers/dashboardController.js
+```javascript
 const { Order, Setting, Customer, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
@@ -1312,8 +1348,10 @@ exports.checkSystemStatus = async (req, res) => {
     }
 };
 
+```
 
-========== ./controllers/discountController.js ==========
+## File: ./controllers/discountController.js
+```javascript
 const { DiscountCode } = require("../models");
 const { Op } = require("sequelize");
 
@@ -1481,8 +1519,10 @@ exports.deleteDiscount = async (req, res) => {
         console.error("❌ خطأ أثناء حذف كود الخصم:", error);
         res.status(500).json({ success: false, message: "❌ فشل حذف كود الخصم!" });
     }
-};
-========== ./controllers/expenseController.js ==========
+};```
+
+## File: ./controllers/expenseController.js
+```javascript
 const { Expense } = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
@@ -1634,8 +1674,10 @@ exports.getDailyExpensesSummary = async (date) => {
         return 0;
     }
 };
+```
 
-========== ./controllers/inventoryController.js ==========
+## File: ./controllers/inventoryController.js
+```javascript
 const { Inventory, sequelize } = require("../models");
 const { Op } = require("sequelize");
 const moment = require("moment");
@@ -1765,8 +1807,10 @@ module.exports = {
     deleteInventory: deleteInventoryItem,
     getLowStockAlerts,
     getExpiryAlerts,
-};
-========== ./controllers/merchantController.js ==========
+};```
+
+## File: ./controllers/merchantController.js
+```javascript
 const { Merchant, MerchantTransaction, sequelize } = require('../models');
 
 exports.getMerchants = async (req, res) => {
@@ -2047,8 +2091,10 @@ exports.updateTransaction = async (req, res) => {
         res.status(500).json({ error: 'فشل تعديل الحركة' });
     }
 };
+```
 
-========== ./controllers/orderController.js ==========
+## File: ./controllers/orderController.js
+```javascript
 const { Op , Sequelize} = require('sequelize');
 const { Order, Customer, Product, DiscountCode, Payment, Recipe, Inventory, Comment, Setting, sequelize } = require('../models');
 const { printReceipt } = require('./receiptPrinter');
@@ -2321,8 +2367,10 @@ exports.getAllOrders = async (req, res) => {
         console.error("❌ خطأ أثناء جلب الطلبات:", error);
         res.status(500).json({ message: "🚨 حدث خطأ أثناء جلب الطلبات." });
     }
-};
-========== ./controllers/ordersController.js ==========
+};```
+
+## File: ./controllers/ordersController.js
+```javascript
 const { Order, sequelize, Setting, Product, Inventory, Recipe } = require("../models");
 
 exports.fetchOrders = async (req, res) => {
@@ -2596,8 +2644,10 @@ exports.reprintOrder = async (req, res) => {
         res.status(500).json({ message: "❌ فشل في الطباعة." });
     }
 };
+```
 
-========== ./controllers/paymentController.js ==========
+## File: ./controllers/paymentController.js
+```javascript
 const { Order, Payment } = require('../models');
 const { printReceipt } = require('./receiptPrinter');
 
@@ -2678,8 +2728,10 @@ exports.updatePaymentStatus = async (req, res) => {
         console.error("❌ خطأ أثناء تحديث حالة الدفع:", error);
         res.status(500).json({ message: "❌ فشل تحديث حالة الدفع", error });
     }
-};
-========== ./controllers/productController.js ==========
+};```
+
+## File: ./controllers/productController.js
+```javascript
 const { Product, Inventory, sequelize } = require('../models'); 
 
 // إنشاء منتج جديد
@@ -2872,8 +2924,10 @@ exports.deleteProduct = async (req, res) => {
     }
 };
 
+```
 
-========== ./controllers/receiptPrinter.js ==========
+## File: ./controllers/receiptPrinter.js
+```javascript
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
@@ -3172,8 +3226,10 @@ async function printThermal(orderData, subtotal, deliveryPrice, discount, calcul
     }
 }
 
-module.exports = { printReceipt };
-========== ./controllers/salesController.js ==========
+module.exports = { printReceipt };```
+
+## File: ./controllers/salesController.js
+```javascript
 const { Sale } = require('../models');
 
 // جلب جميع المبيعات
@@ -3241,17 +3297,15 @@ exports.deleteSale = async (req, res) => {
         res.status(500).json({ error: "⚠️ حدث خطأ أثناء حذف البيع." });
     }
 };
+```
 
-========== ./controllers/settingsController.js ==========
+## File: ./controllers/settingsController.js
+```javascript
 const { Setting } = require('../models');
 
 // ✅ جلب كل الإعدادات
 exports.getAllSettings = async (req, res) => {
     try {
-        // 🕒 Proactive Smart Auto-Shift
-        const closingController = require('./closingController');
-        await closingController.checkAndPerformAutoShift();
-
         const settings = await Setting.findAll();
         // تحويل المصفوفة إلى Object لسهولة التعامل في الفرونت إند
         const settingsObj = {};
@@ -3297,8 +3351,10 @@ exports.updateSettingsBulk = async (req, res) => {
         res.status(500).json({ message: 'فشل في تحديث الإعدادات' });
     }
 };
+```
 
-========== ./controllers/systemController.js ==========
+## File: ./controllers/systemController.js
+```javascript
 const { exec } = require('child_process');
 
 // ✅ دالة لإعادة تشغيل السيرفر
@@ -3324,13 +3380,17 @@ exports.restartServer = (req, res) => {
         console.error('❌ Unexpected error:', error);
         res.status(500).json({ message: 'Unexpected error during server restart' });
     }
-};
-========== ./controllers/userController.js ==========
-const { User } = require("../models"); // ✅ تأكد أن الموديل `User` موجود
+};```
+
+## File: ./controllers/userController.js
+```javascript
+const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll();
+        const users = await User.findAll({
+            attributes: { exclude: ['password'] } // 🛡️ حماية البيانات الحساسة
+        });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: "❌ خطأ في جلب المستخدمين" });
@@ -3340,8 +3400,21 @@ exports.getAllUsers = async (req, res) => {
 exports.createUser = async (req, res) => {
     try {
         const { username, password, role } = req.body;
-        const newUser = await User.create({ username, password, role });
-        res.status(201).json(newUser);
+        
+        // 🔐 تشفير كلمة المرور قبل الحفظ
+        const hashedPassword = await bcrypt.hash(password, 12);
+        
+        const newUser = await User.create({ 
+            username, 
+            password: hashedPassword, 
+            role 
+        });
+
+        // 🛡️ إرسال البيانات بدون الباسورد
+        const userResponse = newUser.toJSON();
+        delete userResponse.password;
+        
+        res.status(201).json(userResponse);
     } catch (error) {
         res.status(500).json({ message: "❌ خطأ في إنشاء المستخدم" });
     }
@@ -3386,8 +3459,10 @@ exports.getUserRole = async (req, res) => {
         res.status(500).json({ message: "خطأ في السيرفر الداخلي" });
     }
 };
+```
 
-========== ./createUser.js ==========
+## File: ./createUser.js
+```javascript
 const { User } = require('./models');
 const bcrypt = require('bcryptjs');
 const sequelize = require('./config/db');
@@ -3432,8 +3507,10 @@ async function createUsers() {
 }
 
 createUsers();
+```
 
-========== ./directoryStructure.js ==========
+## File: ./directoryStructure.js
+```javascript
 const fs = require('fs');
 const path = require('path');
 
@@ -3462,8 +3539,10 @@ function getDirectoryStructure(dirPath) {
 // استبدل 'your_directory_path' بالمسار الذي تريد استعراضه
 const directoryPath = '/Users/adham/Desktop/Vortex POS/Vortex POS_STM/pos-system/server';
 const structure = getDirectoryStructure(directoryPath);
-console.log(JSON.stringify(structure, null, 2));
-========== ./extreme_stress_test.js ==========
+console.log(JSON.stringify(structure, null, 2));```
+
+## File: ./extreme_stress_test.js
+```javascript
 /**
  * 🌪️ VORTEX POS - EXTREME STRESS TESTER
  * This script performs a multi-vector assault on Inventory, Expenses, Wholesale, and Closing.
@@ -3593,8 +3672,10 @@ async function runExtremeTest() {
 }
 
 runExtremeTest();
+```
 
-========== ./fix_date.js ==========
+## File: ./fix_date.js
+```javascript
 const { DailyClosing, Setting, Order } = require('./models');
 
 (async () => {
@@ -3618,8 +3699,10 @@ const { DailyClosing, Setting, Order } = require('./models');
   }
   process.exit();
 })();
+```
 
-========== ./main.js ==========
+## File: ./main.js
+```javascript
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const waitOn = require('wait-on');
@@ -3682,8 +3765,10 @@ app.whenReady().then(createWindow);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+```
 
-========== ./middleware/authMiddleware.js ==========
+## File: ./middleware/authMiddleware.js
+```javascript
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { TokenBlacklist } = require('../models');
@@ -3740,8 +3825,10 @@ const authorizeRoles = (...allowedRoles) => {
 };
 
 module.exports = { authMiddleware, authorizeRoles };
+```
 
-========== ./middleware/authorize.js ==========
+## File: ./middleware/authorize.js
+```javascript
 const { ROLES } = require('../config/permissions');
 
 /**
@@ -3776,8 +3863,10 @@ const authorize = (...requiredPermissions) => {
 };
 
 module.exports = authorize;
+```
 
-========== ./middleware/checkRole.js ==========
+## File: ./middleware/checkRole.js
+```javascript
 // middleware/checkRole.js
 const jwt = require("jsonwebtoken");
 
@@ -3812,8 +3901,10 @@ module.exports = (req, res, next) => {
         res.status(403).json({ error: '❌ المصادقة فشلت! التوكن غير صالح.' });
     }
 };
+```
 
-========== ./middleware/errorHandler.js ==========
+## File: ./middleware/errorHandler.js
+```javascript
 /**
  * المركز الرئيسي لمعالجة الأخطاء في السيرفر
  * يقوم بالتحقق من نوع الخطأ وإرسال استجابة مناسبة للفرونت إند
@@ -3869,8 +3960,10 @@ const errorHandler = (err, req, res, next) => {
 };
 
 module.exports = errorHandler;
+```
 
-========== ./middleware/rateLimiter.js ==========
+## File: ./middleware/rateLimiter.js
+```javascript
 const { sequelize } = require('../models');
 
 /**
@@ -3928,8 +4021,10 @@ const rateLimiter = (options = {}) => {
 };
 
 module.exports = rateLimiter;
+```
 
-========== ./middleware/sanitize.js ==========
+## File: ./middleware/sanitize.js
+```javascript
 /**
  * 🛡️ Sanitize Input Middleware
  * Prevents XSS by escaping HTML special characters in req.body, req.query, and req.params.
@@ -3970,8 +4065,10 @@ const sanitizeInput = (req, res, next) => {
 };
 
 module.exports = sanitizeInput;
+```
 
-========== ./middleware/validationMiddleware.js ==========
+## File: ./middleware/validationMiddleware.js
+```javascript
 const Joi = require('joi');
 
 /**
@@ -4028,8 +4125,10 @@ module.exports = {
     orderSchema,
     productSchema
 };
+```
 
-========== ./models/AuditLog.js ==========
+## File: ./models/AuditLog.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const AuditLog = sequelize.define('AuditLog', {
         id: {
@@ -4085,8 +4184,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return AuditLog;
 };
+```
 
-========== ./models/Comment.js ==========
+## File: ./models/Comment.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const Comment = sequelize.define("Comment", {
         id: {
@@ -4117,8 +4218,10 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     return Comment;
-};
-========== ./models/Customer.js ==========
+};```
+
+## File: ./models/Customer.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
   const Customer = sequelize.define("Customer", {
     id: {
@@ -4153,8 +4256,10 @@ module.exports = (sequelize, DataTypes) => {
 
   return Customer;
 };
+```
 
-========== ./models/DailyClosing.js ==========
+## File: ./models/DailyClosing.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const DailyClosing = sequelize.define("DailyClosing", {
         closingDate: {
@@ -4208,8 +4313,10 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     return DailyClosing;
-};
-========== ./models/DiscountCode.js ==========
+};```
+
+## File: ./models/DiscountCode.js
+```javascript
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -4253,8 +4360,10 @@ const DiscountCode = sequelize.define('DiscountCode', {
     timestamps: false
 });
 
-module.exports = DiscountCode;
-========== ./models/Expense.js ==========
+module.exports = DiscountCode;```
+
+## File: ./models/Expense.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
   const Expense = sequelize.define("Expense", {
     id: {
@@ -4297,8 +4406,10 @@ module.exports = (sequelize, DataTypes) => {
 
   return Expense;
 };
+```
 
-========== ./models/Inventory.js ==========
+## File: ./models/Inventory.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const Inventory = sequelize.define("Inventory", {
         name: {
@@ -4346,8 +4457,10 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     return Inventory;
-};
-========== ./models/Merchant.js ==========
+};```
+
+## File: ./models/Merchant.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const Merchant = sequelize.define("Merchant", {
         name: {
@@ -4378,8 +4491,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return Merchant;
 };
+```
 
-========== ./models/MerchantTransaction.js ==========
+## File: ./models/MerchantTransaction.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const MerchantTransaction = sequelize.define("MerchantTransaction", {
         merchantId: {
@@ -4414,8 +4529,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return MerchantTransaction;
 };
+```
 
-========== ./models/MonthlyClosing.js ==========
+## File: ./models/MonthlyClosing.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const MonthlyClosing = sequelize.define("MonthlyClosing", {
         id: { 
@@ -4479,8 +4596,10 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     return MonthlyClosing;
-};
-========== ./models/Order.js ==========
+};```
+
+## File: ./models/Order.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const Order = sequelize.define("Order", {
         id: {
@@ -4563,8 +4682,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return Order;
 };
+```
 
-========== ./models/OrderDetail.js ==========
+## File: ./models/OrderDetail.js
+```javascript
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
@@ -4592,8 +4713,10 @@ module.exports = (sequelize) => {
         }
     });
 };
+```
 
-========== ./models/Payments.js ==========
+## File: ./models/Payments.js
+```javascript
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -4619,8 +4742,10 @@ const Payment = sequelize.define('Payment', {
     timestamps: false,
 });
 
-module.exports = Payment;
-========== ./models/Products.js ==========
+module.exports = Payment;```
+
+## File: ./models/Products.js
+```javascript
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
@@ -4662,8 +4787,10 @@ Product.init({
     timestamps: true
 });
 
-module.exports = Product;
-========== ./models/RateLimitLog.js ==========
+module.exports = Product;```
+
+## File: ./models/RateLimitLog.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const RateLimitLog = sequelize.define('RateLimitLog', {
         key: {
@@ -4685,8 +4812,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return RateLimitLog;
 };
+```
 
-========== ./models/Recipe.js ==========
+## File: ./models/Recipe.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const Recipe = sequelize.define("Recipe", {
         sandwich: {
@@ -4710,8 +4839,10 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     return Recipe;
-};
-========== ./models/Sale.js ==========
+};```
+
+## File: ./models/Sale.js
+```javascript
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
@@ -4735,8 +4866,10 @@ module.exports = (sequelize) => {
         }
     });
 };
+```
 
-========== ./models/Setting.js ==========
+## File: ./models/Setting.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
   const Setting = sequelize.define("Setting", {
     key: {
@@ -4758,8 +4891,10 @@ module.exports = (sequelize, DataTypes) => {
 
   return Setting;
 };
+```
 
-========== ./models/TokenBlacklist.js ==========
+## File: ./models/TokenBlacklist.js
+```javascript
 module.exports = (sequelize, DataTypes) => {
     const TokenBlacklist = sequelize.define('TokenBlacklist', {
         token: {
@@ -4778,8 +4913,10 @@ module.exports = (sequelize, DataTypes) => {
 
     return TokenBlacklist;
 };
+```
 
-========== ./models/User.js ==========
+## File: ./models/User.js
+```javascript
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
@@ -4808,8 +4945,10 @@ const User = sequelize.define("User", {
     
     module.exports = User;
 
+```
 
-========== ./models/index.js ==========
+## File: ./models/index.js
+```javascript
 const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
@@ -4873,8 +5012,10 @@ module.exports = {
     AuditLog,
     RateLimitLog,
     TokenBlacklist
-};
-========== ./public/js/analytics.js ==========
+};```
+
+## File: ./public/js/analytics.js
+```javascript
 document.addEventListener("DOMContentLoaded", async function () {
     try {
         // 🔹 جلب البيانات من الـ API
@@ -5153,8 +5294,10 @@ function renderChart(chartType, canvas, data, lowStockData) {
     });
 
     return canvas.chartInstance;
-}
-========== ./public/js/auth.js ==========
+}```
+
+## File: ./public/js/auth.js
+```javascript
 // 🔹 إنشاء حاوية الإشعارات عند تحميل الصفحة
 const toastContainer = document.createElement('div');
 toastContainer.id = 'toast-container';
@@ -5315,8 +5458,10 @@ window.addEventListener('DOMContentLoaded', () => {
         navBtn.title = "Logout"; // تحديث التلميح
     }
 });
+```
 
-========== ./public/js/cashier.js ==========
+## File: ./public/js/cashier.js
+```javascript
 /**
  * Vortex POS - Cashier Engine
  * Optimized for Luxury Workstation Theme & Enterprise Best Practices
@@ -6309,8 +6454,10 @@ function setupEventListeners() {
             suggestionsBox.style.display = 'none';
         }
     });
-}
-========== ./public/js/customers.js ==========
+}```
+
+## File: ./public/js/customers.js
+```javascript
 const customerTableBody = document.getElementById("customers-table-body");
 const addButton = document.getElementById("add-btn");
 const editButton = document.getElementById("edit-btn");
@@ -6483,8 +6630,10 @@ const resetForm = () => {
 };
 
 document.addEventListener("DOMContentLoaded", fetchCustomers);
+```
 
-========== ./public/js/daily.js ==========
+## File: ./public/js/daily.js
+```javascript
 document.addEventListener("DOMContentLoaded", function () {
 
     // ربط زر إغلاق اليوم بالدالة الصحيحة
@@ -6608,8 +6757,10 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "Daily Summary");
     
     XLSX.writeFile(wb, `Daily_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-========== ./public/js/daily_closing.js ==========
+}```
+
+## File: ./public/js/daily_closing.js
+```javascript
 /**
  * Vortex POS — Daily Closing Script
  */
@@ -6856,8 +7007,10 @@ async function downloadExcelReport() {
     a.click();
     window.URL.revokeObjectURL(url);
 }
+```
 
-========== ./public/js/dashboard.js ==========
+## File: ./public/js/dashboard.js
+```javascript
 document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     const userRole = localStorage.getItem("role");
@@ -7156,8 +7309,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateDashboardChart(btn.dataset.period);
         });
     });
-});
-========== ./public/js/discount.js ==========
+});```
+
+## File: ./public/js/discount.js
+```javascript
 // ✅ التحقق من تحميل الصفحة بشكل صحيح
 document.addEventListener('DOMContentLoaded', () => {
     fetchDiscountCodes();
@@ -7422,8 +7577,10 @@ const sortTable = (columnIndex) => {
     
     // 🔄 تحديث حالة الترتيب
     table.setAttribute(`data-sort-${columnIndex}`, ascending ? "asc" : "desc");
-};
-========== ./public/js/expenses.js ==========
+};```
+
+## File: ./public/js/expenses.js
+```javascript
 /**
  * Vortex POS — Expenses Module
  * Full rewrite: businessDate-aware, server-side stats, modal CRUD, category filter
@@ -7871,8 +8028,10 @@ function exportToExcel() {
     const fileName = `Expenses_${document.getElementById('date-filter').value}.xlsx`;
     XLSX.writeFile(workbook, fileName);
 }
+```
 
-========== ./public/js/header-loader.js ==========
+## File: ./public/js/header-loader.js
+```javascript
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("header-container");
     if (!container) return;
@@ -7925,8 +8084,10 @@ document.addEventListener("DOMContentLoaded", () => {
         </header>
     `;
 });
+```
 
-========== ./public/js/inventory.js ==========
+## File: ./public/js/inventory.js
+```javascript
 /**
  * Vortex POS - Inventory Management Logic
  * Optimized for Luxury Workstation Theme
@@ -8881,8 +9042,10 @@ function exportToExcel() {
         console.error("Excel Error:", err);
         Swal.fire({ icon: 'error', title: 'Excel Error', text: err.message });
     }
-}
-========== ./public/js/login.js ==========
+}```
+
+## File: ./public/js/login.js
+```javascript
 document.getElementById('login-form').addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -8931,8 +9094,10 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
     .catch(error => console.error('❌ خطأ أثناء تسجيل الدخول:', error));
     
 });
+```
 
-========== ./public/js/manage_orders.js ==========
+## File: ./public/js/manage_orders.js
+```javascript
 const currentLang = localStorage.getItem('lang') || 'ar';
 const isAr = currentLang === 'ar';
 
@@ -9839,8 +10004,10 @@ async function printReceipt(orderId) {
         printBtn.innerHTML = originalContent;
         printBtn.disabled = false;
     }
-}
-========== ./public/js/merchants.js ==========
+}```
+
+## File: ./public/js/merchants.js
+```javascript
 let currentTab = 'supplier';
 let allMerchants = [];
 let activeMerchantId = null;
@@ -10359,8 +10526,10 @@ function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function showToast(msg, icon = 'success') {
     Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, icon, title: msg });
 }
+```
 
-========== ./public/js/monthly.js ==========
+## File: ./public/js/monthly.js
+```javascript
 // ✅ جلب بيانات التقفيل الشهري
 async function fetchMonthlySummary() {
     const token = localStorage.getItem("token");
@@ -10483,8 +10652,10 @@ function openReport() {
     printWindow.onload = function () {
         printWindow.print();
     };
-}
-========== ./public/js/monthly_closing.js ==========
+}```
+
+## File: ./public/js/monthly_closing.js
+```javascript
 /**
  * Vortex POS — Monthly Closing Script (Full Version)
  */
@@ -10836,8 +11007,10 @@ async function handleClosing() {
         }
     }
 }
+```
 
-========== ./public/js/product.js ==========
+## File: ./public/js/product.js
+```javascript
 // Vortex POS - Product Management Logic
 const currentLang = localStorage.getItem('lang') || 'ar';
 const isAr = currentLang === 'ar';
@@ -11141,8 +11314,10 @@ function exportProductsToExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
     XLSX.writeFile(workbook, "vortex_products.xlsx");
 }
+```
 
-========== ./public/js/receipt.js ==========
+## File: ./public/js/receipt.js
+```javascript
 document.addEventListener("DOMContentLoaded", async function () {
     const receiptData = JSON.parse(localStorage.getItem("receiptData"));
 
@@ -11265,8 +11440,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         window.print();
     }, 500);
 });
+```
 
-========== ./public/js/sales.js ==========
+## File: ./public/js/sales.js
+```javascript
 // js/sales.js
 (async () => {
     const response = await fetch('/api/sales');
@@ -11279,8 +11456,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         salesList.appendChild(item);
     });
 })();
+```
 
-========== ./public/js/settings.js ==========
+## File: ./public/js/settings.js
+```javascript
 const currentLang = localStorage.getItem('lang') || 'ar';
 const isAr = currentLang === 'ar';
 
@@ -11453,8 +11632,10 @@ async function fetchSettings() {
         console.error('Error fetching settings:', error);
     }
 }
+```
 
-========== ./public/js/sidebar-loader.js ==========
+## File: ./public/js/sidebar-loader.js
+```javascript
 /**
  * Hub Navigation Controller - Dynamic Injection (Luxury Refinement)
  */
@@ -11569,8 +11750,10 @@ async function fetchSettings() {
         run();
     }
 })();
+```
 
-========== ./public/js/users.js ==========
+## File: ./public/js/users.js
+```javascript
 document.addEventListener('DOMContentLoaded', () => {
     fetchUsers();
 
@@ -11686,8 +11869,10 @@ async function deleteUser(id) {
         }
     }
 }
+```
 
-========== ./public/utils/costCalculator.js ==========
+## File: ./public/utils/costCalculator.js
+```javascript
 async function getTotalCost() {
     const [costResult] = await db.query(`
         SELECT SUM(R.amount * I.cost * J.quantity) AS totalCost
@@ -11701,8 +11886,10 @@ async function getTotalCost() {
         WHERE DATE(O.createdAt) = CURDATE();
     `);
     return costResult.totalCost || 0;
-}
-========== ./public/utils/inventoryUpdater.js ==========
+}```
+
+## File: ./public/utils/inventoryUpdater.js
+```javascript
 async function updateInventory(orderDetails) {
     for (const item of orderDetails) {
         const query = `
@@ -11716,8 +11903,10 @@ async function updateInventory(orderDetails) {
         `;
         await db.query(query, [item.quantity, item.quantity, item.name]);
     }
-}
-========== ./resetAdminPassword.js ==========
+}```
+
+## File: ./resetAdminPassword.js
+```javascript
 const bcrypt = require('bcryptjs');
 const { User } = require('./models');
 
@@ -11747,8 +11936,10 @@ async function resetAdminPassword() {
 }
 
 resetAdminPassword();
+```
 
-========== ./reset_transactions.js ==========
+## File: ./reset_transactions.js
+```javascript
 const { sequelize, Order, OrderItem, DailyClosing, Expense } = require('./models');
 
 async function resetSystemForProduction() {
@@ -11786,8 +11977,10 @@ async function resetSystemForProduction() {
 }
 
 resetSystemForProduction();
+```
 
-========== ./routes/Products.js ==========
+## File: ./routes/Products.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
@@ -11807,8 +12000,10 @@ router.put("/:id", authMiddleware(['manager', 'admin']), validate(productSchema)
 
 router.delete("/:id", authMiddleware(['manager', 'admin']), productController.deleteProduct);
 
-module.exports = router;
-========== ./routes/analytics.js ==========
+module.exports = router;```
+
+## File: ./routes/analytics.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const analyticsController = require("../controllers/analyticsController");
@@ -11820,8 +12015,10 @@ router.get("/low-stock", analyticsController.getLowStockProducts);
 router.get('/stock-by-category', analyticsController.getStockByCategory);
 router.get('/stock-forecast', analyticsController.getStockForecast);
 
-module.exports = router;
-========== ./routes/auth.js ==========
+module.exports = router;```
+
+## File: ./routes/auth.js
+```javascript
 const express = require("express");
 const authController = require("../controllers/authController");
 const rateLimiter = require("../middleware/rateLimiter");
@@ -11834,8 +12031,10 @@ router.post("/login", rateLimiter({ maxRequests: 10, keyPrefix: 'login' }), auth
 router.post("/logout", authController.logout);
 
 module.exports = router;
+```
 
-========== ./routes/closing.js ==========
+## File: ./routes/closing.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const closingController = require('../controllers/closingController');
@@ -11853,8 +12052,10 @@ router.get('/monthly-summary', closingController.getMonthlySummary);
 router.post("/close-month", closingController.closeMonth);
 
 module.exports = router;
+```
 
-========== ./routes/comment.js ==========
+## File: ./routes/comment.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const {
@@ -11870,8 +12071,10 @@ router.get('/popular', getPopularComments);
 
 router.delete('/:id', deleteComment);
 
-module.exports = router;
-========== ./routes/customers.js ==========
+module.exports = router;```
+
+## File: ./routes/customers.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const customerController = require("../controllers/customerController.js");
@@ -11892,8 +12095,10 @@ router.delete("/:id", customerController.deleteCustomer);
 
 
 module.exports = router;
+```
 
-========== ./routes/dashboard.js ==========
+## File: ./routes/dashboard.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
@@ -11904,8 +12109,10 @@ router.get('/dashboard-data', dashboardController.getDashboardData);
 // ✅ Route للتحقق من حالة النظام (الإنترنت، قاعدة البيانات، الطابعة الحرارية)
 router.get('/system-status', dashboardController.checkSystemStatus);
 
-module.exports = router;
-========== ./routes/discountRoutes.js ==========
+module.exports = router;```
+
+## File: ./routes/discountRoutes.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const discountController = require('../controllers/discountController');
@@ -11926,8 +12133,10 @@ router.put('/:id', discountController.updateDiscount);
 // حذف كود خصم
 router.delete('/:id', discountController.deleteDiscount);
 
-module.exports = router;
-========== ./routes/expenses.js ==========
+module.exports = router;```
+
+## File: ./routes/expenses.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const expenseController = require('../controllers/expenseController');
@@ -11940,8 +12149,10 @@ router.put('/:id', authMiddleware(['manager']), expenseController.updateExpense)
 router.delete('/:id', authMiddleware(['manager']), expenseController.deleteExpense);
 
 module.exports = router;
+```
 
-========== ./routes/index.js ==========
+## File: ./routes/index.js
+```javascript
 // routes/index.js
 const express = require("express");
 const router = express.Router();
@@ -11974,8 +12185,10 @@ router.get(
 );
 
 module.exports = router;
+```
 
-========== ./routes/inventory.js ==========
+## File: ./routes/inventory.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const inventoryController = require("../controllers/inventoryController");
@@ -11996,8 +12209,10 @@ router.delete("/:id", inventoryController.deleteInventory);
 router.get("/alerts/low-stock", inventoryController.getLowStockAlerts);
 router.get("/alerts/expiry", inventoryController.getExpiryAlerts);
 
-module.exports = router;
-========== ./routes/login.js ==========
+module.exports = router;```
+
+## File: ./routes/login.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -12049,8 +12264,10 @@ router.post('/', async (req, res) => {
 });
 
 module.exports = router;
+```
 
-========== ./routes/manager.js ==========
+## File: ./routes/manager.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const checkRole = require("../middleware/checkRole");
@@ -12065,8 +12282,10 @@ router.get("/dashboard", checkRole, (req, res) => {
 });
 
 module.exports = router;
+```
 
-========== ./routes/merchants.js ==========
+## File: ./routes/merchants.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const merchantController = require('../controllers/merchantController');
@@ -12090,8 +12309,10 @@ router.put('/transactions/:id', authorize(P.finance.edit), merchantController.up
 router.delete('/transactions/:id', authorize(P.finance.edit), merchantController.deleteTransaction);
 
 module.exports = router;
+```
 
-========== ./routes/order.js ==========
+## File: ./routes/order.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const orderController = require("../controllers/orderController");
@@ -12099,8 +12320,10 @@ const { validate, orderSchema } = require("../middleware/validationMiddleware");
 
 router.post("/", validate(orderSchema), orderController.createOrder);
 
-module.exports = router;
-========== ./routes/orders.js ==========
+module.exports = router;```
+
+## File: ./routes/orders.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const ordersController = require("../controllers/ordersController");
@@ -12118,8 +12341,10 @@ router.put("/:orderId/cancel", authorize(P.orders.cancel), ordersController.canc
 router.post("/:id/print", authorize(P.orders.view), ordersController.reprintOrder); 
 
 module.exports = router;
+```
 
-========== ./routes/pages.js ==========
+## File: ./routes/pages.js
+```javascript
 // routes/pages.js - Clean URL Page Routing (No Auth Middleware)
 // Security is handled client-side via localStorage token checks in each page's JS.
 const express = require('express');
@@ -12169,8 +12394,10 @@ router.get('/users', (req, res) => {
 });
 
 module.exports = router;
+```
 
-========== ./routes/payments.js ==========
+## File: ./routes/payments.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/paymentController");
@@ -12181,8 +12408,10 @@ router.post("/", paymentController.createPayment);
 // Route لتحديث حالة الدفع
 router.post("/update-payment-status", paymentController.updatePaymentStatus);
 
-module.exports = router;
-========== ./routes/sales.js ==========
+module.exports = router;```
+
+## File: ./routes/sales.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const salesController = require("../controllers/salesController");
@@ -12195,8 +12424,10 @@ router.put("/:id", authMiddleware, authorizeRoles("manager"), salesController.up
 router.delete("/:id", authMiddleware, authorizeRoles("manager"), salesController.deleteSale);
 
 module.exports = router;
+```
 
-========== ./routes/settings.js ==========
+## File: ./routes/settings.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settingsController');
@@ -12206,8 +12437,10 @@ router.post('/', settingsController.updateSetting);
 router.post('/bulk', settingsController.updateSettingsBulk);
 
 module.exports = router;
+```
 
-========== ./routes/systemRoutes.js ==========
+## File: ./routes/systemRoutes.js
+```javascript
 const express = require('express');
 const router = express.Router();
 const { restartServer } = require('../controllers/systemController');
@@ -12215,8 +12448,10 @@ const { restartServer } = require('../controllers/systemController');
 // ✅ Route لإعادة تشغيل السيرفر
 router.post('/restart-server', restartServer);
 
-module.exports = router;
-========== ./routes/userRoutes.js ==========
+module.exports = router;```
+
+## File: ./routes/userRoutes.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const { Users } = require("../models"); // تأكد أن اسم الموديل صحيح
@@ -12238,8 +12473,10 @@ router.get("/getUserRole", verifyToken, async (req, res) => {
 });
 
 module.exports = router;
+```
 
-========== ./routes/users.js ==========
+## File: ./routes/users.js
+```javascript
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController"); // ✅ تأكد أن هذا المسار صحيح
@@ -12251,8 +12488,10 @@ router.put("/:id", userController.updateUser);  // ✅ تعديل مستخدم
 router.delete("/:id", userController.deleteUser); // ✅ حذف مستخدم
 
 module.exports = router;
+```
 
-========== ./server.js ==========
+## File: ./server.js
+```javascript
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -12391,19 +12630,26 @@ sequelize
   })
   .catch((err) => console.error("⚠️ Error connecting to the database:", err));
 
-const PORT = process.env.PORT || 8083;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  
   // 💾 Start Auto Backup (Runs every 12 hours)
   startAutoBackup(12);
+
+  // 🕒 Start Auto Shift Check (Runs on startup and every 1 hour)
+  const { checkAndPerformAutoShift } = require('./controllers/closingController');
+  checkAndPerformAutoShift(); // Initial check
+  setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
 });
+```
 
-========== ./services/discountService.js ==========
+## File: ./services/discountService.js
+```javascript
+```
 
-========== ./services/paymentService.js ==========
+## File: ./services/paymentService.js
+```javascript
+```
 
-========== ./showColumns.js ==========
+## File: ./showColumns.js
+```javascript
 const mysql = require('mysql2');
 
 // إعداد الاتصال بقاعدة البيانات
@@ -12450,8 +12696,10 @@ connection.connect((err) => {
         // إغلاق الاتصال
         connection.end();
     });
-});
-========== ./sync_supabase.js ==========
+});```
+
+## File: ./sync_supabase.js
+```javascript
 const { sequelize } = require('./models');
 const bcrypt = require('bcryptjs');
 const { User, Setting } = require('./models');
@@ -12501,8 +12749,10 @@ async function syncSupabase() {
 }
 
 syncSupabase();
+```
 
-========== ./test_api.js ==========
+## File: ./test_api.js
+```javascript
 const { User } = require('./models');
 const jwt = require('jsonwebtoken');
 const secretKey = 'mySuperSecretKey123'; // matches authMiddleware.js
@@ -12526,8 +12776,10 @@ async function test() {
   }
 }
 test();
+```
 
-========== ./test_cashier_logic.js ==========
+## File: ./test_cashier_logic.js
+```javascript
 // 🧪 Comprehensive Cashier Logic Test
 // This script simulates the pricing and order logic implemented in cashier.js
 
@@ -12622,8 +12874,10 @@ if (overallPassed) {
     console.log("⚠️ SOME TESTS FAILED. PLEASE REVIEW THE LOGIC.");
 }
 console.log("==================================================\n");
+```
 
-========== ./test_category.js ==========
+## File: ./test_category.js
+```javascript
 const Product = require('./models/Products');
 const sequelize = require('./config/db');
 
@@ -12662,8 +12916,10 @@ async function testCategory() {
 }
 
 testCategory();
+```
 
-========== ./test_db.js ==========
+## File: ./test_db.js
+```javascript
 const { Setting, DailyClosing } = require('./models');
 
 async function test() {
@@ -12674,8 +12930,10 @@ async function test() {
     console.log("Closed days:", closings.map(c => c.closingDate).sort());
 }
 test().catch(console.error).finally(() => process.exit(0));
+```
 
-========== ./utils/arabicHelper.js ==========
+## File: ./utils/arabicHelper.js
+```javascript
 /**
  * 🌍 Arabic Text Helper Utility
  * Provides basic RTL support and character reshaping for PDF & Thermal Printing.
@@ -12705,8 +12963,10 @@ function fixArabic(text) {
 }
 
 module.exports = { fixArabic };
+```
 
-========== ./utils/auditLogger.js ==========
+## File: ./utils/auditLogger.js
+```javascript
 const { AuditLog } = require('../models');
 
 /**
@@ -12777,4 +13037,5 @@ const logAudit = async (req, { action, tableName, recordId, oldValues, newValues
 };
 
 module.exports = { logAudit };
+```
 
