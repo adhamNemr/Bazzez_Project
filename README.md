@@ -1,56 +1,40 @@
-# 🍽️ Advanced Restaurant Management System
+# 🌌 Vortex POS — Wholesale Ledger Edition
 
 ![License](https://img.shields.io/github/license/adhamNemr/Bazzez_Project?style=flat-square)
-![Issues](https://img.shields.io/github/issues/adhamNemr/Bazzez_Project?style=flat-square)
-![Stars](https://img.shields.io/github/stars/adhamNemr/Bazzez_Project?style=flat-square)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey?style=flat-square)
-![Node](https://img.shields.io/badge/Node.js-v16%2B-green?style=flat-square)
+![Node](https://img.shields.io/badge/Node.js-v18%2B-green?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey?style=flat-square)
 
-
-A full-featured restaurant management system that includes:
-- Order management (Takeaway / Delivery)
-- Customer management
-- Daily & monthly reports
-- Sales analytics with charts
-- Role-based access (Manager / Cashier)
-- Discount codes & expiry alerts
-- Inventory management With Alerts
-- Receipt printing with USB thermal printer
+Vortex POS is a production-ready Wholesale and Retail Management System built for high-concurrency environments. It features atomic inventory management, professional financial tracking for merchants, and a robust security layer.
 
 ---
 
 ## 📦 Tech Stack
 
-- Node.js (Express)
-- MySQL (Sequelize ORM)
-- JWT Authentication
-- HTML, CSS, JavaScript (for testing UI)
-- Chart.js (for analytics charts)
-- Multer (file uploads)
-- dotenv, CORS
+- **Backend:** Node.js (Express)
+- **Database:** PostgreSQL (Production) / SQLite (Development) via Sequelize ORM
+- **Security:** JWT Authentication with Token Revocation (Blacklisting)
+- **Concurrency:** Atomic Row-Level Locking for inventory and financial consistency
+- **Frontend:** HTML5, Vanilla CSS, JavaScript (Dynamic UI with Glassmorphism)
+- **Analytics:** Chart.js for deep sales and financial insights
+- **Storage:** Multer for asset management
 
 ---
 
-## 📬 API Documentation
+## ⚙️ Core Features
 
-You can explore and test the full API using Postman:
-
-🔗 [Click here to open the Postman Docs](https://www.postman.com/adhamnemr/workspace/my-workspace/documentation/40823925-ad580d36-633f-4ce2-a451-06a7d8f8d401)
-
-> Note: The project supports USB thermal printer integration on Windows.
+- **🛡️ Enterprise Security:** 
+  - **Fine-grained RBAC:** 5 distinct roles (Manager, Supervisor, Accountant, Cashier, Owner).
+  - **Audit Logs:** Full history of all financial transactions and order cancellations (with diff tracking).
+  - **Rate Limiting:** Protects sensitive endpoints (Login) from brute-force attacks.
+  - **JWT Blacklisting:** Secure logout and session invalidation.
+- **📈 Wholesale & Retail Logic:**
+  - Automated merchant balance tracking (Debt/Credit).
+  - Atomic inventory decrements to prevent race conditions.
+  - Daily & Monthly closing cycles with strict business date tracking.
+- **🧾 Professional Printing:** USB Thermal Printer integration with Arabic font support.
+- **📊 Real-time Analytics:** Revenue tracking, best-seller charts, and inventory expiry alerts.
 
 ---
-
-## ⚙️ Features
-
-- Secure login with JWT & role-based redirection
-- Add / Edit / Delete customers and orders
-- Daily closing & monthly closing with reset analytics
-- Sales analytics: top products, total revenue, delivery earnings
-- Discount code management with product linking & expiration
-- Alerts for low stock & product expiry dates
-- Dynamic dashboard with blurred popups & filterable data
-- USB Thermal Printer integration for receipt printing
 
 ---
 
