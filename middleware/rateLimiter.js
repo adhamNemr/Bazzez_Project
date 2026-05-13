@@ -1,54 +1,55 @@
-const { RateLimitLog } = require('../models');
-const { Op } = require('sequelize');
+const { sequelize } = require('../models');
 
 /**
- * DB-Backed Rate Limiting Middleware
- * @param {Object} options - { windowMinutes, maxRequests, keyPrefix }
+ * 🚦 Optimized Rate Limiter
+ * Uses database UPSERT (ON CONFLICT) for maximum performance and atomicity.
+ * Prevents race conditions and minimizes database round-trips.
  */
 const rateLimiter = (options = {}) => {
-    const { 
-        windowMinutes = 1, 
-        maxRequests = 10, 
-        keyPrefix = 'rl' 
-    } = options;
+    const { windowMinutes = 1, maxRequests = 10, keyPrefix = 'rl' } = options;
 
     return async (req, res, next) => {
-        try {
-            const ip = req.ip || req.connection.remoteAddress;
-            const key = `${keyPrefix}:${req.path}:${ip}`;
-            
-            // Align to the start of the current window (e.g., start of the minute)
-            const now = new Date();
-            const windowStart = new Date(Math.floor(now.getTime() / (windowMinutes * 60000)) * (windowMinutes * 60000));
+        const ip = req.ip || req.connection.remoteAddress;
+        const key = `${keyPrefix}:${req.path}:${ip}`;
+        
+        // Calculate the start of the current time window
+        const windowStart = new Date(
+            Math.floor(Date.now() / (windowMinutes * 60000)) * (windowMinutes * 60000)
+        );
 
-            // Atomic increment or create
-            const [record, created] = await RateLimitLog.findOrCreate({
-                where: { key, windowStart },
-                defaults: { count: 0 } // Start at 0
+        try {
+            /**
+             * ⚡ UPSERT Pattern (PostgreSQL / SQLite compatible)
+             * This single query handles both creation and incrementing.
+             */
+            const query = `
+                INSERT INTO rate_limit_logs ("key", "windowStart", "count", "createdAt", "updatedAt")
+                VALUES (:key, :windowStart, 1, NOW(), NOW())
+                ON CONFLICT ("key", "windowStart") 
+                DO UPDATE SET "count" = rate_limit_logs."count" + 1, "updatedAt" = NOW()
+                RETURNING "count";
+            `;
+
+            const [results] = await sequelize.query(query, {
+                replacements: { key, windowStart },
+                type: sequelize.QueryTypes.SELECT
             });
 
-            await record.increment('count', { by: 1 });
-            await record.reload();
+            const currentCount = results?.count || 1;
 
-            if (record.count > maxRequests) {
-                return res.status(429).json({ 
-                    error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار دقيقة قبل المحاولة مرة أخرى.' 
+            if (currentCount > maxRequests) {
+                return res.status(429).json({
+                    error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار قليلاً.',
+                    retryAfter: windowMinutes * 60
                 });
             }
 
-            // Cleanup old logs occasionally (e.g., 1% of requests)
-            if (Math.random() < 0.01) {
-                RateLimitLog.destroy({
-                    where: {
-                        windowStart: { [Op.lt]: new Date(now.getTime() - 10 * 60000) } // Clean logs older than 10 mins
-                    }
-                }).catch(err => console.error('RateLimit Cleanup Error:', err));
-            }
-
+            // Optional: Periodic cleanup could be added here or via a cron job
             next();
-        } catch (err) {
-            console.error('Rate Limiter Error:', err);
-            next(); // Proceed anyway if RL fails to not block users
+        } catch (error) {
+            console.error('❌ Rate Limiter Error:', error);
+            // Fail open: If rate limiter fails, allow the request but log the error
+            next();
         }
     };
 };

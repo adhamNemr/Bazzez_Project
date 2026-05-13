@@ -13,41 +13,40 @@ exports.getAnalytics = async (req, res) => {
         // 🔹 إجمالي الإيرادات
         const totalRevenue = (await Order.sum("orderTotal")) || 0;
 
-        // 🔹 جلب الطلبات خلال آخر 7 أيام
-        const recentOrders = await Order.findAll({
-            attributes: ["orderDetails", "createdAt", "orderTotal"],
+        // 🔹 جلب إحصائيات الإيرادات لكل يوم (آخر 7 أيام) باستخدام GROUP BY
+        const revenueByDay = await Order.findAll({
+            attributes: [
+                [Sequelize.fn('DATE', Sequelize.col('createdAt')), 'date'],
+                [Sequelize.fn('COUNT', Sequelize.col('id')), 'orders'],
+                [Sequelize.fn('SUM', Sequelize.col('orderTotal')), 'revenue']
+            ],
             where: {
                 createdAt: { [Op.gte]: Sequelize.literal("CURRENT_DATE - INTERVAL '7 days'") },
+                isCancelled: 'No'
             },
+            group: [Sequelize.fn('DATE', Sequelize.col('createdAt'))],
+            order: [[Sequelize.fn('DATE', Sequelize.col('createdAt')), 'ASC']],
+            raw: true
         });
 
+        // 🔹 تحويل النتائج لتنسيق العرض المطلوب
         const last7Days = [];
-        const ordersPerDay = {};
-        const revenuePerDay = {};
-
+        const revenueMap = Object.fromEntries(revenueByDay.map(d => [d.date, d]));
+        
         for (let i = 6; i >= 0; i--) {
             const date = new Date();
             date.setDate(date.getDate() - i);
             const formattedDate = date.toISOString().split("T")[0];
-
-            last7Days.push({ date: formattedDate, orders: 0, revenue: 0 });
-            ordersPerDay[formattedDate] = 0;
-            revenuePerDay[formattedDate] = 0;
+            const dayData = revenueMap[formattedDate] || { orders: 0, revenue: 0 };
+            
+            last7Days.push({ 
+                date: formattedDate, 
+                orders: parseInt(dayData.orders) || 0, 
+                revenue: parseFloat(dayData.revenue) || 0 
+            });
         }
 
-        // 🔹 حساب الطلبات والإيرادات لكل يوم
-        recentOrders.forEach(order => {
-            const date = order.createdAt.toISOString().split("T")[0];
-            ordersPerDay[date] = (ordersPerDay[date] || 0) + 1;
-            revenuePerDay[date] = (revenuePerDay[date] || 0) + parseFloat(order.orderTotal);
-        });
-
-        last7Days.forEach(day => {
-            day.orders = ordersPerDay[day.date] || 0;
-            day.revenue = revenuePerDay[day.date] || 0;
-        });
-
-        // ✅ جلب المنتجات الأكثر والأقل طلبًا من قاعدة البيانات
+        // ✅ جلب المنتجات الأكثر والأقل طلبًا (كما هي)
         const topProducts = await Product.findAll({
             attributes: ['name', 'sold'],
             order: [["sold", "DESC"]],
@@ -62,29 +61,30 @@ exports.getAnalytics = async (req, res) => {
             raw: true
         });
 
-        // 🔹 تحليل العملاء الأكثر طلبًا
-        const customerOrders = await Order.findAll({ attributes: ["customerId"] });
-        const customerCounts = {};
-
-        customerOrders.forEach(order => {
-            if (order.customerId) {
-                customerCounts[order.customerId] = (customerCounts[order.customerId] || 0) + 1;
-            }
+        // ✅ جلب العملاء الأكثر طلبًا باستخدام GROUP BY (حل مشكلة N+1)
+        const topCustomers = await Order.findAll({
+            attributes: [
+                'customerId',
+                [Sequelize.fn('COUNT', Sequelize.col('Order.id')), 'ordersCount']
+            ],
+            where: { customerId: { [Op.ne]: null } },
+            group: ['customerId', 'Customer.id'],
+            include: [{ 
+                model: Customer, 
+                attributes: ['name'] 
+            }],
+            order: [[Sequelize.literal('"ordersCount"'), 'DESC']],
+            limit: 5,
+            raw: true,
+            nest: true
         });
 
-        // ✅ جلب بيانات العملاء الأكثر طلبًا
-        const topCustomers = await Customer.findAll({
-            where: { id: { [Op.in]: Object.keys(customerCounts).map(id => Number(id)) } },
-            attributes: ["id", "name"],
-            raw: true
-        });
-
-        // ✅ إضافة عدد الطلبات لكل عميل وترتيبهم
-        topCustomers.forEach(customer => {
-            customer.ordersCount = customerCounts[customer.id] || 0;
-        });
-
-        topCustomers.sort((a, b) => b.ordersCount - a.ordersCount);
+        // 🔹 تنسيق بيانات العملاء للعرض
+        const formattedTopCustomers = topCustomers.map(c => ({
+            id: c.customerId,
+            name: c.Customer?.name || "عميل مجهول",
+            ordersCount: parseInt(c.ordersCount) || 0
+        }));
 
         res.json({
             totalOrders,
@@ -92,7 +92,7 @@ exports.getAnalytics = async (req, res) => {
             last7Days,
             topProducts,
             leastProducts,
-            topCustomers,
+            topCustomers: formattedTopCustomers,
         });
 
     } catch (error) {

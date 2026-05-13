@@ -29,15 +29,24 @@ const expenseRoutes = require("./routes/expenses");
 const settingsRoutes = require("./routes/settings");
 const merchantsRoutes = require("./routes/merchants");
 
+const sanitizeInput = require("./middleware/sanitize");
+const rateLimiter = require("./middleware/rateLimiter");
+
 const app = express();
 
+// 🛡️ Security Middleware Chain
 app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10kb' })); // Body size limit
+app.use(sanitizeInput); // Global XSS Protection
 
-// ✅ Static file serving - this handles ALL .html files directly
+// 🚦 Global API Rate Limiter (100 requests per minute)
+const apiLimiter = rateLimiter({ windowMinutes: 1, maxRequests: 100, keyPrefix: 'api_global' });
+app.use("/api", apiLimiter);
+
+// ✅ Static file serving
 app.use(express.static(path.join(__dirname, "public")));
 
 // ✅ API Routes (prefixed with /api to avoid conflicts)
@@ -127,10 +136,11 @@ sequelize
   })
   .catch((err) => console.error("⚠️ Error connecting to the database:", err));
 
-const PORT = process.env.PORT || 8083;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  
   // 💾 Start Auto Backup (Runs every 12 hours)
   startAutoBackup(12);
+
+  // 🕒 Start Auto Shift Check (Runs on startup and every 1 hour)
+  const { checkAndPerformAutoShift } = require('./controllers/closingController');
+  checkAndPerformAutoShift(); // Initial check
+  setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
 });

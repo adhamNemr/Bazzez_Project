@@ -1,8 +1,10 @@
-const { User } = require("../models"); // ✅ تأكد أن الموديل `User` موجود
+const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll();
+        const users = await User.findAll({
+            attributes: { exclude: ['password'] } // 🛡️ حماية البيانات الحساسة
+        });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: "❌ خطأ في جلب المستخدمين" });
@@ -12,8 +14,21 @@ exports.getAllUsers = async (req, res) => {
 exports.createUser = async (req, res) => {
     try {
         const { username, password, role } = req.body;
-        const newUser = await User.create({ username, password, role });
-        res.status(201).json(newUser);
+        
+        // 🔐 تشفير كلمة المرور قبل الحفظ
+        const hashedPassword = await bcrypt.hash(password, 12);
+        
+        const newUser = await User.create({ 
+            username, 
+            password: hashedPassword, 
+            role 
+        });
+
+        // 🛡️ إرسال البيانات بدون الباسورد
+        const userResponse = newUser.toJSON();
+        delete userResponse.password;
+        
+        res.status(201).json(userResponse);
     } catch (error) {
         res.status(500).json({ message: "❌ خطأ في إنشاء المستخدم" });
     }

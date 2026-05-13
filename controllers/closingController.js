@@ -212,19 +212,28 @@ exports.internalAutoClose = async (businessDate) => {
         const existingClosing = await DailyClosing.findOne({ where: { closingDate: businessDate } });
         if (existingClosing) return; // Already closed
 
-        const totalOrders = await Order.count({ where: { businessDate, isCancelled: "No" } });
-        const totalRevenue = await Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }) || 0;
-        const totalDiscount = await Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }) || 0;
-        const totalCost = await calculateTotalCost(businessDate);
-        const totalExpenses = await Expense.sum('amount', { where: { date: businessDate } }) || 0;
-
-        const onlinePaymentsTotal = await Order.sum('orderTotal', {
-            where: { 
-                businessDate, 
-                isCancelled: "No",
-                payment_method: { [Op.ne]: "cash" }
-            }
-        }) || 0;
+        // 🟢 Parallelize data fetching for auto-close
+        const [
+            totalOrders,
+            totalRevenue,
+            totalDiscount,
+            totalCost,
+            totalExpenses,
+            onlinePaymentsTotal
+        ] = await Promise.all([
+            Order.count({ where: { businessDate, isCancelled: "No" } }),
+            Order.sum("orderTotal", { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            Order.sum("discountAmount", { where: { businessDate, isCancelled: "No" } }).then(v => v || 0),
+            calculateTotalCost(businessDate),
+            Expense.sum('amount', { where: { date: businessDate } }).then(v => v || 0),
+            Order.sum('orderTotal', {
+                where: { 
+                    businessDate, 
+                    isCancelled: "No",
+                    payment_method: { [Op.ne]: "cash" }
+                }
+            }).then(v => v || 0)
+        ]);
 
         const orders = await Order.findAll({ where: { businessDate, isCancelled: "No" }, attributes: ['orderDetails'] });
         let totalSandwiches = 0;
@@ -341,13 +350,24 @@ exports.getMonthlySummary = async (req, res) => {
             }
         };
 
-        const total_orders = await DailyClosing.sum("totalOrders", { where: whereClause }) || 0;
-        const total_sandwiches = await DailyClosing.sum("totalSandwiches", { where: whereClause }) || 0;
-        const total_revenue = await DailyClosing.sum("totalRevenue", { where: whereClause }) || 0;
-        const total_cost = await DailyClosing.sum("totalCost", { where: whereClause }) || 0;
-        const totalExpenses = await DailyClosing.sum("totalExpenses", { where: whereClause }) || 0;
-        const totalDiscount = await DailyClosing.sum("totalDiscount", { where: whereClause }) || 0;
-        const onlinePaymentsTotal = await DailyClosing.sum("onlinePaymentsTotal", { where: whereClause }) || 0;
+        // 🟢 Parallelize monthly aggregations
+        const [
+            total_orders,
+            total_sandwiches,
+            total_revenue,
+            total_cost,
+            totalExpenses,
+            totalDiscount,
+            onlinePaymentsTotal
+        ] = await Promise.all([
+            DailyClosing.sum("totalOrders", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalSandwiches", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalRevenue", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalCost", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalExpenses", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("totalDiscount", { where: whereClause }).then(v => v || 0),
+            DailyClosing.sum("onlinePaymentsTotal", { where: whereClause }).then(v => v || 0)
+        ]);
 
         const total_earnings = parseFloat((total_revenue - total_cost - totalExpenses).toFixed(2));
 

@@ -24,10 +24,10 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "❌ اسم المستخدم أو كلمة المرور غير صحيحة." });
         }
 
-        // إنشاء التوكن مع تضمين دور المستخدم
+        // 🔐 Generate JWT Token using ENV secret
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role }, 
-            'mySuperSecretKey123', 
+            process.env.JWT_SECRET || 'fallback_secret_for_dev', 
             { expiresIn: "7d" }
         );
 

@@ -33,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.JSONB,
             allowNull: true
         },
+        meta: {
+            type: DataTypes.JSONB,
+            allowNull: true
+        },
         ipAddress: {
             type: DataTypes.STRING(45),
             allowNull: true

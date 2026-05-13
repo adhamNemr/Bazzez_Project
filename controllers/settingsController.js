@@ -3,10 +3,6 @@ const { Setting } = require('../models');
 // ✅ جلب كل الإعدادات
 exports.getAllSettings = async (req, res) => {
     try {
-        // 🕒 Proactive Smart Auto-Shift
-        const closingController = require('./closingController');
-        await closingController.checkAndPerformAutoShift();
-
         const settings = await Setting.findAll();
         // تحويل المصفوفة إلى Object لسهولة التعامل في الفرونت إند
         const settingsObj = {};
