@@ -24,16 +24,16 @@ const rateLimiter = (options = {}) => {
             // Atomic increment or create
             const [record, created] = await RateLimitLog.findOrCreate({
                 where: { key, windowStart },
-                defaults: { count: 1 }
+                defaults: { count: 0 } // Start at 0
             });
 
-            if (!created) {
-                if (record.count >= maxRequests) {
-                    return res.status(429).json({ 
-                        error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار دقيقة قبل المحاولة مرة أخرى.' 
-                    });
-                }
-                await record.increment('count', { by: 1 });
+            await record.increment('count', { by: 1 });
+            await record.reload();
+
+            if (record.count > maxRequests) {
+                return res.status(429).json({ 
+                    error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار دقيقة قبل المحاولة مرة أخرى.' 
+                });
             }
 
             // Cleanup old logs occasionally (e.g., 1% of requests)
