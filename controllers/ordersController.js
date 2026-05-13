@@ -212,6 +212,16 @@ exports.cancelOrder = async (req, res) => {
         order.isCancelled = "Yes";
         await order.save();
 
+        // 📝 Audit Log
+        const { logAudit } = require('../utils/auditLogger');
+        logAudit(req, {
+            action: 'UPDATE',
+            tableName: 'Order',
+            recordId: orderId,
+            oldValues: { isCancelled: "No" },
+            newValues: { isCancelled: "Yes" }
+        });
+
         res.json({ success: true, message: "✅ تم إلغاء الطلب واسترجاع المخزون" });
     } catch (error) {
         console.error("❌ خطأ أثناء إلغاء الطلب:", error);

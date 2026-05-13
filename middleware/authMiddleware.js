@@ -1,32 +1,37 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const { TokenBlacklist } = require('../models');
 
 const secretKey = process.env.JWT_SECRET || 'mySuperSecretKey123';
 
 // ✅ Middleware للتحقق من صلاحية المستخدم بناءً على الدور المسموح
-const authMiddleware = (allowedRoles) => (req, res, next) => {
+const authMiddleware = (allowedRoles) => async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ message: 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.' });
     }
 
-    jwt.verify(token, secretKey, (err, decoded) => {
-        if (err) {
-            console.error('❌ JWT Verify Error:', err.message);
-            return res.status(401).json({ message: 'جلسة غير صالحة أو انتهت.' });
+    try {
+        // 🛡️ Check if token is blacklisted
+        const isBlacklisted = await TokenBlacklist.findByPk(token);
+        if (isBlacklisted) {
+            return res.status(401).json({ message: 'جلسة ملغاة. يرجى تسجيل الدخول مجدداً.' });
         }
 
+        const decoded = jwt.verify(token, secretKey);
         req.user = decoded;
-        console.log('🧑‍💼 Role المستخدم:', decoded.role); // ✅ التحقق من الـ Role
-
+        
         // التحقق من الدور المسموح به
-        if (!allowedRoles.includes(decoded.role)) {
+        if (allowedRoles && !allowedRoles.includes(decoded.role)) {
             return res.status(403).json({ message: 'ليس لديك الصلاحيات اللازمة للوصول إلى هذه الصفحة.' });
         }
 
         next();
-    });
+    } catch (err) {
+        console.error('❌ Authentication Error:', err.message);
+        return res.status(401).json({ message: 'جلسة غير صالحة أو انتهت.' });
+    }
 };
 
 module.exports = { authMiddleware };

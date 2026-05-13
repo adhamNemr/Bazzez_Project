@@ -18,6 +18,9 @@ const Expense = require("./Expense")(sequelize, DataTypes);
 const Setting = require("./Setting")(sequelize, DataTypes);
 const Merchant = require("./Merchant")(sequelize, DataTypes);
 const MerchantTransaction = require("./MerchantTransaction")(sequelize, DataTypes);
+const AuditLog = require("./AuditLog")(sequelize, DataTypes);
+const RateLimitLog = require("./RateLimitLog")(sequelize, DataTypes);
+const TokenBlacklist = require("./TokenBlacklist")(sequelize, DataTypes);
 
 // ✅ العلاقات بين الجداول
 Product.hasMany(Sale, { foreignKey: "product_id" });
@@ -54,5 +57,8 @@ module.exports = {
     Expense,
     Setting,
     Merchant,
-    MerchantTransaction
+    MerchantTransaction,
+    AuditLog,
+    RateLimitLog,
+    TokenBlacklist
 };

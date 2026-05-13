@@ -160,6 +160,15 @@ exports.addTransaction = async (req, res) => {
         await merchant.save({ transaction: t });
         await t.commit();
 
+        // 📝 Audit Log
+        const { logAudit } = require('../utils/auditLogger');
+        logAudit(req, {
+            action: 'CREATE',
+            tableName: 'MerchantTransaction',
+            recordId: transaction.id,
+            newValues: transaction.toJSON()
+        });
+
         res.json({ success: true, transaction, newBalance: merchant.balance });
     } catch (err) {
         await t.rollback();
@@ -188,10 +197,21 @@ exports.deleteTransaction = async (req, res) => {
             merchant.balance = parseFloat(merchant.balance) + numericAmount;
         }
 
+        const oldData = transaction.toJSON();
         await merchant.save({ transaction: t });
         await transaction.destroy({ transaction: t });
         
         await t.commit();
+
+        // 📝 Audit Log
+        const { logAudit } = require('../utils/auditLogger');
+        logAudit(req, {
+            action: 'DELETE',
+            tableName: 'MerchantTransaction',
+            recordId: id,
+            oldValues: oldData
+        });
+
         res.json({ success: true, newBalance: merchant.balance });
     } catch (err) {
         await t.rollback();
@@ -231,6 +251,7 @@ exports.updateTransaction = async (req, res) => {
         }
 
         // 3. Update transaction record
+        const oldData = transaction.toJSON();
         transaction.amount = newAmount;
         transaction.date = date || transaction.date;
         transaction.notes = notes;
@@ -239,6 +260,17 @@ exports.updateTransaction = async (req, res) => {
         await transaction.save({ transaction: t });
 
         await t.commit();
+
+        // 📝 Audit Log
+        const { logAudit } = require('../utils/auditLogger');
+        logAudit(req, {
+            action: 'UPDATE',
+            tableName: 'MerchantTransaction',
+            recordId: id,
+            oldValues: oldData,
+            newValues: transaction.toJSON()
+        });
+
         res.json({ success: true, newBalance: merchant.balance });
     } catch (err) {
         await t.rollback();
