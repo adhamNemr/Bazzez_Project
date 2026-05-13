@@ -8,6 +8,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('trans-date').valueAsDate = new Date();
     document.getElementById('merchant-form').addEventListener('submit', handleMerchantSubmit);
     document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
+    
+    // 📅 Initialize Flatpickr for Transaction Date
+    const transDateInput = document.getElementById('trans-date');
+    if (transDateInput) {
+        flatpickr(transDateInput, {
+            locale: "ar",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d / m / Y",
+            defaultDate: "today"
+        });
+    }
+
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) e.target.style.display = 'none';
     });
@@ -44,7 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchMerchants() {
     try {
-        const res = await fetch(`/api/merchants?type=${currentTab}&_t=${Date.now()}`);
+        const res = await fetch(`/api/merchants?type=${currentTab}&_t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
         allMerchants = await res.json();
         renderMerchantsList();
     } catch (err) {
@@ -55,8 +70,12 @@ async function fetchMerchants() {
 async function updateSummary() {
     try {
         const [supRes, cliRes] = await Promise.all([
-            fetch(`/api/merchants?type=supplier&_t=${Date.now()}`),
-            fetch(`/api/merchants?type=wholesale_client&_t=${Date.now()}`)
+            fetch(`/api/merchants?type=supplier&_t=${Date.now()}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            }),
+            fetch(`/api/merchants?type=wholesale_client&_t=${Date.now()}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            })
         ]);
         const suppliers = await supRes.json();
         const clients   = await cliRes.json();
@@ -194,7 +213,10 @@ async function quickPayment() {
     try {
         const res = await fetch(`/api/merchants/${activeMerchantId}/transactions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             body: JSON.stringify({
                 type: 'payment', amount,
                 date:  new Date().toISOString().split('T')[0],
@@ -202,7 +224,7 @@ async function quickPayment() {
             })
         });
         if (res.ok) {
-            showToast(`✅ تم تسجيل دفعة ${amount.toLocaleString()}  `, 'success');
+            showToast(`تم تسجيل دفعة بقيمة ${amount.toLocaleString()} بنجاح`, 'success');
             await fetchMerchants();
             updateSummary();
             selectMerchantRow(activeMerchantId);
@@ -246,7 +268,9 @@ function toggleLedgerDrawer(open = null) {
 
 async function fetchMerchantLedger(id) {
     try {
-        const res = await fetch(`/api/merchants/${id}/transactions?_t=${Date.now()}`);
+        const res = await fetch(`/api/merchants/${id}/transactions?_t=${Date.now()}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
         const { merchant, transactions } = await res.json();
 
         // Update Drawer Header & Stats
@@ -361,7 +385,12 @@ async function editTransaction(t) {
     if (value) {
         try {
             const res = await fetch(`/api/merchants/transactions/${t.id}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value)
+                method: 'PUT', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }, 
+                body: JSON.stringify(value)
             });
             if (res.ok) {
                 showToast('تم التعديل بنجاح', 'success');
@@ -381,7 +410,10 @@ async function deleteTransaction(id) {
         confirmButtonColor: '#dc2626', confirmButtonText: 'احذف', cancelButtonText: 'إلغاء' });
     if (r.isConfirmed) {
         try {
-            const res = await fetch(`/api/merchants/transactions/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/merchants/transactions/${id}`, { 
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             if (res.ok) {
                 showToast('تم الحذف', 'success');
                 await fetchMerchants(); 
@@ -408,7 +440,10 @@ async function deleteMerchant(id, name) {
 
     if (r.isConfirmed) {
         try {
-            const res = await fetch(`/api/merchants/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/merchants/${id}`, { 
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             const data = await res.json();
             
             if (res.ok) { 
@@ -465,7 +500,10 @@ async function handleMerchantSubmit(e) {
     try {
         const res = await fetch(id ? `/api/merchants/${id}` : '/api/merchants', {
             method:  id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             body:    JSON.stringify(data)
         });
         if (res.ok) {
@@ -494,7 +532,12 @@ async function handleTransactionSubmit(e) {
     };
     try {
         const res = await fetch(`/api/merchants/${activeMerchantId}/transactions`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }, 
+            body: JSON.stringify(data)
         });
         if (res.ok) {
             closeModal('transaction-modal');
@@ -512,7 +555,3 @@ async function handleTransactionSubmit(e) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function showToast(msg, icon = 'success') {
-    Swal.fire({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true, icon, title: msg });
-}

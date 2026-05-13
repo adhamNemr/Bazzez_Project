@@ -52,10 +52,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Date filter change
-    document.getElementById('date-filter').addEventListener('change', (e) => {
-        fetchExpenses(e.target.value);
-    });
+    // 📅 Initialize Flatpickr for Date Filter
+    const dateInput = document.getElementById('date-filter');
+    if (dateInput) {
+        flatpickr(dateInput, {
+            locale: "ar",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d / m / Y",
+            disableMobile: "true",
+            defaultDate: dateInput.value || "today",
+            onChange: (selectedDates, dateStr) => {
+                fetchExpenses(dateStr);
+            }
+        });
+    }
 
     // Search filter
     document.getElementById('expense-search').addEventListener('input', () => {
@@ -118,8 +129,13 @@ async function fetchExpenses(date = '') {
         
         // Use filteredDate (what we are actually seeing) for UI
         const viewDate = stats.filteredDate;
+        // Update date filter UI
         const dateInput = document.getElementById('date-filter');
-        if (dateInput) dateInput.value = viewDate;
+        if (dateInput && dateInput._flatpickr) {
+            dateInput._flatpickr.setDate(viewDate, false);
+        } else if (dateInput) {
+            dateInput.value = viewDate;
+        }
 
         const dateLabel = document.getElementById('business-date-label');
         if (dateLabel) {
@@ -198,9 +214,9 @@ async function handleSubmit(e) {
 
         Swal.fire({
             icon: 'success',
-            title: editingId ? 'تم التعديل ✅' : 'تم التسجيل ✅',
-            text: data.message,
-            timer: 1800,
+            title: editingId ? 'تم التعديل بنجاح' : 'تم التسجيل بنجاح',
+            text: editingId ? 'تم تحديث بيانات المصروف' : 'تم إضافة المصروف إلى السجل',
+            timer: 2000,
             showConfirmButton: false
         });
 

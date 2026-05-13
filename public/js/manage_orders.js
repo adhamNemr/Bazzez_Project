@@ -516,7 +516,9 @@ async function exportOrdersToExcel() {
         const query = document.getElementById('order-search').value;
         const url = `/api/orders?nopaging=true&date=${selectedDate}&status=${activeFilter}&search=${query}`;
         
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
         let orders = await response.json();
 
         // 🔄 Hybrid Local Filter (Fallback if backend doesn't filter yet)
@@ -780,7 +782,10 @@ async function loadOrderItems(orderDetails) {
     try {
         const response = await fetch('/api/orders/format-details', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             body: JSON.stringify({ orderDetails })
         });
         const data = await response.json();
@@ -848,7 +853,10 @@ async function cancelOrder(orderId) {
 
     if (result.isConfirmed) {
         try {
-            const response = await fetch(`/api/orders/${orderId}/cancel`, { method: 'PUT' });
+            const response = await fetch(`/api/orders/${orderId}/cancel`, { 
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
             if (response.ok) {
                 Swal.fire(
                     isAr ? 'تم الإلغاء!' : 'Cancelled!',

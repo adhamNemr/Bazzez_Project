@@ -2,8 +2,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
         // 🔹 جلب البيانات من الـ API
         const [analyticsResponse, lowStockResponse] = await Promise.all([
-            fetch("/api/analytics"),
-            fetch("/api/analytics/low-stock")
+            fetch("/api/analytics", {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            }),
+            fetch("/api/analytics/low-stock", {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            })
         ]);
 
         const data = await analyticsResponse.json();
