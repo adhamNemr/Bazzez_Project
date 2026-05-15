@@ -218,7 +218,7 @@ function renderInventory(items) {
 
         if (hasVariants) {
             const variantsSum = item.variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
-            totalQty = parseFloat(item.quantity || 0) > variantsSum ? parseFloat(item.quantity) : variantsSum;
+            totalQty = variantsSum;
             totalMin = item.variants.reduce((sum, v) => sum + parseFloat(v.min || 0), 0);
             
             if (totalQty > variantsSum) {
@@ -256,28 +256,30 @@ function renderInventory(items) {
 
         const expiryWarningHTML = isNearExpiry ? `<i class="fas fa-exclamation-circle expiry-pulse" title="${isAr ? 'قرب الانتهاء' : 'Expiring Soon'}"></i>` : '';
 
-        const editParentBtnHTML = hasVariants ? `
-            <button class="edit-parent-btn" data-id="${item.id}" style="background: rgba(16, 185, 129, 0.1); border: none; padding: 5px 10px; border-radius: 8px; color: var(--luxury-emerald); cursor: pointer; transition: 0.3s; margin-${isAr ? 'right' : 'left'}: 10px;">
-                <i class="fas fa-edit"></i>
+        const editParentBtnHTML = `
+            <button class="edit-parent-btn" data-id="${item.id}" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); width: 32px; height: 32px; border-radius: 8px; color: var(--luxury-emerald); cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-edit" style="font-size: 0.85rem;"></i>
             </button>
-        ` : '';
+        `;
 
         // 🏗️ Build Parent Row HTML
         let rowHtml = `
             <tr class="${hasVariants ? 'parent-row' : ''} ${isNearExpiry ? 'row-near-expiry' : ''}" data-id="${item.id}" style="${hasVariants ? 'cursor:pointer;' : ''}">
-                <td style="opacity: 0.5;">${toggleIconHTML} #${item.id}</td>
+                <td style="color: #64748b; font-family: monospace; font-weight: 800;">#${item.id} ${toggleIconHTML}</td>
                 <td style="font-weight: 800; color: var(--luxury-emerald);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>${item.name} ${expiryWarningHTML}</span>
-                        ${editParentBtnHTML}
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 200px;">
+                        <span style="flex: 1; text-align: center;">${item.name} ${expiryWarningHTML}</span>
+                        <div style="width: 40px; display: flex; justify-content: center;">
+                            ${editParentBtnHTML}
+                        </div>
                     </div>
                 </td>
                 <td><span class="${isLow ? 'badge-low' : 'badge-ok'}">${formattedQty}</span></td>
-                <td style="opacity: 0.6;">${formattedMin}</td>
-                <td style="opacity: ${hasVariants ? '0.3' : '1'};">${hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
-                <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: #008060; font-weight: 700;">${hasVariants ? '---' : parseFloat(item.price || item.cost || 0).toFixed(2) + ' <small>EGP</small>'}</td>
+                <td style="color: #64748b; font-weight: 800;">${formattedMin}</td>
+                <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: #64748b;">${hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                <td style="opacity: ${hasVariants ? '0.3' : '1'}; color: var(--luxury-emerald); font-weight: 800;">${hasVariants ? '---' : (parseFloat(item.price || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
                 <td style="font-weight: 800; color: var(--luxury-emerald);">${totalValue.toFixed(2)} <small>EGP</small></td>
-                <td style="font-size: 0.85rem; opacity: 0.6;">${formatDate(latestUpdateDate)}</td>
+                <td style="font-size: 0.9rem; color: #64748b; font-weight: 800;">${formatDate(latestUpdateDate)}</td>
                 ${!isRetail ? `<td style="font-size: 0.85rem; font-weight: 700; color: ${isNearExpiry ? '#ef4444' : 'inherit'};">${formatDate(item.expiryDate)}</td>` : ''}
             </tr>
         `;
@@ -286,25 +288,47 @@ function renderInventory(items) {
         if (hasVariants) {
             const langT = t[currentLang];
             const colorGroupBaseClass = `color-group-${item.id}`;
-            
+            const branchIcon = isAr ? '<i class="fas fa-level-down-alt fa-rotate-90" style="margin-left: 10px; color:#cbd5e1;"></i>' : '<i class="fas fa-level-up-alt fa-rotate-90" style="margin-right: 10px; color:#cbd5e1;"></i>';
+
             item.variants.forEach((variant, vIdx) => {
                 const variantQty = isRetail ? Math.round(variant.quantity) : parseFloat(variant.quantity).toFixed(2);
                 const isVLow = variant.quantity <= (variant.min || 0);
-                const branchIcon = isAr ? '<i class="fas fa-level-down-alt fa-rotate-90" style="margin-left: 10px; color:#cbd5e1;"></i>' : '<i class="fas fa-level-up-alt fa-rotate-90" style="margin-right: 10px; color:#cbd5e1;"></i>';
 
                 rowHtml += `
                     <tr class="${colorGroupBaseClass} tree-child-row tree-level-2" data-pid="${item.id}" data-vidx="${vIdx}" style="display: none; cursor: pointer;">
-                        <td style="padding-${isAr ? 'right' : 'left'}: 2.5rem; font-weight: 700; color: #475569;">
-                            ${branchIcon} <i class="fas fa-shirt" style="margin: 0 5px; opacity: 0.5;"></i> ${variant.name || variant.color}
+                        <!-- 1. ID Column (Hierarchy Icon) -->
+                        <td style="text-align: center; color: #64748b; font-weight: 800;">${branchIcon}</td>
+                        
+                        <!-- 2. Name Column (Indented) -->
+                        <td style="font-weight: 700; color: #475569;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 200px;">
+                                <span style="flex: 1; text-align: center;">${variant.name || (isAr ? 'بدون اسم' : 'Unnamed')}</span>
+                                <div style="width: 40px; display: flex; justify-content: center; opacity: 0.4; font-size: 0.9rem;">
+                                    <i class="fas fa-shirt"></i>
+                                </div>
+                            </div>
                         </td>
-                        <td style="opacity: 0.6; font-size: 0.85rem;">${isAr ? 'خامة' : 'Fabric'}</td>
+
+                        <!-- 3. Qty Column -->
                         <td><span class="${isVLow ? 'badge-low' : 'badge-ok'}" style="transform: scale(0.9);">${variantQty}</span></td>
-                        <td style="opacity: 0.6; font-size: 0.9rem;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
-                        <td style="font-size: 0.9rem; color: #008060; font-weight: 700;">${parseFloat(variant.price || variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
-                        <td style="font-size: 0.9rem; color: #ca8a04;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
-                        <td style="font-weight: 700; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
-                        <td style="font-size: 0.8rem; opacity: 0.6;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
-                        ${!isRetail ? `<td>---</td>` : ''}
+                        
+                        <!-- 4. Min Column -->
+                        <td style="color: #64748b; font-size: 0.9rem; font-weight: 800;">${isRetail ? Math.round(variant.min || 0) : (variant.min || 0).toFixed(2)}</td>
+                        
+                        <!-- 5. Cost Column -->
+                        <td style="font-size: 0.95rem; color: #64748b; font-weight: 800;">${parseFloat(variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                        
+                        <!-- 6. Price Column -->
+                        <td style="font-size: 0.9rem; color: var(--luxury-emerald); font-weight: 800;">${parseFloat(variant.price || variant.cost || item.cost || 0).toFixed(2)} <small>EGP</small></td>
+                        
+                        <!-- 7. Total Column -->
+                        <td style="font-weight: 800; color: var(--luxury-emerald); font-size: 0.9rem;">${((variant.quantity || 0) * (variant.cost || item.cost || 0)).toFixed(2)} <small>EGP</small></td>
+                        
+                        <!-- 8. Added Column -->
+                        <td style="font-size: 0.9rem; color: #64748b; font-weight: 800;">${formatDate(variant.updatedAt || variant.createdAt || new Date())}</td>
+                        
+                        <!-- 9. Expiry Column (If not retail) -->
+                        ${!isRetail ? `<td style="font-size: 0.8rem; opacity: 0.5;">---</td>` : ''}
                     </tr>
                 `;
             });
@@ -312,8 +336,12 @@ function renderInventory(items) {
             // Add Variant Row
             rowHtml += `
                 <tr class="${colorGroupBaseClass} child-row tree-child-row tree-level-2 add-action-row" data-pid="${item.id}" data-action="add-variant" style="display: none; cursor: pointer;">
-                    <td colspan="${isRetail ? 7 : 8}" style="padding-${isAr ? 'right' : 'left'}: 3.5rem; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem;">
-                        <i class="fas fa-plus-circle"></i> ${isAr ? 'إضافة خامة/لون جديد' : 'Add new fabric/color'}
+                    <td style="opacity: 0.3; text-align: center;">${branchIcon}</td>
+                    <td colspan="${isRetail ? 7 : 8}" style="text-align: center; color: var(--luxury-emerald); font-weight: 700; font-size: 0.85rem;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fas fa-plus-circle"></i> 
+                            <span>${isAr ? 'إضافة خامة/لون جديد' : 'Add new fabric/color'}</span>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -323,8 +351,7 @@ function renderInventory(items) {
     }).join('');
 
     tableBody.innerHTML = tableRows + `
-        <tr style="height: 30px; border: none;"><td colspan="${isRetail ? 7 : 8}" style="border:none;"></td></tr>
-        <tr style="height: 30px; border: none;"><td colspan="${isRetail ? 7 : 8}" style="border:none;"></td></tr>
+        <tr class="spacer-row" style="height: 30px; border: none; pointer-events: none;"><td colspan="${isRetail ? 8 : 9}" style="border:none;"></td></tr>
     `;
 
     // ⚡ Attach Event Listeners to the newly created DOM elements
@@ -405,15 +432,22 @@ function attachInventoryListeners() {
 }
 
 function updateStats(items) {
+    const isRetail = (localStorage.getItem('systemMode') || 'restaurant') === 'retail';
     const lowStock = items.filter(i => i.quantity <= (i.min || 0)).length;
     const expiring = items.filter(i => checkIfNearExpiry(i.expiryDate)).length;
 
     const totalEl = document.getElementById('stat-total-items');
     const lowEl   = document.getElementById('stat-low-stock');
     const expEl   = document.getElementById('stat-near-expiry');
+    
     if (totalEl) totalEl.textContent = items.length;
     if (lowEl)   lowEl.textContent   = lowStock;
-    if (expEl)   expEl.textContent   = expiring;
+    if (expEl) {
+        expEl.textContent = expiring;
+        // 🛑 Hide card in retail mode
+        const card = expEl.closest('.stat-card');
+        if (card) card.style.display = isRetail ? 'none' : 'flex';
+    }
 }
 
 function checkIfNearExpiry(dateStr) {
@@ -441,11 +475,11 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                        <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.-]/g, '')">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                        <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ''}" placeholder="0" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.-]/g, '')">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -525,7 +559,7 @@ async function openAddModal(preExistingData = null) {
                         <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 5px; border: 1px solid #e2e8f0;">
                             <div>
                                 <strong style="color: var(--luxury-emerald);">${v.name}</strong> 
-                                <small style="opacity: 0.7;">Qty: ${v.quantity} | ${v.cost} EGP</small>
+                                <small style="opacity: 0.7;">Qty: ${v.quantity || 0} | Price: ${v.price || 0} EGP</small>
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button type="button" class="edit-v-btn" data-index="${i}" style="background:none; border:none; color:var(--luxury-emerald); cursor:pointer;"><i class="fas fa-edit"></i></button>
@@ -619,15 +653,15 @@ async function selectItem(item, preExistingData = null) {
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="swal-edit-qty" type="text" inputmode="decimal" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                        <input id="swal-edit-qty" type="text" inputmode="decimal" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.-]/g, '')">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="swal-edit-min" type="text" inputmode="decimal" class="swal2-input" value="${state.min}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                        <input id="swal-edit-min" type="text" inputmode="decimal" class="swal2-input" value="${state.min}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.-]/g, '')">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                        <input id="swal-edit-cost" type="text" inputmode="decimal" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, '')">
+                        <input id="swal-edit-cost" type="text" inputmode="decimal" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.-]/g, '')">
                     </div>
                     ${!isRetail ? `
                     <div>
@@ -642,7 +676,7 @@ async function selectItem(item, preExistingData = null) {
                         <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 5px; border: 1px solid #e2e8f0;">
                             <div>
                                 <strong style="color: var(--luxury-emerald);">${v.name || v.color}</strong> 
-                                <small style="opacity: 0.7;">(${v.size || '-'}) | Qty: ${v.quantity} | ${v.cost} EGP</small>
+                                <small style="opacity: 0.7;">(${v.size || '-'}) | Qty: ${v.quantity || 0} | Price: ${v.price || 0} EGP</small>
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button type="button" class="edit-v-btn" data-index="${i}" style="background:none; border:none; color:var(--luxury-emerald); cursor:pointer;"><i class="fas fa-edit"></i></button>

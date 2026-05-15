@@ -12,30 +12,21 @@
         document.documentElement.lang = currentLang;
         document.documentElement.dir = isAr ? 'rtl' : 'ltr';
 
-        // Add Global Styles
         const style = document.createElement('style');
         style.innerHTML = `
-            body {
-                margin: 0 !important;
-                background: #f8fafc !important;
-                min-height: 100vh !important;
-                padding: 0 !important;
-                font-family: 'Outfit', sans-serif !important;
-            }
-            
             /* ✨ Luxury Floating Home Button */
             .chic-home-btn {
                 position: fixed;
                 bottom: 30px;
-                \${isAr ? 'left: 30px' : 'right: 30px'};
+                ${isAr ? 'left: 30px' : 'right: 30px'};
                 width: 52px;
                 height: 52px;
                 background: #1e293b;
                 border-radius: 16px;
                 display: flex;
                 align-items: center;
-                justify-content: \${isAr ? 'flex-end' : 'flex-start'};
-                padding: \${isAr ? '0 14px' : '0 14px'};
+                justify-content: ${isAr ? 'flex-end' : 'flex-start'};
+                padding: ${isAr ? '0 14px' : '0 14px'};
                 color: white;
                 text-decoration: none;
                 box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
@@ -69,16 +60,16 @@
                 font-size: 0.9rem;
                 white-space: nowrap;
                 transition: all 0.4s ease;
-                transform: translateX(\${isAr ? '-20px' : '20px'});
+                transform: translateX(${isAr ? '-20px' : '20px'});
             }
 
             .chic-home-btn:hover .btn-text {
                 opacity: 1;
-                transform: translateX(\${isAr ? '25px' : '-25px'});
+                transform: translateX(${isAr ? '25px' : '-25px'});
             }
 
             .chic-home-btn:hover i {
-                transform: translateX(\${isAr ? '-45px' : '45px'});
+                transform: translateX(${isAr ? '-45px' : '45px'});
             }
         `;
         document.head.appendChild(style);
@@ -100,7 +91,7 @@
             homeBtn.className = 'chic-home-btn';
             homeBtn.innerHTML = `
                 <i class="fas fa-th-large"></i>
-                <span class="btn-text">\${isAr ? 'الرئيسية' : 'Home Hub'}</span>
+                <span class="btn-text">${isAr ? 'الرئيسية' : 'Home Hub'}</span>
             `;
             document.body.appendChild(homeBtn);
         }

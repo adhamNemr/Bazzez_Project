@@ -4,274 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="loc-title">إدارة المخزن - Vortex POS</title>
-    
-    <!-- 🎨 Google Fonts & FontAwesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="./js/auth-wrapper.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- 📄 Stylesheets -->
     <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./css/inventory.css">
-
-    <style>
-        /* 📊 Stats Row Styles */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.25rem; /* Reduced distance to toolbar */
-        }
-
-        .header-left, .header-right {
-            flex: 1;
-        }
-
-        .header-center {
-            display: flex;
-            justify-content: center;
-        }
-
-        .orders-table th, .orders-table td {
-            padding: 1.25rem 0.5rem;
-            text-align: center !important;
-            vertical-align: middle;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.25rem 1.5rem;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-            border: 1px solid var(--luxury-border);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            min-height: 140px;
-        }
-
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 4px;
-            background: var(--luxury-emerald);
-            opacity: 0.1;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.05);
-            border-color: var(--luxury-emerald);
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .stat-info span {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            margin-bottom: 0.2rem;
-        }
-
-        /* 🚀 Modal Specific Styles */
-        .swal-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .swal-field label {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .swal2-input {
-            height: 3.5rem !important;
-            border-radius: 12px !important;
-            border: 1px solid #e2e8f0 !important;
-            font-size: 0.95rem !important;
-            box-shadow: none !important;
-            background: #f8fafc !important;
-            margin: 0 !important;
-        }
-
-        .swal2-input:focus {
-            border-color: var(--luxury-emerald) !important;
-            background: white !important;
-        }
-        /* 🖨️ Export Styles */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            .only-print {
-                display: block !important;
-            }
-        }
-        .only-print {
-            display: none;
-        }
-        
-        /* 🎨 Force correct rendering for PDF capture */
-        .pdf-capture-mode {
-            direction: rtl !important;
-            text-align: right !important;
-        }
-
-        .pdf-report-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--luxury-emerald);
-        }
-        .pdf-report-header h1 {
-            color: var(--luxury-emerald);
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        .pdf-report-header p {
-            color: #64748b;
-            font-size: 0.9rem;
-        }
-    </style>
+    <script src="./js/auth-wrapper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
+<body class="luxury-workstation">
+    
+    <!-- 🏗️ Global Sidebar Container -->
     <div id="sidebar-container"></div>
-    <!-- 🏗️ Dynamic Premium Header -->
-    <div id="header-container" data-title="إدارة المخزن" data-icon="fa-warehouse"></div>
 
+    <div class="main-content">
+        <!-- 🏗️ Dynamic Premium Header -->
+        <div id="header-container" data-title="إدارة المخزن" data-icon="fa-warehouse"></div>
 
-    <div class="container" style="padding-top: 6rem;">
-        <div id="printable-content">
-            <!-- 📄 Professional PDF Header (Visible only in PDF) -->
-            <div class="pdf-report-header only-print">
-                <h1>Vortex Systems</h1>
-                <p id="pdf-report-title">تقرير جرد المخزن التفصيلي</p>
-                <p id="pdf-report-date"></p>
-            </div>
-
-            <!-- 📊 Luxury Stats Overview -->
-            <div class="stats-row">
+        <div class="container-fluid">
+            
+            <!-- 📊 Quick Stats Panel -->
+            <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon-wrapper" style="background: var(--luxury-emerald-light);">
-                        <i class="fas fa-layer-group" style="color: var(--luxury-emerald);"></i>
-                    </div>
-                    <div class="stat-content">
-                        <span id="loc-stat-total">Total Items</span>
+                    <div class="stat-info">
+                        <p id="loc-stat-total">إجمالي الأصناف</p>
                         <h3 id="stat-total-items">0</h3>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrapper" style="background: rgba(239, 68, 68, 0.08);">
-                        <i class="fas fa-arrow-trend-down" style="color: #ef4444;"></i>
+                    <div class="stat-icon-box emerald">
+                        <i class="fas fa-boxes"></i>
                     </div>
-                    <div class="stat-content">
-                        <span id="loc-stat-low">Low Stock</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p id="loc-stat-low">نواقص المخزن</p>
                         <h3 id="stat-low-stock">0</h3>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.08);">
-                        <i class="fas fa-clock-rotate-left" style="color: #f59e0b;"></i>
+                    <div class="stat-icon-box red">
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
-                    <div class="stat-content">
-                        <span id="loc-stat-expiry">Expiring Soon</span>
+                </div>
+
+                <div class="stat-card" id="expiry-card">
+                    <div class="stat-info">
+                        <p id="loc-stat-expiry">قرب الانتهاء</p>
                         <h3 id="stat-near-expiry">0</h3>
                     </div>
+                    <div class="stat-icon-box orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
                 </div>
+                <script>
+                    if (localStorage.getItem('systemMode') === 'retail') {
+                        document.getElementById('expiry-card').style.display = 'none';
+                    }
+                </script>
             </div>
 
-            <!-- ✨ Luxury Toolbar (Hidden in PDF) -->
-            <div class="luxury-toolbar no-print">
-                <div class="toolbar-left">
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input 
-                            type="text" 
-                            id="search-input" 
-                            placeholder="Search items..." 
-                            onkeyup="applyFilter()"
-                        />
-                    </div>
-                    <div class="filter-box">
-                        <select id="filter-option" onchange="applyFilter()">
-                            <option value="all" id="loc-filter-all">All Items</option>
-                            <option value="low-stock" id="loc-filter-low">Low Stock</option>
-                            <option value="near-expiry" id="loc-filter-expiry">Near Expiry</option>
-                        </select>
-                    </div>
+            <!-- ✨ Inventory Toolbar -->
+            <div class="inventory-toolbar no-print">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="ابحث عن صنف..." onkeyup="applyFilter()">
                 </div>
-                <div class="toolbar-right">
+                
+                <div class="toolbar-actions">
+                    <select id="filter-option" class="luxury-select" onchange="applyFilter()">
+                        <option value="all" id="loc-filter-all">كل الأصناف</option>
+                        <option value="low-stock" id="loc-filter-low">النواقص</option>
+                        <option value="near-expiry" id="loc-filter-expiry">قرب الانتهاء</option>
+                    </select>
+
                     <button class="btn-add-item" onclick="openAddModal()">
-                        <i class="fas fa-plus-circle"></i>
-                        <span id="loc-btn-add">Add New Item</span>
+                        <i class="fas fa-plus"></i>
+                        <span id="loc-btn-add">إضافة صنف جديد</span>
                     </button>
                 </div>
             </div>
 
             <!-- 📦 Inventory Table Card -->
-            <div class="products-card">
+            <div class="table-card">
                 <div class="table-container">
                     <table class="orders-table">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)" id="loc-id">ID</th>
-                                <th onclick="sortTable(1)" id="loc-name">Name</th>
-                                <th onclick="sortTable(2)" id="loc-qty">Qty (KG/Unit)</th>
-                                <th onclick="sortTable(3)" id="loc-min">Min</th>
-                                <th onclick="sortTable(4)" id="loc-cost">التكلفة</th>
-                                <th style="color: #008060;" id="loc-price">سعر البيع</th>
-                                <th onclick="sortTable(5)" id="loc-total">Total Value</th>
-                                <th onclick="sortTable(6)" id="loc-added">Added</th>
-                                <th onclick="sortTable(7)" id="loc-expiry">Expiry</th>
+                                <th id="loc-id">ID</th>
+                                <th id="loc-name">اسم الصنف</th>
+                                <th id="loc-qty">الكمية</th>
+                                <th id="loc-min">الحد الأدنى</th>
+                                <th id="loc-cost">التكلفة</th>
+                                <th id="loc-price" style="color: var(--luxury-emerald);">سعر البيع</th>
+                                <th id="loc-total">إجمالي القيمة</th>
+                                <th id="loc-added">آخر تحديث</th>
+                        <th id="loc-expiry" class="expiry-col">تاريخ الصلاحية</th>
+                        <script>
+                            if (localStorage.getItem('systemMode') === 'retail') {
+                                document.getElementById('loc-expiry').style.display = 'none';
+                                document.getElementById('loc-filter-expiry').style.display = 'none';
+                            }
+                        </script>
                             </tr>
                         </thead>
-                        <tbody id="product-table">
-                            <!-- Data populated via JS -->
-                        </tbody>
+                        <tbody id="product-table"></tbody>
                     </table>
                 </div>
             </div>
-        </div>
 
-        <!-- 📊 Footer Actions -->
-        <div class="footer">
-            <button onclick="exportToExcel()" id="loc-btn-excel" class="btn-excel-full">
-                <i class="fas fa-file-excel"></i>
-                <span id="loc-excel-text">Export Excel</span>
-            </button>
+            <!-- 📥 Export Footer -->
+            <div class="page-footer no-print">
+                <button onclick="exportToExcel()" class="btn-export-excel">
+                    <span id="loc-excel-text">تصدير إكسل</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- 📚 Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="./js/auth.js"></script>
-    <script src="./js/header-loader.js"></script>
+    <!-- 📜 Scripts -->
     <script src="./js/sidebar-loader.js"></script>
+    <script src="./js/header-loader.js"></script>
     <script src="./js/inventory.js"></script>
 </body>
 </html>

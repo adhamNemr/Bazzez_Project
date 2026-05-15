@@ -4,75 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>التقرير الشهري</title>
-    <style>
-        body {
-            font-family: monospace;
-            direction: rtl;
-            text-align: center;
-            padding: 10px;
-        }
-        .report-container {
-            width: 300px;
-            margin: auto;
-            text-align: right;
-            font-size: 14px;
-            border: 1px dashed black;
-            padding: 10px;
-            background: white;
-        }
-        h1 {
-            font-size: 16px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        td {
-            padding: 5px 0;
-            border-bottom: 1px dashed black;
-            font-size: 14px;
-        }
-        .total {
-            font-weight: bold;
-        }
-        .center {
-            text-align: center;
-        }
-        .print-btn {
-            margin-top: 10px;
-            padding: 5px 15px;
-            font-size: 14px;
-            background: black;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-        .print-btn:hover {
-            background: gray;
-        }
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            .report-container, .report-container * {
-                visibility: visible;
-            }
-            .report-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                border: none;
-            }
-            .print-btn {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="./css/monthly_report.css">
     <script src="./js/auth-wrapper.js"></script>
 </head>
 <body>

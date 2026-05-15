@@ -253,11 +253,11 @@ function showCategory(category) {
         card.className = 'menu-item animate-fade-in';
         card.onclick = () => {
             if (isSuperSimple) {
-                addVariantToOrder(product.name, variants[0].price, variants[0].name || variants[0].color, sizes[0]);
+                addVariantToOrder(product.id, product.name, variants[0].price, variants[0].name || variants[0].color, sizes[0]);
             } else if (hasVariants) {
                 showVariantModal(product);
             } else {
-                addToOrder(product.name, product.price);
+                addToOrder(product.id, product.name, product.price);
             }
         };
         card.innerHTML = `<h3>${product.name}</h3><p>${parseFloat(product.price).toFixed(2)} <small>EGP</small></p>`;
@@ -545,10 +545,10 @@ function handleSizeClick(size) {
         return;
     }
 
-    addVariantToOrder(currentProductForModal.name, selectedPriceForModal, selectedFabricForModal, size);
+    addVariantToOrder(currentProductForModal.id, currentProductForModal.name, selectedPriceForModal, selectedFabricForModal, size);
 }
 
-function addVariantToOrder(name, price, color, size) {
+function addVariantToOrder(id, name, price, color, size) {
     // 🧠 Automatic Special Size Surcharge (+50 EGP)
     let finalPrice = parseFloat(price);
     let finalSizeLabel = size || '';
@@ -575,8 +575,11 @@ function addVariantToOrder(name, price, color, size) {
     
     if (!currentOrder[uniqueKey]) {
         currentOrder[uniqueKey] = { 
+            id: id,
             baseName: name,
             variant: variantLabel,
+            color: color || '',
+            size: finalSizeLabel || '',
             price: finalPrice, 
             quantity: 1, 
             comment: [] 
@@ -590,9 +593,9 @@ function addVariantToOrder(name, price, color, size) {
 }
 
 // --- 3. Order Logic ---
-function addToOrder(name, price) {
+function addToOrder(id, name, price) {
     if (!currentOrder[name]) {
-        currentOrder[name] = { price: parseFloat(price), quantity: 1, comment: [] };
+        currentOrder[name] = { id: id, price: parseFloat(price), quantity: 1, comment: [] };
     } else {
         currentOrder[name].quantity++;
     }
@@ -879,8 +882,11 @@ async function submitOrder() {
     }
 
     const orderDetails = items.map(key => ({
+        productId: currentOrder[key].id,
         name: currentOrder[key].baseName || key,
         variant: currentOrder[key].variant || null,
+        color: currentOrder[key].color || null,
+        size: currentOrder[key].size || null,
         price: currentOrder[key].price,
         quantity: currentOrder[key].quantity,
         comments: currentOrder[key].comment

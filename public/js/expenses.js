@@ -7,6 +7,7 @@ let businessDate = '';
 let allExpenses = [];
 let activeCategory = 'all';
 let editingId = null;
+let fp = null;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,21 @@ function getToken() {
     return localStorage.getItem('token') || '';
 }
 
+const showExpenseToast = (icon, title, timer = 2000) => {
+    Swal.fire({
+        icon,
+        title,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer,
+        timerProgressBar: true,
+        customClass: {
+            popup: 'premium-expense-toast'
+        }
+    });
+};
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -52,19 +68,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // 📅 Initialize Flatpickr for Date Filter
-    const dateInput = document.getElementById('date-filter');
-    if (dateInput) {
-        flatpickr(dateInput, {
-            locale: "ar",
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d / m / Y",
-            disableMobile: "true",
-            defaultDate: dateInput.value || "today",
-            onChange: (selectedDates, dateStr) => {
-                fetchExpenses(dateStr);
+    // Date filter change
+    fp = flatpickr("#date-filter", {
+        locale: "ar",
+        dateFormat: "Y-m-d",
+        disableMobile: true,
+        position: "below left",
+        onChange: function(selectedDates, dateStr, instance) {
+            fetchExpenses(dateStr);
+            const btnClear = document.getElementById('btn-clear-date');
+            if (btnClear) {
+                btnClear.style.display = (dateStr && dateStr !== businessDate) ? 'inline-block' : 'none';
             }
+        }
+    });
+
+    const btnClearDate = document.getElementById('btn-clear-date');
+    if (btnClearDate) {
+        btnClearDate.addEventListener('click', () => {
+            resetToBusinessDate();
         });
     }
 
@@ -129,12 +151,18 @@ async function fetchExpenses(date = '') {
         
         // Use filteredDate (what we are actually seeing) for UI
         const viewDate = stats.filteredDate;
-        // Update date filter UI
         const dateInput = document.getElementById('date-filter');
-        if (dateInput && dateInput._flatpickr) {
-            dateInput._flatpickr.setDate(viewDate, false);
-        } else if (dateInput) {
-            dateInput.value = viewDate;
+        if (dateInput) {
+            if (fp) {
+                fp.setDate(viewDate, false);
+            } else {
+                dateInput.value = viewDate;
+            }
+        }
+        
+        const btnClear = document.getElementById('btn-clear-date');
+        if (btnClear) {
+            btnClear.style.display = (viewDate && viewDate !== businessDate) ? 'inline-block' : 'none';
         }
 
         const dateLabel = document.getElementById('business-date-label');
@@ -211,17 +239,10 @@ async function handleSubmit(e) {
 
         closeModal();
         await fetchExpenses(document.getElementById('date-filter').value);
-
-        Swal.fire({
-            icon: 'success',
-            title: editingId ? 'تم التعديل بنجاح' : 'تم التسجيل بنجاح',
-            text: editingId ? 'تم تحديث بيانات المصروف' : 'تم إضافة المصروف إلى السجل',
-            timer: 2000,
-            showConfirmButton: false
-        });
+        showExpenseToast('success', editingId ? 'تم التعديل ✅' : 'تم التسجيل ✅');
 
     } catch (err) {
-        Swal.fire({ icon: 'error', title: 'خطأ', text: err.message });
+        showExpenseToast('error', err.message, 3000);
     } finally {
         submitBtn.disabled = false;
         document.getElementById('submit-btn-text').textContent = editingId ? 'حفظ التعديلات' : 'تسجيل المصروف';
@@ -251,9 +272,9 @@ async function deleteExpense(id, description) {
         if (!res.ok) throw new Error(data.message);
 
         await fetchExpenses(document.getElementById('date-filter').value);
-        Swal.fire({ icon: 'success', title: 'تم الحذف', timer: 1500, showConfirmButton: false });
+        showExpenseToast('success', 'تم الحذف بنجاح');
     } catch (err) {
-        Swal.fire({ icon: 'error', title: 'خطأ', text: err.message });
+        showExpenseToast('error', err.message, 3000);
     }
 }
 
@@ -400,7 +421,13 @@ function closeModal() {
 }
 
 function resetToBusinessDate() {
-    document.getElementById('date-filter').value = businessDate;
+    if (fp) {
+        fp.setDate(businessDate, false);
+    } else {
+        document.getElementById('date-filter').value = businessDate;
+    }
+    const btnClear = document.getElementById('btn-clear-date');
+    if (btnClear) btnClear.style.display = 'none';
     fetchExpenses(businessDate);
 }
 
@@ -410,7 +437,7 @@ function flashError(fieldId, message) {
     const el = document.getElementById(fieldId);
     el.classList.add('error');
     el.focus();
-    Swal.fire({ icon: 'warning', title: 'تحقق من البيانات', text: message, timer: 2500, showConfirmButton: false });
+    showExpenseToast('warning', message, 2500);
     el.addEventListener('input', () => el.classList.remove('error'), { once: true });
 }
 

@@ -190,9 +190,27 @@ exports.createOrder = async (req, res) => {
                         if (invItem && invItem.variants) {
                             let vs = typeof invItem.variants === 'string' ? JSON.parse(invItem.variants) : invItem.variants;
                             vs = vs.map(v => {
-                                const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
-                                return (vLabel === item.variant || (vLabel && item.variant.startsWith(vLabel + ' '))) 
-                                    ? { ...v, quantity: (v.quantity || 0) - item.quantity } : v;
+                                const vColor = (v.color || v.name || '').trim();
+                                const vSize = (v.size || '').trim();
+                                
+                                // 🎯 Precise Matching: If frontend sends color/size separately
+                                if (item.color !== undefined) {
+                                    const itemColor = (item.color || '').trim();
+                                    const itemSize = (item.size || '').trim();
+                                    
+                                    // Match if color matches AND (size matches OR variant has no size)
+                                    if (vColor === itemColor && (vSize === itemSize || !vSize)) {
+                                        return { ...v, quantity: (v.quantity || 0) - item.quantity };
+                                    }
+                                    return v;
+                                }
+
+                                // 🔄 Fallback: String-based matching for safety
+                                const vLabel = `${vColor} ${vSize}`.trim();
+                                if (vLabel === item.variant || (vLabel && item.variant && item.variant.startsWith(vLabel + ' '))) {
+                                    return { ...v, quantity: (v.quantity || 0) - item.quantity };
+                                }
+                                return v;
                             });
                             await invItem.update({ variants: vs });
                         }

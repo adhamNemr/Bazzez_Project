@@ -1,108 +1,634 @@
+/* Layout specifics - inherits background and fonts from common.css */
+/* body[dir="rtl"], html[dir="rtl"] body {
+    padding-left: 0;
+    padding-right: 16.25rem;
+}
+
+@media (max-width: 992px) {
+    body[dir="rtl"], html[dir="rtl"] body { padding-right: 0 !important; }
+    body[dir="ltr"], html[dir="ltr"] body { padding-left: 0 !important; }
+    .order-details-sidebar { width: 100%; max-width: 100%; }
+} */
 /* 
- * Vortex POS - Order Management Styles
- * Modern Minimalist Professional Theme
- */
+body[dir="ltr"], html[dir="ltr"] body {
+    padding-right: 0;
+    padding-left: 16.25rem;
+} */
 
-.container {
-    max-width: 1400px;
-    padding: 2rem;
+/* 🏔️ Fix Header to match Inventory EXACTLY */
+#header-container .main-brand-header {
+    background: white;
+    padding: 0.75rem 2rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+    border-radius: 0;
+}
+
+#header-container .context-pill {
+    background: var(--luxury-emerald-light, #f0fdf4);
+    color: var(--luxury-emerald, #008060);
+    border: 1px solid rgba(0, 128, 96, 0.1);
+}
+
+#header-container .context-pill i {
+    color: var(--luxury-emerald, #008060);
+}
+
+.main-content {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.orders-page {
+    padding:1rem 2rem;
+}
+
+/* 🧪 Skeleton Loading Animation */
+@keyframes skeleton-loading {
+    0% { background-color: #f1f5f9; }
+    100% { background-color: #e2e8f0; }
+}
+
+.skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    animation: animate-fade-in 0.4s ease-out;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
 }
 
-.header {
-    text-align: left;
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
 }
 
-.header h1 {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: var(--text-main);
-    letter-spacing: -0.025em;
+/* Luxury Card Style */
+.orders-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    overflow: hidden;
 }
 
-/* 🔹 Toolbar (Action Panel) */
-.toolbar {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--bg-surface-light);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem 2rem;
-    box-shadow: var(--shadow-md);
+/* Tabs */
+.orders-tabs {
+    display: flex;
+    justify-content: space-between !important;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 0 1rem;
+    background: transparent;
 }
 
-#add-product-form {
+.tabs-list {
+    display: flex;
+    gap: 0;
+}
+
+.tab-item {
+    padding: 1.25rem 1.25rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-count {
+    background: rgba(0, 128, 96, 0.08);
+    color: var(--primary);
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    min-width: 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.tab-item.active .tab-count {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.tab-item:hover {
+    color: var(--primary);
+}
+
+.tab-item.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.btn-refresh-inline {
+    background: white;
+    border: 1px solid rgba(0, 128, 96, 0.15);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: auto;
+}
+
+.btn-refresh-inline:hover {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);
+    transform: translateY(-1px);
+}
+
+/* 🏷️ Luxury Status Badges */
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-completed { 
+    background: rgba(0, 128, 96, 0.08); 
+    color: #008060;
+    border: 1px solid rgba(0, 128, 96, 0.15);
+}
+
+.status-pending { 
+    background: rgba(245, 158, 11, 0.08); 
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.status-cancelled { 
+    background: rgba(220, 38, 38, 0.08); 
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+/* 📊 Table Row Interaction */
+.orders-table tbody tr {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.orders-table tbody tr:hover {
+    background: rgba(0, 128, 96, 0.02) !important;
+}
+
+/* Filter Bar Improvement */
+.filter-bar {
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
-    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
 }
 
-#add-product-form input {
+.filter-stats {
+    display: flex;
+    gap: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.stat-item i {
+    color: var(--primary);
+    font-size: 0.8rem;
+}
+
+.search-container {
+    position: relative;
     flex: 1;
-    min-width: 150px;
+    max-width: 550px; /* Slightly wider for better balance */
 }
 
-/* 🔹 Table Styles */
-.list {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--bg-surface-light);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
+.search-input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: white;
+    transition: all 0.3s ease;
 }
 
-table {
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(0, 128, 96, 0.1);
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+/* Table Styling Refined */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 20px;
+}
+
+.orders-table {
     width: 100%;
     border-collapse: collapse;
+    text-align: center; /* Centered everything */
+    white-space: nowrap;
 }
 
-th {
-    background-color: var(--bg-surface-light);
-    padding: 1.25rem 1.5rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.orders-table th {
+    padding: 1.25rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: var(--text-muted);
-    text-align: left;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+    background: #fafbfc;
+    text-align: center;
 }
 
-td {
-    padding: 1.25rem 1.5rem;
-    border-top: 1px solid var(--bg-surface-light);
+.orders-table td {
+    padding: 1.25rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+    text-align: center;
+}
+
+.order-id {
+    background: rgba(0, 128, 96, 0.05);
+    color: var(--primary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-family: monospace;
+    font-weight: 800;
+    font-size: 0.95rem;
+    border: 1px dashed rgba(0, 128, 96, 0.2);
+    display: inline-block;
+}
+
+.order-date-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    min-height: 40px;
+}
+
+.customer-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.date-main { font-weight: 700; color: var(--text-main); }
+.date-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+.orders-table tbody tr:hover {
+    background-color: #f8fafc;
+    transform: scale(1.002);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+
+.badge {
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge-success { background: #e0f2ec; color: var(--primary); }
+.badge-warning { background: #fef3c7; color: #b45309; }
+.badge-critical { background: #fee2e2; color: #b91c1c; }
+
+.order-id {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 1.05rem;
+}
+
+/* Modal / Sidebar Details */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 2000;
+}
+
+/* ✨ Luxury Sidebar Redesign ✨ */
+.order-details-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 30rem;
+    max-width: 95vw;
+    height: 100%;
+    background: #f8fafc; /* Subtle background color */
+    box-shadow: -1.25rem 0 3.125rem rgba(0,0,0,0.15);
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2001;
+    display: none; /* 🚫 Hidden by default to prevent flickering */
+    flex-direction: column;
+    border-left: 0.0625rem solid rgba(255,255,255,0.2);
+}
+
+.sidebar-header {
+    padding: 1.8rem 1.5rem;
+    background: white;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h3 {
+    font-size: 1.4rem;
+    font-weight: 800;
     color: var(--text-main);
+    letter-spacing: -0.5px;
+}
+
+.close-sidebar-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-muted);
+}
+
+.close-sidebar-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* 📦 Sidebar Info Cards */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    border: 1px solid rgba(0,0,0,0.03);
+}
+
+.info-card h4 {
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.item-row:last-child { border-bottom: none; }
+
+.item-main { display: flex; align-items: center; gap: 0.75rem; }
+.item-qty {
+    background: #f1f5f9;
+    color: var(--primary);
+    font-weight: 800;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.customer-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.customer-detail i {
+    width: 2rem;
+    height: 2rem;
+    background: #f0fdf4;
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+/* 🧾 Soft Receipt Style Totals */
+.receipt-card {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 2px dashed #e2e8f0;
+    position: relative;
+}
+
+.receipt-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.receipt-divider {
+    border-top: 2px dashed #e2e8f0;
+    margin: 1rem 0;
+}
+
+.receipt-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: var(--text-main);
+}
+
+.total-label {
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.sidebar-footer {
+    padding: 1.5rem;
+    background: white;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    height: 52px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
     font-size: 0.95rem;
 }
 
-tr:hover td {
-    background-color: rgba(255, 255, 255, 0.02);
+.btn-cancel { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.btn-cancel:hover { background: #ef4444; color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239, 68, 68, 0.2); }
+.btn-print { background: var(--primary); color: white; border: none; }
+.btn-print:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 128, 96, 0.2); }
+
+/* 📄 Pagination Styles */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: white;
+    border-top: 1px solid rgba(0,0,0,0.05);
 }
 
-/* 🔹 Order Status & Actions */
-.cancel-button {
-    background-color: var(--error);
-    color: var(--text-inverse);
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius-md);
-    font-weight: 600;
+.pagination-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid var(--luxury-border, rgba(0,0,0,0.1));
+    background: white;
+    color: var(--luxury-slate, #1e293b);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.cancel-button:hover {
-    background-color: #dc2626;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+.pagination-btn:hover:not(:disabled) {
+    background: var(--luxury-emerald-light, #f0fdf4);
+    color: var(--luxury-emerald, #008060);
+    border-color: var(--luxury-emerald, #008060);
+    transform: translateY(-2px);
 }
 
-/* Cancelled Order Styling */
-tr.cancelled {
-    opacity: 0.5;
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
-/* 🔹 Responsive */
-@media (max-width: 1024px) {
-    .toolbar #add-product-form {
-        flex-direction: column;
-        align-items: stretch;
-    }
+.pagination-info {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #64748b;
 }
+
+/* 📊 Excel Full Width Button */
+.btn-excel-full {
+    width: 100%;
+    padding: 1.25rem;
+    border-radius: 20px;
+    border: none;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s;
+    color: white;
+    background: var(--luxury-emerald, #008060);
+    font-size: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 128, 96, 0.15);
+}
+
+.btn-excel-full:hover {
+    transform: translateY(-4px);
+    filter: brightness(1.1);
+    box-shadow: 0 12px 25px rgba(0, 128, 96, 0.25);
+}
+
+/* Ensure SweetAlert is always above our sidebar */
+.swal2-container { z-index: 9999 !important; }
