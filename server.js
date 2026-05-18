@@ -6,6 +6,9 @@ const helmet = require("helmet");
 const errorHandler = require("./middleware/errorHandler");
 const sequelize = require("./config/db");
 const { startAutoBackup } = require("./utils/backup");
+const syncService = require('./services/syncService');
+const { Op } = require('sequelize');
+const bcrypt = require('bcryptjs');
 
 // ✅ Route Imports
 const userRoutes = require("./routes/users");
@@ -28,6 +31,7 @@ const commentRoutes = require('./routes/comment');
 const expenseRoutes = require("./routes/expenses");
 const settingsRoutes = require("./routes/settings");
 const merchantsRoutes = require("./routes/merchants");
+const syncRoutes = require("./routes/sync");
 
 const sanitizeInput = require("./middleware/sanitize");
 const rateLimiter = require("./middleware/rateLimiter");
@@ -39,17 +43,19 @@ app.use(helmet({
   contentSecurityPolicy: false,
 }));
 app.use(cors());
-app.use(bodyParser.json({ limit: '1mb' })); // Increased limit for orderDetails
-app.use(sanitizeInput); // Global XSS Protection
+app.use(bodyParser.json({ limit: '1mb' }));
+app.use(sanitizeInput);
 
-// 🚦 Global API Rate Limiter (100 requests per minute)
+// 🚦 Global API Rate Limiter
 const apiLimiter = rateLimiter({ windowMinutes: 1, maxRequests: 100, keyPrefix: 'api_global' });
 app.use("/api", apiLimiter);
 
-// ✅ Static file serving
-app.use(express.static(path.join(__dirname, "public")));
+// ✅ Static file serving - Robust path resolution for Electron/Portable
+const publicPath = path.resolve(__dirname, "public");
+app.use(express.static(publicPath));
+console.log(`📂 Serving static files from: ${publicPath}`);
 
-// ✅ API Routes (prefixed with /api to avoid conflicts)
+// ✅ API Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
@@ -68,6 +74,7 @@ app.use('/comments', commentRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/merchants", merchantsRoutes);
+app.use("/api/sync", syncRoutes);
 
 // ✅ Auth & Login
 app.use("/login", loginRoutes);
@@ -78,75 +85,55 @@ app.use("/", indexRoutes);
 // ✅ Error Handler (must be last)
 app.use(errorHandler);
 
-const JWT_SECRET = 'mySuperSecretKey123';
-console.log("🔑 JWT Secret Loaded");
+const { Setting, SyncQueue, User } = require("./models");
 
-const { Setting } = require("./models");
+// ✅ Server Startup Logic
+const startServer = () => {
+  if (process.env.NODE_ENV === 'test') return;
 
+  const PORT = process.env.PORT || 8083;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    
+    // ✅ Start Sync Service (Offline-First Engine)
+    syncService.start();
+
+    // 💾 Start Auto Backup (Every 12 hours)
+    startAutoBackup(12);
+
+    // 🕒 Auto Shift Check
+    const { checkAndPerformAutoShift } = require('./controllers/closingController');
+    checkAndPerformAutoShift();
+    setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
+
+    // ✅ Sync Queue Cleanup (Every 24 hours)
+    setInterval(async () => {
+        try {
+            const deletedCount = await SyncQueue.destroy({ 
+                where: { 
+                    status: 'done', 
+                    createdAt: { [Op.lt]: new Date(Date.now() - 86400000) } 
+                }
+            });
+            if (deletedCount > 0) console.log(`🧹 Cleaned up ${deletedCount} synced items from queue.`);
+        } catch (err) {
+            console.error('❌ Sync Queue cleanup error:', err.message);
+        }
+    }, 86400000);
+  });
+};
+
+// ✅ Database Initialization
 if (process.env.NODE_ENV !== 'test') {
-  sequelize
-    .authenticate()
+  sequelize.authenticate()
     .then(async () => {
-      console.log("✅ Connected to the database successfully!");
+      console.log("✅ Local SQLite Database Connected!");
       try {
-        await sequelize.sync(); // Sync all models for Supabase fresh start
-        
-        // ✅ Check and add 'variants' column to 'inventory' table if missing (DB Agnostic)
-        const tableInfo = await sequelize.getQueryInterface().describeTable('inventory');
-        if (!tableInfo.variants) {
-          await sequelize.query('ALTER TABLE inventory ADD COLUMN variants JSON NULL');
-          console.log("✅ Column 'variants' added to 'inventory' table.");
-        }
+        // Sync models to ensure local schema is up to date
+        await sequelize.sync(); 
+        console.log("✅ Database schema synchronized.");
 
-        // ✅ Ensure 'audit_logs' table exists and has 'meta' column
-        try {
-          const auditLogsTableInfo = await sequelize.getQueryInterface().describeTable('audit_logs');
-          if (!auditLogsTableInfo.meta) {
-            await sequelize.query('ALTER TABLE audit_logs ADD COLUMN meta JSONB NULL');
-            console.log("✅ Column 'meta' added to 'audit_logs' table.");
-          }
-        } catch (auditErr) {
-          console.log("⚠️ audit_logs table check failed, attempting to sync...");
-          await sequelize.sync(); 
-        }
-
-        // ✅ Ensure 'rate_limit_logs' table exists (PostgreSQL specific)
-        try {
-          await sequelize.query(`
-            CREATE TABLE IF NOT EXISTS rate_limit_logs (
-              "key" TEXT NOT NULL,
-              "windowStart" TIMESTAMP WITH TIME ZONE NOT NULL,
-              "count" INTEGER DEFAULT 1,
-              "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-              "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL,
-              PRIMARY KEY ("key", "windowStart")
-            )
-          `);
-          console.log("✅ Table 'rate_limit_logs' verified/created.");
-        } catch (rateErr) {
-          console.error("⚠️ Failed to ensure rate_limit_logs table:", rateErr.message);
-        }
-
-        // ✅ Ensure Performance Indexes exist in PostgreSQL
-        console.log("⚡ Ensuring Database Indexes exist for optimal performance...");
-        try {
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_businessDate ON "Orders" ("businessDate")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_createdAt ON "Orders" ("createdAt")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_orders_isCancelled ON "Orders" ("isCancelled")`);
-          
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_merchantId ON merchant_transactions ("merchantId")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_merchantTrans_date ON merchant_transactions ("date")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_recipes_sandwich ON recipes ("sandwich")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_qty ON inventory ("quantity")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_min ON inventory ("min")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_inventory_expiry ON inventory ("expiryDate")`);
-          await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses ("date")`);
-          console.log("✅ Performance Indexes applied successfully.");
-        } catch (indexErr) {
-          console.error("⚠️ Note: Could not create indexes automatically. They might already exist.", indexErr.message);
-        }
-
-        // ✅ Seed Default Settings if empty
+        // Seed Default Settings if empty
         const settingsCount = await Setting.count();
         if (settingsCount === 0) {
           console.log("🌱 Seeding default settings...");
@@ -159,7 +146,22 @@ if (process.env.NODE_ENV !== 'test') {
           console.log("✅ Default settings seeded.");
         }
 
-        console.log("✅ Settings table synced");
+        // 👤 Seed Default Admin if empty
+        const userCount = await User.count();
+        if (userCount === 0) {
+          console.log("👤 Seeding default admin user...");
+          const hashedPassword = await bcrypt.hash('admin123', 10);
+          await User.create({
+            username: 'admin',
+            password: hashedPassword,
+            role: 'manager'
+          });
+          console.log("✅ Default admin seeded (admin / admin123).");
+        }
+
+        // 🚀 Start the server ONLY after DB is ready
+        startServer();
+
       } catch (err) {
         console.error("⚠️ Error during DB initialization:", err);
       }
@@ -167,19 +169,14 @@ if (process.env.NODE_ENV !== 'test') {
     .catch((err) => console.error("⚠️ Error connecting to the database:", err));
 }
 
-if (process.env.NODE_ENV !== 'test') {
-  const PORT = process.env.PORT || 8083;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-    
-    // 💾 Start Auto Backup (Runs every 12 hours)
-    startAutoBackup(12);
+// ✅ Clean Shutdown
+const gracefulShutdown = () => {
+    console.log('🛑 Shutting down gracefully...');
+    syncService.stop();
+    process.exit(0);
+};
 
-    // 🕒 Start Auto Shift Check (Runs on startup and every 1 hour)
-    const { checkAndPerformAutoShift } = require('./controllers/closingController');
-    checkAndPerformAutoShift(); // Initial check
-    setInterval(checkAndPerformAutoShift, 60 * 60 * 1000); 
-  });
-}
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 module.exports = app;

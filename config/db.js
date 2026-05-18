@@ -1,31 +1,25 @@
 const { Sequelize } = require('sequelize');
 require("dotenv").config();
 
-const isTest = process.env.NODE_ENV === 'test';
+// 🗄️ Vortex POS - Standard SQLite Configuration
+const sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: process.env.DB_PATH || './database.sqlite',
+    logging: false,
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    }
+});
 
-const sequelize = isTest 
-  ? new Sequelize('sqlite::memory:', { logging: false })
-  : new Sequelize(process.env.DATABASE_URL || {
-      database: process.env.DB_NAME,
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      host: process.env.DB_HOST,
-      dialect: 'postgres',
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      },
-      logging: false
-    });
-
-if (!isTest) {
-  sequelize.authenticate()
-    .then(() => console.log('✅ Connected to Supabase Pooler!'))
+sequelize.authenticate()
+    .then(() => {
+        console.log('✅ Local Database Ready (Standard Mode)');
+    })
     .catch(err => {
-        console.error('❌ Connection Error:', err.message);
+        console.error('❌ Local DB Error:', err.message);
     });
-}
 
 module.exports = sequelize;

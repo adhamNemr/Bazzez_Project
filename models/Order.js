@@ -67,6 +67,14 @@ module.exports = (sequelize, DataTypes) => {
         dailySerial: {
             type: DataTypes.INTEGER,
             allowNull: true
+        },
+        sync_status: { 
+            type: DataTypes.STRING(20), 
+            defaultValue: 'pending' 
+        },
+        local_id: { 
+            type: DataTypes.UUID, 
+            defaultValue: DataTypes.UUIDV4 
         }
     }, {
         timestamps: false,  // ✅ تعطيل `createdAt` و `updatedAt` لأن `updatedAt` غير موجود

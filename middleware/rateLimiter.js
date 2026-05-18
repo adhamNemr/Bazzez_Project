@@ -1,57 +1,54 @@
-const { sequelize } = require('../models');
-
 /**
- * 🚦 Optimized Rate Limiter
- * Uses database UPSERT (ON CONFLICT) for maximum performance and atomicity.
- * Prevents race conditions and minimizes database round-trips.
+ * 🚦 In-Memory Rate Limiter
+ * Switched from Database to Memory to eliminate 'SQLITE_BUSY' errors.
+ * Memory is preferred for transient data like rate limits in a POS environment.
  */
-const rateLimiter = (options = {}) => {
-    const { windowMinutes = 1, maxRequests = 10, keyPrefix = 'rl' } = options;
+const memoryStore = new Map();
 
-    return async (req, res, next) => {
+const rateLimiter = (options = {}) => {
+    const { windowMinutes = 1, maxRequests = 100, keyPrefix = 'rl' } = options;
+
+    // Cleanup memory every window period to prevent memory leaks
+    setInterval(() => {
+        const now = Date.now();
+        for (const [key, record] of memoryStore.entries()) {
+            if (now > record.resetTime) {
+                memoryStore.delete(key);
+            }
+        }
+    }, windowMinutes * 60000);
+
+    return (req, res, next) => {
         if (process.env.NODE_ENV === 'test') return next();
+        
         const ip = req.ip || req.connection.remoteAddress;
         const key = `${keyPrefix}:${req.path}:${ip}`;
-        
-        // Calculate the start of the current time window
-        const windowStart = new Date(
-            Math.floor(Date.now() / (windowMinutes * 60000)) * (windowMinutes * 60000)
-        );
+        const now = Date.now();
+        const windowMs = windowMinutes * 60000;
 
-        try {
-            /**
-             * ⚡ UPSERT Pattern (PostgreSQL / SQLite compatible)
-             * This single query handles both creation and incrementing.
-             */
-            const query = `
-                INSERT INTO rate_limit_logs ("key", "windowStart", "count", "createdAt", "updatedAt")
-                VALUES (:key, :windowStart, 1, NOW(), NOW())
-                ON CONFLICT ("key", "windowStart") 
-                DO UPDATE SET "count" = rate_limit_logs."count" + 1, "updatedAt" = NOW()
-                RETURNING "count";
-            `;
+        let record = memoryStore.get(key);
 
-            const [results] = await sequelize.query(query, {
-                replacements: { key, windowStart },
-                type: sequelize.QueryTypes.SELECT
-            });
-
-            const currentCount = results?.count || 1;
-
-            if (currentCount > maxRequests) {
-                return res.status(429).json({
-                    error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار قليلاً.',
-                    retryAfter: windowMinutes * 60
-                });
-            }
-
-            // Optional: Periodic cleanup could be added here or via a cron job
-            next();
-        } catch (error) {
-            console.error('❌ Rate Limiter Error:', error);
-            // Fail open: If rate limiter fails, allow the request but log the error
-            next();
+        if (!record || now > record.resetTime) {
+            // Create new record for new window
+            record = {
+                count: 1,
+                resetTime: now + windowMs
+            };
+        } else {
+            // Increment count in current window
+            record.count += 1;
         }
+
+        memoryStore.set(key, record);
+
+        if (record.count > maxRequests) {
+            return res.status(429).json({
+                error: '⚠️ محاولات كثيرة جداً. يرجى الانتظار قليلاً.',
+                retryAfter: Math.ceil((record.resetTime - now) / 1000)
+            });
+        }
+
+        next();
     };
 };
 

@@ -1,4 +1,5 @@
 const { Product, Inventory, sequelize } = require('../models'); 
+const syncService = require('../services/syncService');
 
 // إنشاء منتج جديد
 exports.addProduct = async (req, res) => {
@@ -31,6 +32,10 @@ exports.addProduct = async (req, res) => {
         } catch (invError) {
             console.error("⚠️ خطأ أثناء إضافة المنتج للمخزن تلقائياً:", invError);
         }
+
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'products', newProduct.id, newProduct.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
 
         res.status(201).json({ 
             success: true, 
@@ -153,6 +158,10 @@ exports.updateProduct = async (req, res) => {
             console.error("⚠️ خطأ أثناء تحديث بيانات المنتج في المخزن تلقائياً:", invError);
         }
 
+        // ✅ Enqueue for Sync
+        syncService.enqueue('UPDATE', 'products', req.params.id, product.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ 
             success: true, 
             message: "✅ تم تحديث المنتج بنجاح!", 
@@ -182,6 +191,11 @@ exports.deleteProduct = async (req, res) => {
         } catch (invError) {
             console.error("⚠️ خطأ أثناء حذف المنتج من المخزن تلقائياً:", invError);
         }
+
+        // ✅ Enqueue for Sync
+        syncService.enqueue('DELETE', 'products', req.params.id, { id: req.params.id })
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ success: true, message: "✅ تم حذف المنتج بنجاح!" });
 
     } catch (error) {

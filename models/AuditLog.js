@@ -26,15 +26,15 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         },
         oldValues: {
-            type: DataTypes.JSONB,
+            type: DataTypes.JSON,
             allowNull: true
         },
         newValues: {
-            type: DataTypes.JSONB,
+            type: DataTypes.JSON,
             allowNull: true
         },
         meta: {
-            type: DataTypes.JSONB,
+            type: DataTypes.JSON,
             allowNull: true
         },
         ipAddress: {

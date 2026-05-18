@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background: #0f172a;
+            color: #ef4444;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .container {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin: 0 0 15px;
+            color: #f87171;
+            font-size: 24px;
+        }
+        #msg {
+            color: #94a3b8;
+            text-align: right;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.8;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+            border-right: 4px solid #ef4444;
+        }
+        button {
+            margin-top: 25px;
+            padding: 12px 30px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⚠️</div>
+        <h2 id="title">خطأ في النظام</h2>
+        <div id="msg">جاري تحميل تفاصيل الخطأ...</div>
+        <button onclick="location.href='index.html'">إعادة المحاولة</button>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const title = params.get('title');
+        const msg = params.get('msg');
+        
+        if (title) document.getElementById('title').textContent = title;
+        if (msg) document.getElementById('msg').innerHTML = decodeURIComponent(msg);
+    </script>
+</body>
+</html>

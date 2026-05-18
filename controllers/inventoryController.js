@@ -1,11 +1,12 @@
 const { Inventory, sequelize } = require("../models");
 const { Op } = require("sequelize");
 const moment = require("moment");
+const syncService = require("../services/syncService");
 
 // ✅ جلب جميع عناصر المخزون
 const getAllInventory = async (req, res) => {
     try {
-        const inventory = await Inventory.findAll({ raw: true });
+        const inventory = await Inventory.findAll();
         res.json(inventory);
     } catch (error) {
         console.error("❌ خطأ أثناء جلب المخزون:", error);
@@ -33,6 +34,10 @@ const addInventoryItem = async (req, res) => {
             expiryDate: expiryDate || null,
             variants: variants || []
         });
+
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'inventory', newItem.id, newItem.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
 
         res.status(201).json(newItem);
     } catch (error) {
@@ -65,6 +70,10 @@ const updateInventoryItem = async (req, res) => {
         item.changed('variants', true);
         await item.save();
 
+        // ✅ Enqueue for Sync
+        syncService.enqueue('UPDATE', 'inventory', id, item.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ message: "✅ تم تحديث المنتج بنجاح" });
     } catch (error) {
         console.error("❌ خطأ في تعديل المنتج:", error);
@@ -81,6 +90,11 @@ const deleteInventoryItem = async (req, res) => {
         if (!item) return res.status(404).json({ error: "العنصر غير موجود" });
 
         await item.destroy();
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('DELETE', 'inventory', id, { id })
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ message: "✅ تم حذف المنتج بنجاح" });
     } catch (error) {
         console.error("❌ خطأ في حذف المنتج:", error);

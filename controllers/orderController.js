@@ -1,6 +1,7 @@
 const { Op , Sequelize} = require('sequelize');
 const { Order, Customer, Product, DiscountCode, Payment, Recipe, Inventory, Comment, Setting, sequelize } = require('../models');
 const { printReceipt } = require('./receiptPrinter');
+const syncService = require('../services/syncService');
 
 // ✅ دالة لحساب الخصم تلقائيًا بناءً على المنتجات الموجودة في الطلب
 exports.applyAutomaticDiscount = async (orderDetails, orderTotal, discountCode) => {
@@ -171,14 +172,14 @@ exports.createOrder = async (req, res) => {
                 (recipeMap[item.name] || []).forEach(r => {
                     inventoryOps.push(Inventory.decrement("quantity", { 
                         by: (r.amount * item.quantity), 
-                        where: { name: { [Op.iLike]: r.ingredient } } 
+                        where: { name: { [Op.like]: r.ingredient } } 
                     }));
                 });
 
                 // 3. Deduct from Direct Inventory Item (Atomic)
                 inventoryOps.push(Inventory.decrement("quantity", { 
                     by: item.quantity, 
-                    where: { name: { [Op.iLike]: item.name } } 
+                    where: { name: { [Op.like]: item.name } } 
                 }));
 
                 // 4. Handle Variants (requires careful update if using JSON)
@@ -186,7 +187,7 @@ exports.createOrder = async (req, res) => {
                     // Variants still need a more careful approach since they are in JSON
                     // We'll fetch the latest and update specifically for variants
                     inventoryOps.push(async () => {
-                        const invItem = await Inventory.findOne({ where: { name: { [Op.iLike]: item.name } } });
+                        const invItem = await Inventory.findOne({ where: { name: { [Op.like]: item.name } } });
                         if (invItem && invItem.variants) {
                             let vs = typeof invItem.variants === 'string' ? JSON.parse(invItem.variants) : invItem.variants;
                             vs = vs.map(v => {
@@ -246,6 +247,10 @@ exports.createOrder = async (req, res) => {
 
         printReceipt(orderData).catch(e => console.error("🖨️ Printing Error (Background):", e));
 
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'orders', order.id, order.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         res.status(201).json({
             message: "✅ تم إنشاء الطلب بنجاح!",
             order: orderData,
@@ -266,9 +271,9 @@ exports.getAllOrders = async (req, res) => {
         if (status && status !== 'all') whereClause.payment_status = status;
         if (search) {
             whereClause[Op.or] = [
-                { customerName: { [Op.iLike]: `%${search}%` } },
-                { customerPhone: { [Op.iLike]: `%${search}%` } },
-                { customerAddress: { [Op.iLike]: `%${search}%` } }
+                { customerName: { [Op.like]: `%${search}%` } },
+                { customerPhone: { [Op.like]: `%${search}%` } },
+                { customerAddress: { [Op.like]: `%${search}%` } }
             ];
         }
         const { count, rows } = await Order.findAndCountAll({

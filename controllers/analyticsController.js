@@ -13,15 +13,19 @@ exports.getAnalytics = async (req, res) => {
         // 🔹 إجمالي الإيرادات
         const totalRevenue = (await Order.sum("orderTotal")) || 0;
 
-        // 🔹 جلب إحصائيات الإيرادات لكل يوم (آخر 7 أيام) باستخدام GROUP BY
+        // 🔹 Calculate date 7 days ago in JS (Dialect Agnostic)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
         const revenueByDay = await Order.findAll({
             attributes: [
                 [Sequelize.fn('DATE', Sequelize.col('createdAt')), 'date'],
-                [Sequelize.fn('COUNT', Sequelize.col('id')), 'orders'],
+                [Sequelize.fn('COUNT', Sequelize.col('Order.id')), 'orders'],
                 [Sequelize.fn('SUM', Sequelize.col('orderTotal')), 'revenue']
             ],
             where: {
-                createdAt: { [Op.gte]: Sequelize.literal("CURRENT_DATE - INTERVAL '7 days'") },
+                createdAt: { [Op.gte]: sevenDaysAgo },
                 isCancelled: 'No'
             },
             group: [Sequelize.fn('DATE', Sequelize.col('createdAt'))],
@@ -74,7 +78,7 @@ exports.getAnalytics = async (req, res) => {
                 as: 'customer_info',
                 attributes: ['name'] 
             }],
-            order: [[Sequelize.literal('"ordersCount"'), 'DESC']],
+            order: [[Sequelize.literal('ordersCount'), 'DESC']],
             limit: 5,
             raw: true,
             nest: true
@@ -132,9 +136,14 @@ exports.getLowStockProducts = async (req, res) => {
 exports.getStockByCategory = async (req, res) => {
     try {
         console.log("📂 تحليل المخزون حسب الفئات...");
-        const stockByCategory = await Product.findAll({
-            attributes: ['category', [Sequelize.fn('SUM', Sequelize.col('stock_quantity')), 'total_stock']],
-            group: ['category']
+        // Stock quantity is in Inventory model, linked to Product by name or id?
+        // Assuming we join or query Inventory
+        const stockByCategory = await Inventory.findAll({
+            attributes: [
+                [Sequelize.literal("(SELECT category FROM products WHERE products.name = Inventory.name LIMIT 1)"), 'category'],
+                [Sequelize.fn('SUM', Sequelize.col('quantity')), 'total_stock']
+            ],
+            group: [Sequelize.literal('category')]
         });
 
         res.json({ success: true, data: stockByCategory });
@@ -149,16 +158,25 @@ exports.getStockByCategory = async (req, res) => {
 exports.getStockForecast = async (req, res) => {
     try {
         console.log("📊 حساب توقعات المخزون...");
-        const products = await Product.findAll({
-            attributes: ['id', 'name', 'stock_quantity', 'sold']
+        const inventory = await Inventory.findAll({
+            attributes: ['id', 'name', 'quantity']
         });
 
-        const forecastData = products.map(product => {
-            const avgDailySales = product.sold > 0 ? product.sold / 30 : 0;
-            const estimatedStockLeft = avgDailySales > 0 ? Math.round(product.stock_quantity / avgDailySales) : 'غير متاح';
+        const forecastData = await Promise.all(inventory.map(async item => {
+            const product = await Product.findOne({ where: { name: item.name }, attributes: ['sold'] });
+            const sold = product ? product.sold : 0;
+            const avgDailySales = sold > 0 ? sold / 30 : 0;
+            const estimatedStockLeft = avgDailySales > 0 ? Math.round(item.quantity / avgDailySales) : 'غير متاح';
 
-            return { ...product.toJSON(), avgDailySales, estimatedStockLeft };
-        });
+            return { 
+                id: item.id,
+                name: item.name,
+                stock_quantity: item.quantity,
+                sold: sold,
+                avgDailySales, 
+                estimatedStockLeft 
+            };
+        }));
 
         res.json({ success: true, data: forecastData });
 

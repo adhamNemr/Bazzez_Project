@@ -23,12 +23,15 @@ body {
 
 h2 {
     text-align: center;
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    margin-top: 0;
+    font-family: 'Amiri', 'Traditional Arabic', 'Sakkal Majalla', serif;
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 10px;
     color: #000;
-    letter-spacing: 0.5px;
+    letter-spacing: 2px;
+    display: block;
+    width: 100%;
+    line-height: 1.2;
 }
 
 #order-id-large {
@@ -94,18 +97,31 @@ th {
     font-size: 0.82rem;
     font-weight: 700;
     color: #000;
-    padding: 8px 0; /* Balanced padding */
-    border-top: 1px solid #000; /* Line above */
-    border-bottom: 1px solid #000; /* Line below */
+    padding: 8px 0;
+    border-top: 1.5px solid #000; /* خط صريح غير منقط */
+    border-bottom: 1.5px solid #000; /* خط صريح غير منقط */
 }
+
+th:first-child { width: 65%; } /* اسم الصنف يأخذ المساحة الأكبر */
+th:nth-child(2) { width: 15%; text-align: center; }
+th:last-child { width: 20%; text-align: left; }
+
 
 td {
-    padding: 12px 0; /* More air between items */
+    padding: 8px 0; /* مسافة مريحة */
     font-size: 0.85rem;
-    border-bottom: 1px solid #f8fafc;
 }
 
+tbody tr:not(:last-child) td {
+    border-bottom: 1.5px dashed #555; /* خط منقط بين كل صنف والتاني */
+}
+
+td:first-child { width: 65%; }
+td:nth-child(2) { width: 15%; text-align: center; }
+td:last-child { width: 20%; text-align: left; }
+
 .item-name {
+    width: 100%;
     font-weight: 600;
     text-align: right;
     line-height: 1.4;
@@ -127,7 +143,7 @@ td {
     background: #fff;
     padding: 10px 0;
     margin-bottom: 5px;
-    border-top: 1px solid #000;
+    border-top: 1.5px solid #000; /* خط فاصل صريح للإجمالي */
 }
 
 .totalBox p {
@@ -142,13 +158,14 @@ td {
 .totalBox p.grand-total {
     margin-top: 12px;
     padding: 8px 0;
-    border-top: 1px dashed #000;
-    border-bottom: 1px dashed #000;
-    font-size: 1.1rem;
+    border-top: 1.5px solid #000; /* خط صريح */
+    border-bottom: 1.5px solid #000; /* خط صريح */
+
+    font-size: 1.2rem;
     font-weight: 700;
     color: #000;
-    justify-content: center;
-    gap: 8px;
+    display: flex;
+    justify-content: space-between; /* الكلمة يمين والسعر شمال */
 }
 
 .footer {

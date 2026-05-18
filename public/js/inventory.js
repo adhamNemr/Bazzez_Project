@@ -197,7 +197,7 @@ function renderInventory(items) {
     if (items.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="${isRetail ? 7 : 8}" style="padding: 5rem 2rem; text-align: center;">
+                <td colspan="${isRetail ? 8 : 9}" style="padding: 5rem 2rem; text-align: center;">
                     <i class="fas fa-box-open" style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem;"></i>
                     <h3 style="color: #64748b;">${t[currentLang].noResults}</h3>
                 </td>
@@ -208,7 +208,11 @@ function renderInventory(items) {
 
     // 🚀 Performance Optimization: Use a single string join to minimize DOM reflows
     const tableRows = items.map(item => {
-        const hasVariants = item.variants && item.variants.length > 0;
+        // ✅ Safety: Ensure variants is an array even if it comes as a string from SQLite
+        if (typeof item.variants === 'string') {
+            try { item.variants = JSON.parse(item.variants); } catch(e) { item.variants = []; }
+        }
+        const hasVariants = item.variants && Array.isArray(item.variants) && item.variants.length > 0;
         
         let totalQty = parseFloat(item.quantity || 0);
         let totalMin = parseFloat(item.min || 0);

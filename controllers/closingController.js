@@ -339,14 +339,15 @@ exports.getMonthlySummary = async (req, res) => {
     try {
         const currentMonth = req.query.month || new Date().toISOString().slice(0, 7); // "yyyy-MM"
         
-        // Use MySQL DATE() function to avoid UTC timezone offset issues
-        // This ensures e.g. '2026-04-30 00:00:00 UTC' is treated as April, not March
+        const startDate = `${currentMonth}-01`;
+        const nextMonthDate = new Date(startDate);
+        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+        const endDateStr = nextMonthDate.toISOString().slice(0, 10);
+
         const whereClause = {
             closingDate: {
-                [Op.and]: [
-                    { [Op.gte]: `${currentMonth}-01` },
-                    { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
-                ]
+                [Op.gte]: startDate,
+                [Op.lt]: endDateStr
             }
         };
 
@@ -382,10 +383,8 @@ exports.getMonthlySummary = async (req, res) => {
             ? await Order.findAll({
                 where: { 
                     businessDate: {
-                        [Op.and]: [
-                            { [Op.gte]: `${currentMonth}-01` },
-                            { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
-                        ]
+                        [Op.gte]: startDate,
+                        [Op.lt]: endDateStr
                     },
                     isCancelled: "No",
                     archived: false
@@ -425,11 +424,14 @@ exports.closeMonth = async (req, res) => {
             return res.status(400).json({ error: "⚠️ الشهر قد تم إغلاقه بالفعل!" });
         }
 
+        const startDate = `${currentMonth}-01`;
+        const nextMonthDate = new Date(startDate);
+        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+        const endDateStr = nextMonthDate.toISOString().slice(0, 10);
+
         const dateCondition = {
-            [Op.and]: [
-                { [Op.gte]: `${currentMonth}-01` },
-                { [Op.lt]: sequelize.literal(`('${currentMonth}-01'::date + interval '1 month')`) }
-            ]
+            [Op.gte]: startDate,
+            [Op.lt]: endDateStr
         };
 
         const total_orders = await DailyClosing.sum("totalOrders", { where: { closingDate: dateCondition } }) || 0;

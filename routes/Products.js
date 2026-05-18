@@ -5,11 +5,12 @@ const { authMiddleware } = require("../middleware/authMiddleware");
 const { validate, productSchema } = require("../middleware/validationMiddleware");
 
 // ✅ تأكد من استخدام الدوال بالشكل الصحيح
+// ✅ المزامنة مع الفرونت إند: استخدام الـ root للـ POST والـ GET
+router.get("/", authMiddleware(['manager', 'cashier', 'admin']), productController.getAllProducts);
+
 router.get('/:category', authMiddleware(['manager', 'cashier', 'admin']), productController.getProductsByCategory);
 
-router.post('/add', authMiddleware(['manager', 'admin']), validate(productSchema), productController.addProduct);
-
-router.get("/", authMiddleware(['manager', 'cashier', 'admin']), productController.getAllProducts);
+router.post('/', authMiddleware(['manager', 'admin']), validate(productSchema), productController.addProduct);
 
 router.get("/:id", authMiddleware(['manager', 'cashier', 'admin']), productController.getProductById);
 

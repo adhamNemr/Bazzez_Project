@@ -876,6 +876,23 @@ async function printReceipt(orderId) {
         printBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${isAr ? 'جاري الطباعة...' : 'Printing...'}`;
         printBtn.disabled = true;
 
+        // ✅ حفظ بيانات الإيصال في localStorage عشان صفحة الإيصال تلاقيها (نفس حركة الكاشير)
+        const order = currentOrders.find(o => o.id === orderId);
+        if (order) {
+            const receiptData = {
+                id: order.dailySerial || order.id,
+                orderDate: new Date(order.createdAt).toLocaleString('ar-EG'),
+                customerName: order.customerName || (isAr ? 'عميل نقدي' : 'Cash Customer'),
+                customerPhone: order.customerPhone || '',
+                customerAddress: order.customerAddress || '',
+                orderDetails: order.orderDetails,
+                deliveryPrice: parseFloat(order.deliveryPrice || 0),
+                discount: parseFloat(order.discountAmount || 0),
+                total: parseFloat(order.orderTotal)
+            };
+            localStorage.setItem('receiptData', JSON.stringify(receiptData));
+        }
+
         const response = await fetch(`/api/orders/${orderId}/print`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }

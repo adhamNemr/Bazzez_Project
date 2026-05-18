@@ -37,9 +37,9 @@ exports.fetchOrders = async (req, res) => {
         if (cleanSearch !== "") {
             where[Op.or] = [
                 { dailySerial: isNumericSearch ? parseInt(cleanSearch) : 0 },
-                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'TEXT'), { [Op.iLike]: `%${cleanSearch}%` }),
-                { customerName: { [Op.iLike]: `%${cleanSearch}%` } },
-                { customerPhone: { [Op.iLike]: `%${cleanSearch}%` } }
+                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'TEXT'), { [Op.like]: `%${cleanSearch}%` }),
+                { customerName: { [Op.like]: `%${cleanSearch}%` } },
+                { customerPhone: { [Op.like]: `%${cleanSearch}%` } }
             ];
         }
 

@@ -1,5 +1,14 @@
 document.addEventListener("DOMContentLoaded", async function () {
-    const receiptData = JSON.parse(localStorage.getItem("receiptData"));
+    let receiptData = null;
+
+    // 🏆 محاولة الحصول على الداتا من الإليكترون مباشرة (Handshake)
+    try {
+        const { ipcRenderer } = require('electron');
+        receiptData = ipcRenderer.sendSync('get-receipt-data');
+    } catch (e) {
+        console.warn("⚠️ Not running in Electron or IPC failed, falling back to localStorage");
+        receiptData = JSON.parse(localStorage.getItem("receiptData"));
+    }
 
     if (!receiptData) {
         console.error("❌ لم يتم العثور على بيانات الإيصال!");
@@ -17,7 +26,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) {
                 const settings = await res.json();
-                if (settings.store_name) document.getElementById('store-name').innerText = settings.store_name;
+                // فرض اسم "دار الفاروق" وتجاهل إعدادات قاعدة البيانات مؤقتاً لضمان ظهور الاسم المطلوب
+                document.getElementById('store-name').innerText = "دار الفاروق";
                 if (settings.store_phone) document.getElementById('store-phone-footer').innerText = settings.store_phone;
                 if (settings.receipt_footer) document.getElementById('store-footer-msg').innerText = settings.receipt_footer;
                 if (settings.show_discount) showDiscountSetting = settings.show_discount;
@@ -52,68 +62,89 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     document.getElementById("customer-name").innerText = cleanValue(receiptData.customerName, ["تيك أوي", "نقدي", "Guest"]);
     document.getElementById("customer-phone").innerText = cleanValue(receiptData.customerPhone);
-    document.getElementById("customer-address").innerText = cleanValue(receiptData.customerAddress);
+    
+    // ✅ وضع رقم الأوردر مكان العنوان كما طلب العميل
+    const orderIdLabel = document.getElementById("order-id-label");
+    if (orderIdLabel) orderIdLabel.innerText = receiptData.id || "-";
     
     document.getElementById("order-date").innerText = receiptData.orderDate || "-";
-    document.getElementById("delivery-price").innerText = fmt(receiptData.deliveryPrice);
+    const deliveryEl = document.getElementById("delivery-price");
+    if (deliveryEl) deliveryEl.innerText = fmt(receiptData.deliveryPrice);
     
     let subtotal = 0;
     const orderDetailsContainer = document.getElementById("order-details");
-    orderDetailsContainer.innerHTML = "";
+    if (orderDetailsContainer) {
+        orderDetailsContainer.innerHTML = "";
 
-    if (receiptData.orderDetails && Array.isArray(receiptData.orderDetails)) {
-        receiptData.orderDetails.forEach(item => {
-            const quantity = Number(item.quantity) || 0;
-            const price = parseFloat(item.price) || 0;
-            
-            let addonsTotal = 0;
-            let commentsText = "";
-            if (Array.isArray(item.comments)) {
-                item.comments.forEach(c => {
-                    const addonPrice = parseFloat(c.price || 0);
-                    
-                    // Skip printing manual discount comment if disabled
-                    if (addonPrice < 0 && showDiscountSetting === 'no') return;
-                    
-                    if (addonPrice > 0) addonsTotal += addonPrice;
-                    
-                    // Print comment only if show_comments is enabled
-                    if (showCommentsSetting !== 'no') {
-                        commentsText += `<div class="addon-line">• ${c.text} ${addonPrice > 0 ? '(+'+addonPrice+')' : ''}</div>`;
-                    }
-                });
-            }
-            
-            const itemFinalTotal = (price + addonsTotal) * quantity;
-            subtotal += itemFinalTotal;
+        // 🔄 معالجة البيانات: لو جاية نص نحولها لقائمة
+        let items = receiptData.orderDetails;
+        if (typeof items === 'string') {
+            try { items = JSON.parse(items); } catch(e) { items = []; }
+        }
 
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>
-                    <div class="item-name">${item.name || "N/A"}</div>
-                    <div class="item-addons">${commentsText}</div>
-                </td>
-                <td style="text-align: center; font-weight: bold;">x${quantity}</td>
-                <td style="text-align: left;">${fmt(price + addonsTotal)}</td>
-            `;
-            orderDetailsContainer.appendChild(row);
-        });
+        if (items && Array.isArray(items)) {
+            items.forEach(item => {
+                const quantity = Number(item.quantity) || 0;
+                const price = parseFloat(item.price) || 0;
+                let name = item.name || item.productName || "صنف غير معروف";
+                
+                // استخدم variant بس — هو بالفعل فيه color و size مدمجين
+                const variantText = (item.variant && String(item.variant) !== "null") 
+                    ? String(item.variant).trim() 
+                    : '';
+
+                // إضافة التفريعة للاسم لو مش موجودة بالفعل
+                if (variantText && !name.includes(variantText)) {
+                    name += ` (${variantText})`;
+                }
+                let addonsTotal = 0;
+                let commentsText = "";
+
+                if (Array.isArray(item.comments)) {
+                    item.comments.forEach(c => {
+                        const addonPrice = parseFloat(c.price || 0);
+                        if (addonPrice < 0 && showDiscountSetting === 'no') return;
+                        if (addonPrice > 0) addonsTotal += addonPrice;
+                        if (showCommentsSetting !== 'no') {
+                            commentsText += `<div class="addon-line">• ${c.text} ${addonPrice > 0 ? '(+'+addonPrice+')' : ''}</div>`;
+                        }
+                    });
+                }
+                
+                const itemFinalTotal = (price + addonsTotal) * quantity;
+                subtotal += itemFinalTotal;
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>
+                        <div class="item-name">${name}</div>
+                        <div class="item-addons">${commentsText}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: bold;">x${quantity}</td>
+                    <td style="text-align: left;">${(price + addonsTotal).toFixed(2)}</td>
+                `;
+                orderDetailsContainer.appendChild(row);
+            });
+        }
     }
 
-    document.getElementById("subtotal").innerText = fmt(subtotal);
-    const discount = parseFloat(receiptData.discount || 0);
+    const subtotalEl = document.getElementById("subtotal");
+    if (subtotalEl) subtotalEl.innerText = fmt(subtotal);
     
-    // Hide discount line if it's 0 or if settings say 'no'
+    const discount = parseFloat(receiptData.discount || 0);
+    const discountEl = document.getElementById("discount");
+    
     if (discount === 0 || showDiscountSetting === 'no') {
         const discContainer = document.getElementById("discount-container");
         if (discContainer) discContainer.remove();
     } else {
-        document.getElementById("discount").innerText = fmt(discount);
+        if (discountEl) discountEl.innerText = fmt(discount);
     }
     
     const delivery = parseFloat(receiptData.deliveryPrice || 0);
     const grandTotal = subtotal + delivery - discount;
-    document.getElementById("order-total").innerText = fmt(grandTotal);
+    const orderTotalEl = document.getElementById("order-total");
+    if (orderTotalEl) orderTotalEl.innerText = fmt(grandTotal);
 
     // 3. Auto Print after rendering (optional but recommended for POS)
     setTimeout(() => {

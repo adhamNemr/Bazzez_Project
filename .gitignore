@@ -20,3 +20,7 @@ temp/
 controllers/receipt_*.pdf
 *.pdf
 receipts/
+
+*.sqlite*
+*.sqbpro
+

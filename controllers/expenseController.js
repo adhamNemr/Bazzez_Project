@@ -1,6 +1,7 @@
 const { Expense } = require('../models');
 const { Op } = require('sequelize');
 const Joi = require('joi');
+const syncService = require('../services/syncService');
 
 // ✅ Joi Validation Schema
 const expenseSchema = Joi.object({
@@ -91,6 +92,10 @@ exports.createExpense = async (req, res) => {
             notes: value.notes || null,
             addedBy: req.user ? req.user.username : 'Unknown'
         });
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'expenses', expense.id, expense.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
 
         res.status(201).json({ message: '✅ تم تسجيل المصروف بنجاح', expense });
     } catch (error) {
@@ -114,6 +119,11 @@ exports.updateExpense = async (req, res) => {
         }
 
         await expense.update(value);
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('UPDATE', 'expenses', expense.id, expense.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ message: '✅ تم تعديل المصروف بنجاح', expense });
     } catch (error) {
         console.error('❌ Error updating expense:', error);
@@ -130,6 +140,11 @@ exports.deleteExpense = async (req, res) => {
             return res.status(404).json({ message: 'المصروف غير موجود' });
         }
         await expense.destroy();
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('DELETE', 'expenses', id, { id })
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ message: '✅ تم حذف المصروف بنجاح' });
     } catch (error) {
         console.error('❌ Error deleting expense:', error);

@@ -83,8 +83,9 @@ async function printReceipt(orderData) {
  */
 function generatePDF(orderData, subtotal, deliveryPrice, discount, calculatedTotal, storeConfig) {
     try {
+        const os = require('os');
         const doc = new PDFDocument({ size: [226, 600], margin: 5 }); // 80mm with minimal margin
-        const receiptPath = path.join(__dirname, `receipt_${orderData.id}.pdf`);
+        const receiptPath = path.join(os.tmpdir(), `receipt_${orderData.id}.pdf`);
         const writeStream = fs.createWriteStream(receiptPath);
 
         doc.pipe(writeStream);

@@ -24,7 +24,15 @@ const t = {
         successTitle: 'تم الحفظ',
         successText: 'تم تحديث الإعدادات بنجاح',
         errorTitle: 'خطأ',
-        errorMsg: 'فشل في حفظ الإعدادات'
+        errorMsg: 'فشل في حفظ الإعدادات',
+        secDanger: 'منطقة الخطورة - تصفير النظام للتسليم',
+        btnResetDb: 'تصفير فواتير وعمليات النظام بالكامل',
+        resetWarnTitle: 'هل أنت متأكد من تصفير النظام؟',
+        resetWarnText: 'سيتم مسح جميع الفواتير والمبيعات والمصروفات والعمليات بالكامل محلياً وعلى السحابة! هذا الإجراء لا يمكن التراجع عنه!',
+        resetConfirmBtn: 'نعم، قم بالتصفير!',
+        resetCancelBtn: 'إلغاء',
+        resetSuccessTitle: 'تم التصفير بنجاح!',
+        resetSuccessText: 'تمت تهيئة وتصفير النظام بنجاح للتسليم.'
     },
     en: {
         pageTitle: 'System Settings - Vortex POS',
@@ -48,7 +56,15 @@ const t = {
         successTitle: 'Saved',
         successText: 'Settings updated successfully',
         errorTitle: 'Error',
-        errorMsg: 'Failed to save settings'
+        errorMsg: 'Failed to save settings',
+        secDanger: 'Danger Zone - Production Reset',
+        btnResetDb: 'Reset All System Invoices & Operations',
+        resetWarnTitle: 'Are you absolutely sure?',
+        resetWarnText: 'All invoices, sales, expenses, and transaction logs will be permanently wiped locally and from the cloud! This action CANNOT be undone!',
+        resetConfirmBtn: 'Yes, Wipe Everything!',
+        resetCancelBtn: 'Cancel',
+        resetSuccessTitle: 'Reset Complete!',
+        resetSuccessText: 'All transactional data has been successfully wiped.'
     }
 };
 
@@ -104,6 +120,63 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     });
+
+    // 🔴 Danger Zone: Database Reset Event Listener
+    const resetBtn = document.getElementById('reset-db-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', async () => {
+            const langT = t[currentLang];
+            const result = await Swal.fire({
+                title: langT.resetWarnTitle,
+                text: langT.resetWarnText,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: langT.resetConfirmBtn,
+                cancelButtonText: langT.resetCancelBtn
+            });
+
+            if (result.isConfirmed) {
+                // Show loading spinner
+                Swal.fire({
+                    title: isAr ? 'جاري التصفير والتهيئة...' : 'Resetting system...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                try {
+                    const response = await fetch('/api/settings/reset-database', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: langT.resetSuccessTitle,
+                            text: langT.resetSuccessText,
+                            confirmButtonColor: 'var(--primary)'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(isAr ? 'فشل في الاتصال بالسيرفر لتصفير البيانات' : 'Server failed to reset database');
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: langT.errorTitle,
+                        text: error.message
+                    });
+                }
+            }
+        });
+    }
 });
 
 function applyTranslations() {
@@ -137,6 +210,8 @@ function applyTranslations() {
     updateLoc('loc-system-mode', langT.systemMode);
     updateLoc('loc-print-mode', langT.printMode);
     updateLoc('loc-btn-save', langT.btnSave);
+    updateLoc('loc-sec-danger', langT.secDanger);
+    updateLoc('loc-btn-reset-db', langT.btnResetDb);
     
     // Update placeholders for English
     if(!isAr) {

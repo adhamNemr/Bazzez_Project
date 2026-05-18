@@ -1,4 +1,5 @@
 const { Merchant, MerchantTransaction, sequelize } = require('../models');
+const syncService = require('../services/syncService');
 
 exports.getMerchants = async (req, res) => {
     try {
@@ -65,6 +66,11 @@ exports.createMerchant = async (req, res) => {
         }
         
         await t.commit();
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'merchants', merchant.id, merchant.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         res.status(201).json(merchant);
     } catch (err) {
         await t.rollback();
@@ -78,6 +84,14 @@ exports.updateMerchant = async (req, res) => {
         const { id } = req.params;
         const { name, phone, notes } = req.body;
         await Merchant.update({ name, phone, notes }, { where: { id } });
+        
+        // ✅ Enqueue for Sync (Fetch updated to get full record)
+        const updated = await Merchant.findByPk(id);
+        if (updated) {
+            syncService.enqueue('UPDATE', 'merchants', id, updated.toJSON())
+                .catch(err => console.error('Sync queue error:', err));
+        }
+
         res.json({ success: true, message: 'تم التحديث بنجاح' });
     } catch (err) {
         console.error(err);
@@ -102,6 +116,11 @@ exports.deleteMerchant = async (req, res) => {
         }
 
         await t.commit();
+        
+        // ✅ Enqueue for Sync
+        syncService.enqueue('DELETE', 'merchants', id, { id })
+            .catch(err => console.error('Sync queue error:', err));
+
         res.json({ success: true, message: 'تم الحذف بنجاح مع كافة البيانات المرتبطة' });
     } catch (err) {
         await t.rollback();
@@ -160,6 +179,14 @@ exports.addTransaction = async (req, res) => {
         await merchant.save({ transaction: t });
         await t.commit();
 
+        // ✅ Enqueue for Sync
+        syncService.enqueue('INSERT', 'merchant_transactions', transaction.id, transaction.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+        
+        // Also sync the updated merchant balance
+        syncService.enqueue('UPDATE', 'merchants', merchant.id, merchant.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+
         // 📝 Audit Log
         const { logAudit } = require('../utils/auditLogger');
         logAudit(req, {
@@ -199,9 +226,14 @@ exports.deleteTransaction = async (req, res) => {
 
         const oldData = transaction.toJSON();
         await merchant.save({ transaction: t });
-        await transaction.destroy({ transaction: t });
-        
         await t.commit();
+
+        // ✅ Enqueue for Sync
+        syncService.enqueue('DELETE', 'merchant_transactions', id, { id })
+            .catch(err => console.error('Sync queue error:', err));
+        
+        syncService.enqueue('UPDATE', 'merchants', merchant.id, merchant.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
 
         // 📝 Audit Log
         const { logAudit } = require('../utils/auditLogger');
@@ -257,9 +289,14 @@ exports.updateTransaction = async (req, res) => {
         transaction.notes = notes;
 
         await merchant.save({ transaction: t });
-        await transaction.save({ transaction: t });
-
         await t.commit();
+
+        // ✅ Enqueue for Sync
+        syncService.enqueue('UPDATE', 'merchant_transactions', id, transaction.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
+            
+        syncService.enqueue('UPDATE', 'merchants', merchant.id, merchant.toJSON())
+            .catch(err => console.error('Sync queue error:', err));
 
         // 📝 Audit Log
         const { logAudit } = require('../utils/auditLogger');

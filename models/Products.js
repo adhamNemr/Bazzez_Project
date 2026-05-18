@@ -29,6 +29,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
+        },
+        sync_status: { 
+            type: DataTypes.STRING(20), 
+            defaultValue: 'pending' 
+        },
+        local_id: { 
+            type: DataTypes.UUID, 
+            defaultValue: DataTypes.UUIDV4 
         }
     }, {
         sequelize,

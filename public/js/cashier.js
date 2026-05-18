@@ -396,7 +396,7 @@ function showVariantModal(product) {
             
             <!-- 📏 Sizes Selection Section (Ultra Compact) -->
             <div id="size-selection-area" style="text-align: center; display: ${sizes.length === 1 && sizes[0] === 'مقاس واحد' ? 'none' : 'block'}; border-top: 1px solid #f1f5f9; padding-top: 1.2rem;">
-                <div id="size-buttons-grid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 5px;">
+                <div id="size-buttons-grid" style="display: flex; flex-wrap: nowrap; justify-content: center; gap: 15px; padding: 5px;">
                     ${product.category === 'جلباب رجالي' ? 
                         // Grouping for Men's Galabeya
                         (() => {
@@ -479,6 +479,16 @@ function renderSizeButtons(sizes) {
     const grid = document.getElementById('size-buttons-grid');
     const initialButtonStyle = (selectedFabricForModal) ? '' : 'opacity: 0.4; pointer-events: none;';
     
+    // 🧹 Reset any dynamic grid styles to prevent layout leaks between products
+    grid.style.display = 'flex';
+    grid.style.flexWrap = 'nowrap';
+    grid.style.gridTemplateColumns = '';
+    grid.style.gap = '15px';
+    grid.style.width = '';
+    grid.style.maxWidth = '';
+    grid.style.margin = '';
+    grid.style.padding = '5px';
+
     const isNumericCategory = currentProductForModal.category === 'جلباب أطفالي' || currentProductForModal.category === 'سراويل' || (currentProductForModal.category === 'جلباب رجالي' && !sizes[0].includes('S'));
 
     if (isNumericCategory) {
@@ -923,6 +933,21 @@ async function submitOrder() {
         });
         
         if (res.ok) {
+            // ✅ حفظ بيانات الإيصال في localStorage عشان صفحة الإيصال تلاقيها
+            const savedOrder = await res.json().catch(() => ({}));
+            const receiptData = {
+                id: savedOrder.id || savedOrder.orderId || Date.now(),
+                orderDate: new Date().toLocaleString('ar-EG'),
+                customerName: orderData.customer.name,
+                customerPhone: orderData.customer.phone,
+                customerAddress: orderData.customer.address,
+                orderDetails: orderData.orderDetails,
+                deliveryPrice: orderData.deliveryPrice,
+                discount: 0,
+                total: orderData.orderTotal
+            };
+            localStorage.setItem('receiptData', JSON.stringify(receiptData));
+            
             Swal.fire({ icon: 'success', title: isAr ? 'تم بنجاح' : 'Success', timer: 1500, showConfirmButton: false });
             resetForm();
         } else {

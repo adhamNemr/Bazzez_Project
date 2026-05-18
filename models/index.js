@@ -21,6 +21,7 @@ const MerchantTransaction = require("./MerchantTransaction")(sequelize, DataType
 const AuditLog = require("./AuditLog")(sequelize, DataTypes);
 const RateLimitLog = require("./RateLimitLog")(sequelize, DataTypes);
 const TokenBlacklist = require("./TokenBlacklist")(sequelize, DataTypes);
+const SyncQueue = require("./SyncQueue")(sequelize, DataTypes);
 
 // ✅ العلاقات بين الجداول
 Product.hasMany(Sale, { foreignKey: "product_id" });
@@ -60,5 +61,6 @@ module.exports = {
     MerchantTransaction,
     AuditLog,
     RateLimitLog,
-    TokenBlacklist
+    TokenBlacklist,
+    SyncQueue
 };

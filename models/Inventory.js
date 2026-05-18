@@ -38,6 +38,14 @@ module.exports = (sequelize, DataTypes) => {
         variants: {
             type: DataTypes.JSON,
             allowNull: true
+        },
+        sync_status: { 
+            type: DataTypes.STRING(20), 
+            defaultValue: 'pending' 
+        },
+        local_id: { 
+            type: DataTypes.UUID, 
+            defaultValue: DataTypes.UUIDV4 
         }
     }, {
         tableName: "inventory",

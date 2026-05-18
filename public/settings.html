@@ -110,6 +110,22 @@
                 </div>
             </form>
         </div>
+
+        <!-- 🔴 Danger Zone / Production Reset -->
+        <div class="settings-card" style="margin-top: 2rem; border: 2px dashed #ef4444; background: #fffdfd; border-radius: var(--card-radius); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);">
+            <div class="settings-section" style="margin-bottom: 0;">
+                <h3 style="color: #dc2626;"><i class="fas fa-exclamation-triangle"></i> <span id="loc-sec-danger">منطقة الخطورة - تصفير النظام للتسليم</span></h3>
+                <p style="color: #6b7280; font-size: 0.95rem; margin: 1rem 0; font-weight: 600; line-height: 1.6; font-family: 'Noto Sans Arabic', sans-serif;">
+                    تنبيه هام جداً: هذا الإجراء سيقوم بحذف وتصفير جميع الفواتير، المبيعات، المصروفات، والعمليات المسجلة على النظام بالكامل (محلياً وعلى السحابة)، ليعود البرنامج جديداً تماماً للتسليم للعميل. لن يتم مسح المنتجات أو المخزن أو الإعدادات الأساسية.
+                </p>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" id="reset-db-btn" class="save-btn" style="background: #dc2626; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25); border: none; transition: 0.3s;margin: auto;">
+                        <i class="fas fa-trash-alt"></i>
+                        <span id="loc-btn-reset-db">تصفير فواتير وعمليات النظام بالكامل</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 📚 Scripts -->
