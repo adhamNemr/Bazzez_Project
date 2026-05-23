@@ -1,82 +1,140 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Discount Codes</title>
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="./css/dash.css">
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="./css/dash.css">
-    <script src="./js/auth-wrapper.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الخصومات | Discounts — Vortex POS</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Flatpickr -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" />
+
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+  <link rel="stylesheet" href="./css/common.css">
+  <!-- Discount CSS -->
+  <link rel="stylesheet" href="./css/discount.css" />
+  <script src="./js/auth-wrapper.js"></script>
 </head>
 <body>
-    <div class="top-nav-container">
-        <button onclick="window.location.href='dashboard.html'" class="nav-back-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Dashboard
-        </button>
-    </div>
-    <div class="container">
-        <header class="header">
-            <h1>Manage Discounts</h1>
-        </header>
 
-        <!-- ✅ نموذج التحكم في أكواد الخصم -->
-        <div class="toolbar">
-            <form id="discount-form">
-                <input type="hidden" id="discount-id" />
-                <input type="text" id="code" placeholder="Code" required />
-            
-                <select id="discount_type" required>
-                    <option value="">Type</option>
-                    <option value="percentage">percentage (%)</option>
-                    <option value="fixed">Fixed</option>
-                </select>
-            
-                <input type="number" id="discount_value" placeholder="Value" required />
-                <input type="date" id="start_date" placeholder="Start Date" required />
-                <input type="date" id="end_date" placeholder="End day" required />
-            
-                <!-- 🆕 Dropdown مخفي يظهر عند الضغط -->
-                <div class="autocomplete">
-                    <input type="text" id="applicable_products" placeholder="Select the Products" readonly />
-                    <div id="products-list" class="dropdown-list hidden"></div>
-                </div>
-            
-                <select id="is_active" required>
-                    <option value="true">Active</option>
-                    <option value="false">Not Active</option>
-                </select>
-            
-                <button type="submit" class="save-button">Save</button>
-                <button type="button" id="cancel-btn" class="cancel-button">Cancel</button>
-                <button id="delete-discount" class="delete-button">Delete</button> 
-            </form>
-        </div>
+  <!-- Header (loaded dynamically) -->
+  <div id="header-container" data-title="الخصومات | Discounts" data-icon="fa-tags"></div>
 
-        <!-- ✅ جدول عرض أكواد الخصم -->
-        <div class="list">
-            <table>
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">Code</th>
-                        <th onclick="sortTable(1)">Type</th>
-                        <th onclick="sortTable(2)">Value</th>
-                        <th onclick="sortTable(3)">Start Date</th>
-                        <th onclick="sortTable(4)">End Date</th>
-                        <th onclick="sortTable(5)">Products</th>
-                        <th onclick="sortTable(6)">Status</th>
-                    </tr>
-                </thead>
-                <tbody id="discounts-table-body">
-                    <!-- Customer data will be populated here using JavaScript -->
-                </tbody>
-            </table>
+  <!-- Main Content -->
+  <main class="discounts-main">
+
+    <!-- Page Top Bar -->
+    <div class="page-topbar">
+      <div class="page-topbar__info">
+        <div class="page-topbar__icon">
+          <i class="fa-solid fa-tags"></i>
         </div>
+        <div>
+          <h1 class="page-topbar__title" data-i18n="pageTitle">إدارة الخصومات</h1>
+          <p class="page-topbar__subtitle" data-i18n="pageSubtitle">أنشئ وأدر أكواد الخصم بكل سهولة</p>
+        </div>
+      </div>
+      <button class="btn-add" id="btnAddDiscount">
+        <i class="fa-solid fa-plus"></i>
+        <span data-i18n="addBtn">إضافة كود جديد</span>
+      </button>
     </div>
 
-    <script src="./js/discount.js"></script>
-    <!-- <script src="./js/auth.js"></script> -->
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--total">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div>
+          <p class="stat-card__label" data-i18n="statTotal">إجمالي الأكواد</p>
+          <p class="stat-card__value" id="statTotal">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--active">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+          <p class="stat-card__label" data-i18n="statActive">أكواد نشطة</p>
+          <p class="stat-card__value" id="statActive">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--inactive">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div>
+          <p class="stat-card__label" data-i18n="statInactive">أكواد معطلة</p>
+          <p class="stat-card__value" id="statInactive">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--expired">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div>
+          <p class="stat-card__label" data-i18n="statExpired">منتهية الصلاحية</p>
+          <p class="stat-card__value" id="statExpired">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-box__icon"></i>
+        <input type="text" id="searchInput" class="search-box__input" data-i18n-placeholder="searchPlaceholder" placeholder="ابحث عن كود خصم..." />
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all" data-i18n="filterAll">الكل</button>
+        <button class="filter-tab" data-filter="active" data-i18n="filterActive">نشط</button>
+        <button class="filter-tab" data-filter="inactive" data-i18n="filterInactive">معطل</button>
+        <button class="filter-tab" data-filter="expired" data-i18n="filterExpired">منتهي</button>
+      </div>
+    </div>
+
+    <!-- Discounts Grid -->
+    <div class="discounts-grid" id="discountsGrid">
+      <!-- Cards injected by JS -->
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div class="empty-state__icon">
+        <i class="fa-solid fa-tags"></i>
+      </div>
+      <h3 class="empty-state__title" data-i18n="emptyTitle">لا توجد خصومات بعد</h3>
+      <p class="empty-state__subtitle" data-i18n="emptySubtitle">أضف أول كود خصم لبدء العروض الترويجية</p>
+      <button class="btn-add" id="btnAddDiscountEmpty">
+        <i class="fa-solid fa-plus"></i>
+        <span data-i18n="addBtn">إضافة كود جديد</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+      <div class="loading-spinner"></div>
+      <p data-i18n="loading">جاري التحميل...</p>
+    </div>
+
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="./js/header-loader.js"></script>
+  <script src="./js/sidebar-loader.js"></script>
+  <script src="./js/discount.js"></script>
 </body>
 </html>
