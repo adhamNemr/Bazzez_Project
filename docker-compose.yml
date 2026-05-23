@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  pos-system:
+    build: .
+    container_name: vortex-pos
+    ports:
+      - "8083:8083"
+    volumes:
+      # Data directory to persist the SQLite database safely across restarts
+      - pos_data:/app/data
+      # Map backups to a local folder so the client can access them from Windows
+      - ./backups:/app/backups
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8083
+      # We put the database inside the mapped /app/data volume for safety
+      - DB_PATH=/app/data/database.sqlite
+      - JWT_SECRET=vortex_pos_secure_secret_key_2026
+
+volumes:
+  pos_data:
