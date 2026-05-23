@@ -31,7 +31,7 @@ describe('Products API', () => {
 
     it('should add a new product', async () => {
         const res = await request(app)
-            .post('/api/products/add')
+            .post('/api/products')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 name: 'Burger Test',

@@ -551,6 +551,32 @@ async function exportOrdersToExcel() {
         const excelData = orders.map(o => {
             const date = o.createdAt ? new Date(o.createdAt) : (o.businessDate ? new Date(o.businessDate) : new Date());
             const serial = o.dailySerial || o.id;
+
+            // Translate payment status
+            let displayPaymentStatus = o.payment_status;
+            if (isAr) {
+                if (o.payment_status === 'Paid') displayPaymentStatus = 'مدفوع (أونلاين)';
+                else if (o.payment_status === 'Pending') displayPaymentStatus = 'معلق (نقدي)';
+            } else {
+                if (o.payment_status === 'Paid') displayPaymentStatus = 'Paid (Online)';
+                else if (o.payment_status === 'Pending') displayPaymentStatus = 'Pending (Cash)';
+            }
+
+            // Translate payment method
+            let displayMethod = o.payment_method || (o.payment_status === 'Paid' ? 'Card' : 'Cash');
+            const rawMethod = displayMethod.toLowerCase();
+            if (isAr) {
+                if (rawMethod.includes('vcash') || rawMethod.includes('vodafone')) displayMethod = 'فودافون كاش';
+                else if (rawMethod.includes('instapay')) displayMethod = 'إنستاباي';
+                else if (rawMethod.includes('card') || rawMethod.includes('wallet') || rawMethod.includes('visa')) displayMethod = 'فيزا / محفظة';
+                else if (rawMethod.includes('cash')) displayMethod = 'نقدي';
+            } else {
+                if (rawMethod.includes('vcash') || rawMethod.includes('vodafone')) displayMethod = 'Vodafone Cash';
+                else if (rawMethod.includes('instapay')) displayMethod = 'Instapay';
+                else if (rawMethod.includes('card') || rawMethod.includes('wallet') || rawMethod.includes('visa')) displayMethod = 'Card / Wallet';
+                else if (rawMethod.includes('cash')) displayMethod = 'Cash';
+            }
+
             return {
                 [isAr ? 'رقم الطلب' : 'Order #']: serial,
                 [isAr ? 'كود النظام' : 'System ID']: o.id,
@@ -558,15 +584,33 @@ async function exportOrdersToExcel() {
                 [isAr ? 'الوقت' : 'Time']: date.toLocaleTimeString('en-US', { hour12: false }),
                 [isAr ? 'العميل' : 'Customer']: o.customerName || (isAr ? 'عميل نقدي' : 'Cash Customer'),
                 [isAr ? 'الهاتف' : 'Phone']: o.customerPhone || '-',
-                [isAr ? 'الإجمالي' : 'Total']: parseFloat(o.orderTotal).toFixed(2),
-                [isAr ? 'حالة الدفع' : 'Payment Status']: o.payment_status,
-                [isAr ? 'طريقة الدفع' : 'Payment Method']: o.payment_method || '-',
+                [isAr ? 'الإجمالي (EGP)' : 'Total (EGP)']: parseFloat(o.orderTotal).toFixed(2),
+                [isAr ? 'حالة الدفع' : 'Payment Status']: displayPaymentStatus,
+                [isAr ? 'طريقة الدفع' : 'Payment Method']: displayMethod,
                 [isAr ? 'الحالة' : 'Status']: o.isCancelled === 'Yes' ? (isAr ? 'ملغي' : 'Cancelled') : (isAr ? 'نشط' : 'Active')
             };
         });
 
         const ws = XLSX.utils.json_to_sheet(excelData);
-        ws['!cols'] = [{wch: 12}, {wch: 15}, {wch: 12}, {wch: 25}, {wch: 15}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 12}];
+        
+        // Auto-size columns to look super clean and prevent text clipping
+        const maxCols = [];
+        if (excelData.length > 0) {
+            const headers = Object.keys(excelData[0]);
+            headers.forEach((header, colIndex) => {
+                maxCols[colIndex] = header.length + 5; // header length padding
+            });
+            excelData.forEach(row => {
+                headers.forEach((header, colIndex) => {
+                    const val = row[header] ? row[header].toString() : '';
+                    const len = val.length + 3;
+                    if (len > maxCols[colIndex]) {
+                        maxCols[colIndex] = len;
+                    }
+                });
+            });
+            ws['!cols'] = maxCols.map(w => ({ wch: Math.max(w, 12) }));
+        }
 
         const wb = XLSX.utils.book_new();
         if (!wb.Workbook) wb.Workbook = {};

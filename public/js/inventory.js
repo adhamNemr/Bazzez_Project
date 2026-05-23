@@ -1,4 +1,4 @@
-/**
+ /**
  * Vortex POS - Inventory Management Logic
  * Optimized for Luxury Workstation Theme
  */
@@ -947,8 +947,9 @@ function exportToExcel() {
             showConfirmButton: false
         });
 
-        // Prepare data with clean formatting
-        const excelData = allInventory.map(item => {
+        // Prepare data with clean formatting and variant breakdowns
+        const excelData = [];
+        allInventory.forEach(item => {
             let addedDate = '-';
             let expiryDate = '-';
             try {
@@ -956,27 +957,84 @@ function exportToExcel() {
                 if (item.expiryDate) expiryDate = new Date(item.expiryDate).toISOString().split('T')[0];
             } catch (e) { console.error(e); }
 
-            return {
-                [isAr ? 'كود' : 'ID']: item.id,
-                [isAr ? 'اسم الصنف' : 'Name']: item.name,
-                [isAr ? 'الكمية' : 'Quantity']: item.quantity,
-                [isAr ? 'الحد الأدنى' : 'Min Limit']: item.min || 0,
-                [isAr ? 'سعر الوحدة' : 'Unit Cost']: item.unitCost || 0,
-                [isAr ? 'إجمالي القيمة' : 'Total Value']: (item.quantity * (item.unitCost || 0)).toFixed(2),
-                [isAr ? 'تاريخ الإضافة' : 'Added Date']: addedDate,
-                [isAr ? 'تاريخ الانتهاء' : 'Expiry Date']: expiryDate
-            };
+            // Ensure variants is an array
+            let variants = [];
+            if (typeof item.variants === 'string') {
+                try { variants = JSON.parse(item.variants); } catch (e) { variants = []; }
+            } else if (Array.isArray(item.variants)) {
+                variants = item.variants;
+            }
+
+            const hasVariants = variants.length > 0;
+            let totalQty = parseFloat(item.quantity || 0);
+            let totalMin = parseFloat(item.min || 0);
+            let totalValue = 0;
+
+            if (hasVariants) {
+                totalQty = variants.reduce((sum, v) => sum + parseFloat(v.quantity || 0), 0);
+                totalMin = variants.reduce((sum, v) => sum + parseFloat(v.min || 0), 0);
+                totalValue = variants.reduce((sum, v) => sum + (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)), 0);
+            } else {
+                totalValue = totalQty * parseFloat(item.cost || 0);
+            }
+
+            // 1. Add Parent Item Row
+            excelData.push({
+                [isAr ? 'الكود' : 'Code']: item.id,
+                [isAr ? 'اسم الصنف / الخامة' : 'Item / Fabric Name']: item.name,
+                [isAr ? 'الكمية' : 'Quantity']: totalQty,
+                [isAr ? 'الحد الأدنى' : 'Min Limit']: totalMin,
+                [isAr ? 'سعر التكلفة (للوحدة)' : 'Unit Cost']: hasVariants ? '---' : parseFloat(item.cost || 0).toFixed(2),
+                [isAr ? 'سعر البيع' : 'Selling Price']: hasVariants ? '---' : parseFloat(item.price || item.cost || 0).toFixed(2),
+                [isAr ? 'إجمالي قيمة المخزون' : 'Total Stock Value']: totalValue.toFixed(2),
+                [isAr ? 'تاريخ التحديث' : 'Last Updated']: addedDate,
+                [isAr ? 'تاريخ الصلاحية' : 'Expiry Date']: expiryDate
+            });
+
+            // 2. Add Variant Rows (indented and marked)
+            if (hasVariants) {
+                variants.forEach(v => {
+                    let vDate = addedDate;
+                    try {
+                        if (v.updatedAt || v.createdAt) {
+                            vDate = new Date(v.updatedAt || v.createdAt).toISOString().split('T')[0];
+                        }
+                    } catch (e) {}
+
+                    excelData.push({
+                        [isAr ? 'الكود' : 'Code']: '',
+                        [isAr ? 'اسم الصنف / الخامة' : 'Item / Fabric Name']: isAr ? `  ↳ ${v.name || 'بدون اسم'}` : `  ↳ ${v.name || 'Unnamed'}`,
+                        [isAr ? 'الكمية' : 'Quantity']: parseFloat(v.quantity || 0),
+                        [isAr ? 'الحد الأدنى' : 'Min Limit']: parseFloat(v.min || 0),
+                        [isAr ? 'سعر التكلفة (للوحدة)' : 'Unit Cost']: parseFloat(v.cost || item.cost || 0).toFixed(2),
+                        [isAr ? 'سعر البيع' : 'Selling Price']: parseFloat(v.price || v.cost || item.cost || 0).toFixed(2),
+                        [isAr ? 'إجمالي قيمة المخزون' : 'Total Stock Value']: (parseFloat(v.quantity || 0) * parseFloat(v.cost || item.cost || 0)).toFixed(2),
+                        [isAr ? 'تاريخ التحديث' : 'Last Updated']: vDate,
+                        [isAr ? 'تاريخ الصلاحية' : 'Expiry Date']: '---'
+                    });
+                });
+            }
         });
 
         const ws = XLSX.utils.json_to_sheet(excelData);
+        
+        // Define column widths for beautiful layout
         const wscols = [
-            {wch: 10}, {wch: 30}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
+            {wch: 10}, // Code
+            {wch: 35}, // Name
+            {wch: 12}, // Quantity
+            {wch: 12}, // Min Limit
+            {wch: 20}, // Unit Cost
+            {wch: 15}, // Selling Price
+            {wch: 22}, // Total Stock Value
+            {wch: 18}, // Last Updated
+            {wch: 18}  // Expiry Date
         ];
         ws['!cols'] = wscols;
 
         const wb = XLSX.utils.book_new();
         
-        // 🛠️ Proper Workbook-level RTL setting
+        // 🛠️ Proper Workbook-level RTL setting if language is Arabic
         if (!wb.Workbook) wb.Workbook = {};
         if (!wb.Workbook.Views) wb.Workbook.Views = [];
         wb.Workbook.Views[0] = { RTL: isAr };

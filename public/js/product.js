@@ -296,8 +296,50 @@ async function deleteProduct(id) {
 
 function exportProductsToExcel() {
     const products = Object.values(allProducts).flat();
-    const worksheet = XLSX.utils.json_to_sheet(products);
+    if (!products || products.length === 0) {
+        Swal.fire({ icon: 'warning', title: isAr ? 'لا توجد منتجات لتصديرها' : 'No products to export' });
+        return;
+    }
+
+    const excelData = products.map(product => {
+        return {
+            [isAr ? 'كود المنتج' : 'Product Code']: product.id,
+            [isAr ? 'الاسم' : 'Name']: product.name,
+            [isAr ? 'الفئة' : 'Category']: product.category || '-',
+            [isAr ? 'سعر البيع قطاعي (EGP)' : 'Retail Price (EGP)']: parseFloat(product.price || 0).toFixed(2),
+            [isAr ? 'سعر الجملة (EGP)' : 'Wholesale Price (EGP)']: parseFloat(product.wholesalePrice || product.price || 0).toFixed(2),
+            [isAr ? 'الكمية المباعة' : 'Quantity Sold']: parseInt(product.sold || 0, 10)
+        };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Auto-size columns to look super clean and prevent text clipping
+    const maxCols = [];
+    if (excelData.length > 0) {
+        const headers = Object.keys(excelData[0]);
+        headers.forEach((header, colIndex) => {
+            maxCols[colIndex] = header.length + 5; // header length padding
+        });
+        excelData.forEach(row => {
+            headers.forEach((header, colIndex) => {
+                const val = row[header] ? row[header].toString() : '';
+                const len = val.length + 3;
+                if (len > maxCols[colIndex]) {
+                    maxCols[colIndex] = len;
+                }
+            });
+        });
+        worksheet['!cols'] = maxCols.map(w => ({ wch: Math.max(w, 12) }));
+    }
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-    XLSX.writeFile(workbook, "vortex_products.xlsx");
+    if (!workbook.Workbook) workbook.Workbook = {};
+    if (!workbook.Workbook.Views) workbook.Workbook.Views = [];
+    workbook.Workbook.Views[0] = { RTL: isAr };
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, isAr ? "المنتجات" : "Products");
+    
+    const fileName = isAr ? `تقرير_المنتجات_${new Date().toISOString().split('T')[0]}.xlsx` : `vortex_products_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
 }

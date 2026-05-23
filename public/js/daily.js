@@ -102,23 +102,47 @@ function openReport() {
 
 // 🟢 دالة تصدير البيانات إلى إكسل
 function exportToExcel() {
+    const currentLang = localStorage.getItem('lang') || 'ar';
+    const isAr = currentLang === 'ar';
+
+    const title = isAr ? "Vortex POS - تقرير المبيعات اليومي" : "Vortex POS - Daily Sales Report";
+    const dateLabel = isAr ? "التاريخ" : "Date";
+    const metricHeader = isAr ? "المؤشر" : "Metric";
+    const valueHeader = isAr ? "القيمة" : "Value";
+
+    const metrics = [
+        { key: isAr ? "إجمالي الطلبات" : "Total Orders", val: document.getElementById("totalOrders").textContent },
+        { key: isAr ? "إجمالي السندوتشات" : "Total Sandwiches", val: document.getElementById("totalSandwiches").textContent },
+        { key: isAr ? "إجمالي الإيرادات" : "Total Revenue", val: document.getElementById("total-revenue").textContent },
+        { key: isAr ? "إجمالي التكلفة" : "Total Cost", val: document.getElementById("total-cost").textContent },
+        { key: isAr ? "إجمالي الأرباح" : "Total Earnings", val: document.getElementById("total-earnings").textContent },
+        { key: isAr ? "إجمالي الخصومات" : "Total Discounts", val: document.getElementById("total-discount").textContent },
+        { key: isAr ? "المدفوعات الإلكترونية" : "Online Payments", val: document.getElementById("total-online-payments").textContent }
+    ];
+
     const data = [
-        ["Vortex POS - Daily Sales Report"],
-        ["Date", new Date().toLocaleDateString()],
+        [title],
+        [dateLabel, new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US')],
         [],
-        ["Metric", "Value"],
-        ["Total Orders", document.getElementById("totalOrders").textContent],
-        ["Total Sandwiches", document.getElementById("totalSandwiches").textContent],
-        ["Total Revenue", document.getElementById("total-revenue").textContent],
-        ["Total Cost", document.getElementById("total-cost").textContent],
-        ["Total Earnings", document.getElementById("total-earnings").textContent],
-        ["Total Discounts", document.getElementById("total-discount").textContent],
-        ["Online Payments", document.getElementById("total-online-payments").textContent]
+        [metricHeader, valueHeader],
+        ...metrics.map(m => [m.key, m.val])
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Daily Summary");
     
-    XLSX.writeFile(wb, `Daily_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // Auto-size columns to look super clean and prevent text clipping
+    ws['!cols'] = [
+        { wch: isAr ? 35 : 25 }, // Metric column
+        { wch: 18 }  // Value column
+    ];
+
+    const wb = XLSX.utils.book_new();
+    if (!wb.Workbook) wb.Workbook = {};
+    if (!wb.Workbook.Views) wb.Workbook.Views = [];
+    wb.Workbook.Views[0] = { RTL: isAr };
+
+    XLSX.utils.book_append_sheet(wb, ws, isAr ? "الملخص اليومي" : "Daily Summary");
+    
+    const fileName = isAr ? `تقرير_المبيعات_اليومي_${new Date().toISOString().split('T')[0]}.xlsx` : `Daily_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 }

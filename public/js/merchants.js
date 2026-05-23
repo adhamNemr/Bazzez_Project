@@ -5,7 +5,14 @@ let activeMerchantId = null;
 document.addEventListener('DOMContentLoaded', () => {
     fetchMerchants();
     updateSummary();
-    document.getElementById('trans-date').valueAsDate = new Date();
+    
+    // Initialize flatpickr for new transaction modal date
+    flatpickr('#trans-date', {
+        locale: 'ar',
+        dateFormat: 'Y-m-d',
+        defaultDate: new Date()
+    });
+
     document.getElementById('merchant-form').addEventListener('submit', handleMerchantSubmit);
     document.getElementById('transaction-form').addEventListener('submit', handleTransactionSubmit);
     window.addEventListener('click', (e) => {
@@ -344,14 +351,20 @@ async function editTransaction(t) {
         html: `
             <div style="text-align:right;font-family:inherit;">
                 <label style="font-weight:700;display:block;margin-bottom:5px;">المبلغ</label>
-                <input id="sa" class="swal2-input" type="number" step="0.01" value="${t.amount}" style="margin:0 0 12px;width:100%;">
+                <input id="sa" class="swal2-input" type="text" inputmode="decimal" value="${t.amount}" style="margin:0 0 12px;width:100%;">
                 <label style="font-weight:700;display:block;margin-bottom:5px;">التاريخ</label>
-                <input id="sd" class="swal2-input" type="date" value="${(t.date||'').split('T')[0]}" style="margin:0 0 12px;width:100%;">
+                <input id="sd" class="swal2-input" type="text" value="${(t.date||'').split('T')[0]}" style="margin:0 0 12px;width:100%;">
                 <label style="font-weight:700;display:block;margin-bottom:5px;">ملاحظات</label>
-                <textarea id="sn" class="swal2-textarea" style="margin:0;width:100%;height:70px;">${t.notes||''}</textarea>
+                <textarea id="sn" class="swal2-textarea" style="margin:0;width:100%;height:70px;font-family:inherit;font-size:0.95rem;">${t.notes||''}</textarea>
             </div>`,
         focusConfirm: false, showCancelButton: true,
         confirmButtonText: 'حفظ', cancelButtonText: 'إلغاء', confirmButtonColor: '#008060',
+        didOpen: () => {
+            flatpickr('#sd', {
+                locale: 'ar',
+                dateFormat: 'Y-m-d'
+            });
+        },
         preConfirm: () => {
             const a = document.getElementById('sa').value;
             if (!a || parseFloat(a) <= 0) { Swal.showValidationMessage('أدخل مبلغ صحيح'); return false; }
@@ -480,7 +493,10 @@ function openTransactionModal(type) {
     if (!activeMerchantId) return showToast('الرجاء اختيار عميل أو مورد أولاً', 'warning');
     document.getElementById('trans-type').value = type;
     document.getElementById('trans-modal-title').textContent = type === 'invoice' ? '📦 إضافة فاتورة / بضاعة' : '💳 إضافة دفعة / سداد';
-    document.getElementById('trans-date').valueAsDate = new Date();
+    const dateInput = document.getElementById('trans-date');
+    if (dateInput._flatpickr) {
+        dateInput._flatpickr.setDate(new Date());
+    }
     document.getElementById('transaction-modal').style.display = 'flex';
 }
 

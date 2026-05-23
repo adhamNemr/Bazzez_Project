@@ -502,6 +502,7 @@ tr:hover td {
     padding: 10px !important;
     width: 325px !important; /* Fix for Arabic text clipping */
     box-sizing: border-box !important;
+    z-index: 999999 !important; /* Fix for SweetAlert modals */
 }
 
 .flatpickr-months .flatpickr-month {

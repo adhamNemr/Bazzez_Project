@@ -193,8 +193,15 @@ class SyncService {
         let cleanPayload = { ...payload };
         delete cleanPayload.local_id;
         delete cleanPayload.sync_status;
-        delete cleanPayload.createdAt;
-        delete cleanPayload.updatedAt;
+        
+        // Preserve createdAt and updatedAt to ensure they are synchronized with the cloud
+        // and to avoid NOT NULL constraint violations on tables (like Expenses) that require them.
+        if (cleanPayload.createdAt === undefined || cleanPayload.createdAt === null) {
+            delete cleanPayload.createdAt;
+        }
+        if (cleanPayload.updatedAt === undefined || cleanPayload.updatedAt === null) {
+            delete cleanPayload.updatedAt;
+        }
 
         // 🛡️ Self-Healing: Ensure default walk-in customer exists on Supabase before pushing orders
         if (remoteTableName === 'Orders' && operation === 'INSERT') {

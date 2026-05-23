@@ -448,8 +448,15 @@ function clearErrors() {
 // ─── Export to Excel ──────────────────────────────────────────────────────────
 
 function exportToExcel() {
+    const currentLang = localStorage.getItem('lang') || 'ar';
+    const isAr = currentLang === 'ar';
+
     if (allExpenses.length === 0) {
-        Swal.fire({ icon: 'info', title: 'لا يوجد بيانات', text: 'لا يوجد مصروفات لتصديرها في التاريخ المختار' });
+        Swal.fire({
+            icon: 'info',
+            title: isAr ? 'لا يوجد بيانات' : 'No Data',
+            text: isAr ? 'لا يوجد مصروفات لتصديرها في التاريخ المختار' : 'There are no expenses to export in the selected date range'
+        });
         return;
     }
 
@@ -465,26 +472,67 @@ function exportToExcel() {
         );
     }
 
+    const categoryNames = isAr ? CATEGORY_NAMES : {
+        Supplies: 'Supplies & Materials',
+        Rent: 'Rent',
+        Utilities: 'Utilities',
+        Salaries: 'Salaries',
+        Maintenance: 'Maintenance',
+        Marketing: 'Marketing',
+        Other: 'Other'
+    };
+
+    const paymentMethods = isAr ? {
+        cash: 'كاش',
+        card: 'فيزا',
+        vcash: 'فودافون كاش',
+        instapay: 'إنستاباي'
+    } : {
+        cash: 'Cash',
+        card: 'Visa',
+        vcash: 'Vodafone Cash',
+        instapay: 'Instapay'
+    };
+
     const rows = toExport.map(e => ({
-        'التاريخ': e.date,
-        'الوصف': e.description,
-        'الفئة': CATEGORY_NAMES[e.category] || e.category,
-        'المبلغ': parseFloat(e.amount),
-        'طريقة الدفع': METHOD_ICONS[e.payment_method]?.label || e.payment_method,
-        'ملاحظات': e.notes || '',
-        'بواسطة': e.addedBy || ''
+        [isAr ? 'التاريخ' : 'Date']: e.date,
+        [isAr ? 'الوصف' : 'Description']: e.description,
+        [isAr ? 'الفئة' : 'Category']: categoryNames[e.category] || e.category,
+        [isAr ? 'المبلغ (EGP)' : 'Amount (EGP)']: parseFloat(e.amount || 0).toFixed(2),
+        [isAr ? 'طريقة الدفع' : 'Payment Method']: paymentMethods[e.payment_method] || METHOD_ICONS[e.payment_method]?.label || e.payment_method,
+        [isAr ? 'ملاحظات' : 'Notes']: e.notes || '',
+        [isAr ? 'بواسطة' : 'Added By']: e.addedBy || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
+    
+    // Auto-size columns to look super clean and prevent text clipping
+    const maxCols = [];
+    if (rows.length > 0) {
+        const headers = Object.keys(rows[0]);
+        headers.forEach((header, colIndex) => {
+            maxCols[colIndex] = header.length + 5; // header length padding
+        });
+        rows.forEach(row => {
+            headers.forEach((header, colIndex) => {
+                const val = row[header] ? row[header].toString() : '';
+                const len = val.length + 3;
+                if (len > maxCols[colIndex]) {
+                    maxCols[colIndex] = len;
+                }
+            });
+        });
+        worksheet['!cols'] = maxCols.map(w => ({ wch: Math.max(w, 12) }));
+    }
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+    if (!workbook.Workbook) workbook.Workbook = {};
+    if (!workbook.Workbook.Views) workbook.Workbook.Views = [];
+    workbook.Workbook.Views[0] = { RTL: isAr };
 
-    // Auto-size columns (rough estimate)
-    const wscols = [
-        {wch: 12}, {wch: 30}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 30}, {wch: 15}
-    ];
-    worksheet['!cols'] = wscols;
+    XLSX.utils.book_append_sheet(workbook, worksheet, isAr ? "المصروفات" : "Expenses");
 
-    const fileName = `Expenses_${document.getElementById('date-filter').value}.xlsx`;
+    const dateVal = document.getElementById('date-filter').value;
+    const fileName = isAr ? `تقرير_المصروفات_${dateVal}.xlsx` : `Expenses_${dateVal}.xlsx`;
     XLSX.writeFile(workbook, fileName);
 }

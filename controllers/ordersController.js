@@ -1,4 +1,4 @@
-const { Order, sequelize, Setting, Product, Inventory, Recipe } = require("../models");
+const { Order, sequelize, Setting, Product, Inventory, Recipe, DailyClosing, MonthlyClosing } = require("../models");
 
 exports.fetchOrders = async (req, res) => {
     try {
@@ -155,6 +155,64 @@ exports.formatOrderDetails = (req, res) => {
     }
 };
 
+// ✅ Helper to calculate the cost of a single order
+async function calculateOrderCost(orderItems) {
+    let orderCost = 0;
+    const ingredientMap = {};
+
+    const [allRecipes, allInventory] = await Promise.all([
+        Recipe.findAll({ raw: true }),
+        Inventory.findAll({ raw: true })
+    ]);
+
+    const recipeMap = {};
+    allRecipes.forEach(r => {
+        if (!recipeMap[r.sandwich]) recipeMap[r.sandwich] = [];
+        recipeMap[r.sandwich].push(r);
+    });
+
+    const inventoryMap = {};
+    allInventory.forEach(inv => {
+        inventoryMap[inv.name] = inv;
+    });
+
+    for (const item of orderItems) {
+        const recipes = recipeMap[item.name] || [];
+        if (recipes.length > 0) {
+            recipes.forEach(recipe => {
+                const ingredient = recipe.ingredient.trim().toLowerCase();
+                const quantityUsed = recipe.amount * item.quantity;
+                ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
+            });
+        } else {
+            const inventoryItem = inventoryMap[item.name];
+            if (inventoryItem) {
+                let itemCost = parseFloat(inventoryItem.cost) || 0;
+                if (item.variant && inventoryItem.variants) {
+                    const variants = typeof inventoryItem.variants === 'string' ? JSON.parse(inventoryItem.variants) : inventoryItem.variants;
+                    const matchedVariant = variants.find(v => {
+                        const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
+                        return vLabel === item.variant || (vLabel && item.variant.startsWith(vLabel + ' '));
+                    });
+                    if (matchedVariant && matchedVariant.cost !== undefined && matchedVariant.cost !== null) {
+                        itemCost = parseFloat(matchedVariant.cost);
+                    }
+                }
+                orderCost += itemCost * item.quantity;
+            }
+        }
+    }
+
+    if (Object.keys(ingredientMap).length > 0) {
+        allInventory.forEach(item => {
+            const name = item.name.trim().toLowerCase();
+            if (ingredientMap[name]) orderCost += ingredientMap[name] * parseFloat(item.cost || 0);
+        });
+    }
+
+    return parseFloat(orderCost.toFixed(2));
+}
+
 exports.cancelOrder = async (req, res) => {
     try {
         const { orderId } = req.params;
@@ -211,6 +269,53 @@ exports.cancelOrder = async (req, res) => {
 
         order.isCancelled = "Yes";
         await order.save();
+
+        // 🔄 تحديث التقفيل اليومي والشهري إذا كان اليوم مغلقاً بالفعل
+        try {
+            const dailyClosing = await DailyClosing.findOne({ where: { closingDate: new Date(order.businessDate) } });
+            if (dailyClosing) {
+                const orderCost = await calculateOrderCost(orderItems);
+                const totalItemsQty = orderItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+                // تحديث التقفيل اليومي
+                dailyClosing.totalOrders = Math.max(0, dailyClosing.totalOrders - 1);
+                dailyClosing.totalSandwiches = Math.max(0, dailyClosing.totalSandwiches - totalItemsQty);
+                dailyClosing.totalRevenue = parseFloat(Math.max(0, parseFloat(dailyClosing.totalRevenue) - parseFloat(order.orderTotal)).toFixed(2));
+                dailyClosing.totalDiscount = parseFloat(Math.max(0, parseFloat(dailyClosing.totalDiscount) - parseFloat(order.discountAmount || 0)).toFixed(2));
+                
+                if (order.payment_method && order.payment_method.toLowerCase() !== "cash") {
+                    dailyClosing.onlinePaymentsTotal = parseFloat(Math.max(0, parseFloat(dailyClosing.onlinePaymentsTotal) - parseFloat(order.orderTotal)).toFixed(2));
+                }
+                
+                dailyClosing.totalCost = parseFloat(Math.max(0, parseFloat(dailyClosing.totalCost) - orderCost).toFixed(2));
+                dailyClosing.totalEarnings = parseFloat((parseFloat(dailyClosing.totalRevenue) - parseFloat(dailyClosing.totalCost) - parseFloat(dailyClosing.totalExpenses)).toFixed(2));
+                
+                await dailyClosing.save();
+                console.log(`✅ Updated DailyClosing stats for ${order.businessDate} due to cancellation of order ${order.id}`);
+
+                // تحديث التقفيل الشهري إذا كان مغلقاً أيضاً
+                const monthYear = order.businessDate.slice(0, 7); // "YYYY-MM"
+                const monthlyClosing = await MonthlyClosing.findOne({ where: { month_year: monthYear } });
+                if (monthlyClosing) {
+                    monthlyClosing.total_orders = Math.max(0, monthlyClosing.total_orders - 1);
+                    monthlyClosing.total_sandwiches = Math.max(0, monthlyClosing.total_sandwiches - totalItemsQty);
+                    monthlyClosing.total_revenue = parseFloat(Math.max(0, parseFloat(monthlyClosing.total_revenue) - parseFloat(order.orderTotal)).toFixed(2));
+                    monthlyClosing.total_cost = parseFloat(Math.max(0, parseFloat(monthlyClosing.total_cost) - orderCost).toFixed(2));
+                    monthlyClosing.totalDiscount = parseFloat(Math.max(0, parseFloat(monthlyClosing.totalDiscount) - parseFloat(order.discountAmount || 0)).toFixed(2));
+                    
+                    if (order.payment_method && order.payment_method.toLowerCase() !== "cash") {
+                        monthlyClosing.onlinePaymentsTotal = parseFloat(Math.max(0, parseFloat(monthlyClosing.onlinePaymentsTotal) - parseFloat(order.orderTotal)).toFixed(2));
+                    }
+                    
+                    monthlyClosing.total_earnings = parseFloat((parseFloat(monthlyClosing.total_revenue) - parseFloat(monthlyClosing.total_cost) - parseFloat(monthlyClosing.totalExpenses)).toFixed(2));
+                    
+                    await monthlyClosing.save();
+                    console.log(`✅ Updated MonthlyClosing stats for ${monthYear} due to cancellation of order ${order.id}`);
+                }
+            }
+        } catch (syncErr) {
+            console.error("❌ Failed to update closing stats on order cancellation:", syncErr);
+        }
 
         // 📝 Audit Log
         const { logAudit } = require('../utils/auditLogger');
