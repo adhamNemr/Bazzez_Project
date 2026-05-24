@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Using LTS Version for stability
+          node-version: '24' # Using LTS Version for stability
           cache: 'npm'
 
       - name: Install Dependencies

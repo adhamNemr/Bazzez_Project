@@ -31,8 +31,8 @@ router.post('/', async (req, res) => {
         // إنشاء توكن JWT
         const token = jwt.sign(
             { username: user.username, role: user.role }, 
-            process.env.JWT_SECRET || 'mySuperSecretKey123', 
-            { expiresIn: '1h' }
+            process.env.JWT_SECRET || 'fallback_secret_for_dev', 
+            { expiresIn: '7d' }
         );
 
         console.log('🟢 تسجيل الدخول ناجح، اسم المستخدم:', user.username);

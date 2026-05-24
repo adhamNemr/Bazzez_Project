@@ -80,10 +80,18 @@
       const response = await originalFetch(resource, config);
       clearTimeout(timeoutId);
 
+      // 🚪 Auto-redirect to login ONLY if we get a 401 AND we are not already on index/login
       if (response.status === 401 && !resource.includes("/login")) {
-        console.warn("⚠️ Unauthorized access - redirecting to login");
-        localStorage.removeItem("token");
-        window.location.href = "/index.html";
+        const isLoginPage =
+          window.location.pathname === "/" ||
+          window.location.pathname.includes("index.html");
+        if (!isLoginPage) {
+          console.warn(
+            "⚠️ Unauthorized access detected - clearing token and redirecting",
+          );
+          localStorage.removeItem("token");
+          window.location.href = "/index.html";
+        }
       }
 
       return response;
