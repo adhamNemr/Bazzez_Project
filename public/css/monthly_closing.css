@@ -52,8 +52,8 @@
         /* --- Hero Card --- */
         .hero-card {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 20px;
-            padding: 1.8rem 2.5rem;
+            border-radius: var(--radius-lg);
+            padding: clamp(1.5rem, 3vh, 1.8rem) clamp(2rem, 3vw, 2.5rem);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -81,7 +81,7 @@
         }
         .hero-value {
             color: white;
-            font-size: 3rem;
+            font-size: clamp(2.5rem, 5vh, 3.5rem);
             font-weight: 800;
             letter-spacing: -1px;
             line-height: 1;
@@ -112,8 +112,8 @@
 
         .stat-card {
             background: white;
-            border-radius: 18px;
-            padding: 1.2rem;
+            border-radius: var(--radius-md);
+            padding: clamp(1rem, 2vh, 1.25rem);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -125,10 +125,11 @@
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
         .stat-top { display: flex; justify-content: space-between; align-items: flex-start; }
         .stat-icon-box {
-            width: 42px; height: 42px;
-            border-radius: 12px;
+            width: clamp(38px, 5vh, 44px); 
+            height: clamp(38px, 5vh, 44px);
+            border-radius: var(--radius-sm);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem;
+            font-size: clamp(1.1rem, 1.5vh, 1.3rem);
         }
         .revenue-icon  { background: #ecfdf5; color: #059669; }
         .expenses-icon { background: #fef2f2; color: #dc2626; }
@@ -141,7 +142,7 @@
 
         .stat-meta { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
         .stat-label  { color: #64748b; font-weight: 600; font-size: 0.85rem; }
-        .stat-number { color: #0f172a; font-weight: 800; font-size: 1.35rem; margin-top: 0.3rem; }
+        .stat-number { color: #0f172a; font-weight: 800; font-size: clamp(1.2rem, 2.2vh, 1.4rem); margin-top: 0.3rem; }
 
         /* Month Picker inside a stat card */
         .month-picker-input {
@@ -160,8 +161,8 @@
 
         .detail-card {
             background: white;
-            border-radius: 20px;
-            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            padding: clamp(1.25rem, 2.5vh, 1.5rem);
             box-shadow: 0 4px 12px rgba(0,0,0,0.03);
             border: 1px solid #f1f5f9;
         }
@@ -181,8 +182,8 @@
         .data-list { display: flex; flex-direction: column; gap: 0.8rem; }
         .data-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0.8rem; background: #f8fafc;
-            border-radius: 14px; border: 1px solid #f1f5f9;
+            padding: clamp(0.6rem, 1.2vh, 0.8rem); background: #f8fafc;
+            border-radius: var(--radius-md); border: 1px solid #f1f5f9;
             transition: all 0.2s ease;
         }
         .data-item:hover { border-color: #e2e8f0; background: #fff; }
