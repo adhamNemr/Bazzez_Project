@@ -176,31 +176,47 @@ exports.updateProduct = async (req, res) => {
 
 // حذف منتج معين
 exports.deleteProduct = async (req, res) => {
+    const transaction = await sequelize.transaction();
     try {
-        const product = await Product.findByPk(req.params.id); // ✅ استخدام Product بدلًا من Products
+        const product = await Product.findByPk(req.params.id, { transaction });
         if (!product) {
+            await transaction.rollback();
             return res.status(404).json({ error: "⚠️ المنتج غير موجود." });
         }
 
         const oldName = product.name;
-        await product.destroy();
+        
+        // 1. حذف المنتج من جدول Products
+        await product.destroy({ transaction });
 
-        // 🔄 Sync with Inventory: Delete the linked stock record
-        try {
-            await Inventory.destroy({ where: { name: oldName } });
-        } catch (invError) {
-            console.error("⚠️ خطأ أثناء حذف المنتج من المخزن تلقائياً:", invError);
-        }
+        // 2. 🔄 حذف السجل المقابل في جدول Inventory لضمان عدم وجود Orphaned Records
+        // تم استخدام transaction لضمان حذف الاثنين معاً أو لا شيء
+        await Inventory.destroy({ 
+            where: { name: oldName },
+            transaction 
+        });
 
-        // ✅ Enqueue for Sync
+        // 3. حذف أي وصفات (Recipes) مرتبطة بهذا المنتج لضمان نظافة البيانات
+        await Recipe.destroy({
+            where: { sandwich: oldName },
+            transaction
+        });
+
+        await transaction.commit();
+
+        // ✅ Enqueue for Sync (بعد نجاح العملية محلياً)
         syncService.enqueue('DELETE', 'products', req.params.id, { id: req.params.id })
             .catch(err => console.error('Sync queue error:', err));
+        
+        syncService.enqueue('DELETE', 'inventory', oldName, { name: oldName })
+            .catch(err => console.error('Sync queue error (Inventory):', err));
 
-        res.json({ success: true, message: "✅ تم حذف المنتج بنجاح!" });
+        res.json({ success: true, message: "✅ تم حذف المنتج وجميع سجلات المخزن المرتبطة به بنجاح!" });
 
     } catch (error) {
-        console.error("⚠️ خطأ أثناء حذف المنتج:", error);
-        res.status(500).json({ error: "⚠️ حدث خطأ أثناء حذف المنتج." });
+        if (transaction) await transaction.rollback();
+        console.error("⚠️ خطأ أثناء حذف المنتج وملحقاته:", error);
+        res.status(500).json({ error: "⚠️ حدث خطأ أثناء عملية الحذف." });
     }
 };
 

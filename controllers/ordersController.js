@@ -1,378 +1,567 @@
-const { Order, sequelize, Setting, Product, Inventory, Recipe, DailyClosing, MonthlyClosing } = require("../models");
+const {
+  Order,
+  sequelize,
+  Setting,
+  Product,
+  Inventory,
+  Recipe,
+  DailyClosing,
+  MonthlyClosing,
+} = require("../models");
 
 exports.fetchOrders = async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const offset = (page - 1) * limit;
-        const nopaging = req.query.nopaging === 'true';
-        const { date, status, search } = req.query;
-        const { Op } = require("sequelize");
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const nopaging = req.query.nopaging === "true";
+    const { date, status, search } = req.query;
+    const { Op } = require("sequelize");
 
-        const activeDateSetting = await Setting.findOne({ where: { key: 'active_business_date' } });
-        const activeBusinessDate = activeDateSetting ? activeDateSetting.value : new Date().toLocaleDateString('en-CA');
+    const activeDateSetting = await Setting.findOne({
+      where: { key: "active_business_date" },
+    });
+    const activeBusinessDate = activeDateSetting
+      ? activeDateSetting.value
+      : new Date().toLocaleDateString("en-CA");
 
-        const where = {};
+    const where = {};
 
-        // 🗓️ Strict Date Filter
-        const filterDate = (date && date.trim() !== "" && date !== 'undefined') ? date : activeBusinessDate;
-        where.businessDate = filterDate;
+    // 🗓️ Strict Date Filter
+    const filterDate =
+      date && date.trim() !== "" && date !== "undefined"
+        ? date
+        : activeBusinessDate;
+    where.businessDate = filterDate;
 
-        // 🏷️ Status Filter
-        if (status && status !== 'all' && status !== 'undefined') {
-            if (status === 'cancelled') {
-                where.isCancelled = 'Yes';
-            } else {
-                where.payment_status = status;
-                where.isCancelled = { [Op.ne]: 'Yes' };
-            }
-        }
-
-        let cleanSearch = (search && search !== 'undefined') ? search.trim() : "";
-        const arabicMap = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
-        cleanSearch = cleanSearch.replace(/[٠-٩]/g, d => arabicMap[d]);
-
-        const isNumericSearch = !isNaN(cleanSearch) && cleanSearch !== "";
-
-        if (cleanSearch !== "") {
-            where[Op.or] = [
-                { dailySerial: isNumericSearch ? parseInt(cleanSearch) : 0 },
-                sequelize.where(sequelize.cast(sequelize.col('dailySerial'), 'TEXT'), { [Op.like]: `%${cleanSearch}%` }),
-                { customerName: { [Op.like]: `%${cleanSearch}%` } },
-                { customerPhone: { [Op.like]: `%${cleanSearch}%` } }
-            ];
-        }
-
-        if (nopaging) {
-            const orders = await Order.findAll({ where, order: [["id", "DESC"]] });
-            return res.json(orders);
-        }
-
-        const { count, rows } = await Order.findAndCountAll({
-            where,
-            order: [["id", "DESC"]],
-            limit: limit,
-            offset: offset
-        });
-
-        // 📊 Unified Count Calculation - Optimizing latency by running queries concurrently
-        const countsWhere = { businessDate: filterDate };
-        
-        const [all, paid, pending, cancelled, todayCount] = await Promise.all([
-            Order.count({ where: countsWhere }),
-            Order.count({ where: { ...countsWhere, payment_status: 'Paid', isCancelled: { [Op.ne]: 'Yes' } } }),
-            Order.count({ where: { ...countsWhere, payment_status: 'Pending', isCancelled: { [Op.ne]: 'Yes' } } }),
-            Order.count({ where: { ...countsWhere, isCancelled: 'Yes' } }),
-            Order.count({ where: { businessDate: activeBusinessDate } })
-        ]);
-
-        const counts = { all, paid, pending, cancelled, today: todayCount };
-
-        res.json({
-            orders: rows,
-            total: count,
-            currentPage: page,
-            totalPages: Math.ceil(count / limit),
-            counts
-        });
-    } catch (error) {
-        console.error("❌ خطأ في جلب الطلبات:", error);
-        res.status(500).json({ message: "❌ خطأ في جلب الطلبات" });
+    // 🏷️ Status Filter
+    if (status && status !== "all" && status !== "undefined") {
+      if (status === "cancelled") {
+        where.isCancelled = "Yes";
+      } else {
+        where.payment_status = status;
+        where.isCancelled = { [Op.ne]: "Yes" };
+      }
     }
+
+    let cleanSearch = search && search !== "undefined" ? search.trim() : "";
+    const arabicMap = {
+      "٠": "0",
+      "١": "1",
+      "٢": "2",
+      "٣": "3",
+      "٤": "4",
+      "٥": "5",
+      "٦": "6",
+      "٧": "7",
+      "٨": "8",
+      "٩": "9",
+    };
+    cleanSearch = cleanSearch.replace(/[٠-٩]/g, (d) => arabicMap[d]);
+
+    const isNumericSearch = !isNaN(cleanSearch) && cleanSearch !== "";
+
+    if (cleanSearch !== "") {
+      where[Op.or] = [
+        { dailySerial: isNumericSearch ? parseInt(cleanSearch) : 0 },
+        sequelize.where(sequelize.cast(sequelize.col("dailySerial"), "TEXT"), {
+          [Op.like]: `%${cleanSearch}%`,
+        }),
+        { customerName: { [Op.like]: `%${cleanSearch}%` } },
+        { customerPhone: { [Op.like]: `%${cleanSearch}%` } },
+      ];
+    }
+
+    if (nopaging) {
+      const orders = await Order.findAll({ where, order: [["id", "DESC"]] });
+      return res.json(orders);
+    }
+
+    const { count, rows } = await Order.findAndCountAll({
+      where,
+      order: [["id", "DESC"]],
+      limit: limit,
+      offset: offset,
+    });
+
+    // 📊 Unified Count Calculation - Optimizing latency by running queries concurrently
+    const countsWhere = { businessDate: filterDate };
+
+    const [all, paid, pending, cancelled, todayCount] = await Promise.all([
+      Order.count({ where: countsWhere }),
+      Order.count({
+        where: {
+          ...countsWhere,
+          payment_status: "Paid",
+          isCancelled: { [Op.ne]: "Yes" },
+        },
+      }),
+      Order.count({
+        where: {
+          ...countsWhere,
+          payment_status: "Pending",
+          isCancelled: { [Op.ne]: "Yes" },
+        },
+      }),
+      Order.count({ where: { ...countsWhere, isCancelled: "Yes" } }),
+      Order.count({ where: { businessDate: activeBusinessDate } }),
+    ]);
+
+    const counts = { all, paid, pending, cancelled, today: todayCount };
+
+    res.json({
+      orders: rows,
+      total: count,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+      counts,
+    });
+  } catch (error) {
+    console.error("❌ خطأ في جلب الطلبات:", error);
+    res.status(500).json({ message: "❌ خطأ في جلب الطلبات" });
+  }
 };
 
 exports.countSandwiches = (req, res) => {
-    try {
-        const { orderDetails } = req.body;
-        if (!orderDetails) return res.json({ count: 0 });
+  try {
+    const { orderDetails } = req.body;
+    if (!orderDetails) return res.json({ count: 0 });
 
-        let sandwiches = [];
-        try {
-            sandwiches = typeof orderDetails === 'string' ? JSON.parse(orderDetails) : orderDetails;
-        } catch (e) { return res.json({ count: 0 }); }
-        
-        if (!Array.isArray(sandwiches)) return res.json({ count: 0 });
-        
-        const total = sandwiches.reduce((total, sandwich) => total + (Number(sandwich.quantity) || 0), 0);
-        res.json({ count: total });
-    } catch (error) {
-        console.error("❌ خطأ في حساب السندوتشات:", error);
-        res.status(400).json({ message: "⚠️ خطأ في تحليل الطلب" });
+    let sandwiches = [];
+    try {
+      sandwiches =
+        typeof orderDetails === "string"
+          ? JSON.parse(orderDetails)
+          : orderDetails;
+    } catch (e) {
+      return res.json({ count: 0 });
     }
+
+    if (!Array.isArray(sandwiches)) return res.json({ count: 0 });
+
+    const total = sandwiches.reduce(
+      (total, sandwich) => total + (Number(sandwich.quantity) || 0),
+      0,
+    );
+    res.json({ count: total });
+  } catch (error) {
+    console.error("❌ خطأ في حساب السندوتشات:", error);
+    res.status(400).json({ message: "⚠️ خطأ في تحليل الطلب" });
+  }
 };
 
 exports.formatOrderDetails = (req, res) => {
+  try {
+    const { orderDetails } = req.body;
+    if (!orderDetails) return res.json({ formatted: [] });
+
+    let items = [];
+    const cleanedOrderDetails =
+      typeof orderDetails === "string"
+        ? orderDetails.replace(/\u200B/g, "").trim()
+        : orderDetails;
+
     try {
-        const { orderDetails } = req.body;
-        if (!orderDetails) return res.json({ formatted: [] });
-
-        let items = [];
-        const cleanedOrderDetails = (typeof orderDetails === 'string') ? orderDetails.replace(/\u200B/g, "").trim() : orderDetails;
-
-        try {
-            items = typeof cleanedOrderDetails === "string" ? JSON.parse(cleanedOrderDetails) : cleanedOrderDetails;
-        } catch (e) {
-            return res.json({ formatted: [] });
-        }
-
-        if (!Array.isArray(items)) items = [];
-
-        const formatted = items.map((item) => {
-            let addonsTotal = 0;
-            const comments = (item.comments || []).map(comment => {
-                const addPrice = parseFloat(comment.price || 0);
-                addonsTotal += addPrice;
-                return { text: comment.text, price: addPrice.toFixed(2) };
-            });
-
-            const manualComments = (item.manualComments || []).map(comment => {
-                if (typeof comment === "object") {
-                    const addPrice = parseFloat(comment.price || 0);
-                    addonsTotal += addPrice;
-                    return { text: comment.text, price: addPrice.toFixed(2) };
-                }
-                return { text: comment, price: "0.00" };
-            });
-
-            const quantity = Number(item.quantity) || 1;
-            const basePrice = parseFloat(item.price) || 0;
-
-            return {
-                name: item.name,
-                variant: item.variant || null,
-                price: basePrice.toFixed(2),
-                quantity: quantity,
-                comments,
-                manualComments,
-                total: (basePrice + addonsTotal) * quantity
-            };
-        });
-
-        res.json({ formatted });
-    } catch (error) {
-        console.error("❌ خطأ في تنسيق الطلب:", error.message);
-        res.status(400).json({ message: error.message });
+      items =
+        typeof cleanedOrderDetails === "string"
+          ? JSON.parse(cleanedOrderDetails)
+          : cleanedOrderDetails;
+    } catch (e) {
+      return res.json({ formatted: [] });
     }
+
+    if (!Array.isArray(items)) items = [];
+
+    const formatted = items.map((item) => {
+      let addonsTotal = 0;
+      const comments = (item.comments || []).map((comment) => {
+        const addPrice = parseFloat(comment.price || 0);
+        addonsTotal += addPrice;
+        return { text: comment.text, price: addPrice.toFixed(2) };
+      });
+
+      const manualComments = (item.manualComments || []).map((comment) => {
+        if (typeof comment === "object") {
+          const addPrice = parseFloat(comment.price || 0);
+          addonsTotal += addPrice;
+          return { text: comment.text, price: addPrice.toFixed(2) };
+        }
+        return { text: comment, price: "0.00" };
+      });
+
+      const quantity = Number(item.quantity) || 1;
+      const basePrice = parseFloat(item.price) || 0;
+
+      return {
+        name: item.name,
+        variant: item.variant || null,
+        price: basePrice.toFixed(2),
+        quantity: quantity,
+        comments,
+        manualComments,
+        total: (basePrice + addonsTotal) * quantity,
+      };
+    });
+
+    res.json({ formatted });
+  } catch (error) {
+    console.error("❌ خطأ في تنسيق الطلب:", error.message);
+    res.status(400).json({ message: error.message });
+  }
 };
 
 // ✅ Helper to calculate the cost of a single order
 async function calculateOrderCost(orderItems) {
-    let orderCost = 0;
-    const ingredientMap = {};
+  let orderCost = 0;
+  const ingredientMap = {};
 
-    const [allRecipes, allInventory] = await Promise.all([
-        Recipe.findAll({ raw: true }),
-        Inventory.findAll({ raw: true })
-    ]);
+  const [allRecipes, allInventory] = await Promise.all([
+    Recipe.findAll({ raw: true }),
+    Inventory.findAll({ raw: true }),
+  ]);
 
-    const recipeMap = {};
-    allRecipes.forEach(r => {
-        if (!recipeMap[r.sandwich]) recipeMap[r.sandwich] = [];
-        recipeMap[r.sandwich].push(r);
-    });
+  const recipeMap = {};
+  allRecipes.forEach((r) => {
+    if (!recipeMap[r.sandwich]) recipeMap[r.sandwich] = [];
+    recipeMap[r.sandwich].push(r);
+  });
 
-    const inventoryMap = {};
-    allInventory.forEach(inv => {
-        inventoryMap[inv.name] = inv;
-    });
+  const inventoryMap = {};
+  allInventory.forEach((inv) => {
+    inventoryMap[inv.name] = inv;
+  });
 
-    for (const item of orderItems) {
-        const recipes = recipeMap[item.name] || [];
-        if (recipes.length > 0) {
-            recipes.forEach(recipe => {
-                const ingredient = recipe.ingredient.trim().toLowerCase();
-                const quantityUsed = recipe.amount * item.quantity;
-                ingredientMap[ingredient] = (ingredientMap[ingredient] || 0) + quantityUsed;
-            });
-        } else {
-            const inventoryItem = inventoryMap[item.name];
-            if (inventoryItem) {
-                let itemCost = parseFloat(inventoryItem.cost) || 0;
-                if (item.variant && inventoryItem.variants) {
-                    const variants = typeof inventoryItem.variants === 'string' ? JSON.parse(inventoryItem.variants) : inventoryItem.variants;
-                    const matchedVariant = variants.find(v => {
-                        const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
-                        return vLabel === item.variant || (vLabel && item.variant.startsWith(vLabel + ' '));
-                    });
-                    if (matchedVariant && matchedVariant.cost !== undefined && matchedVariant.cost !== null) {
-                        itemCost = parseFloat(matchedVariant.cost);
-                    }
-                }
-                orderCost += itemCost * item.quantity;
-            }
+  for (const item of orderItems) {
+    const recipes = recipeMap[item.name] || [];
+    if (recipes.length > 0) {
+      recipes.forEach((recipe) => {
+        const ingredient = recipe.ingredient.trim().toLowerCase();
+        const quantityUsed = recipe.amount * item.quantity;
+        ingredientMap[ingredient] =
+          (ingredientMap[ingredient] || 0) + quantityUsed;
+      });
+    } else {
+      const inventoryItem = inventoryMap[item.name];
+      if (inventoryItem) {
+        let itemCost = parseFloat(inventoryItem.cost) || 0;
+        if (item.variant && inventoryItem.variants) {
+          const variants =
+            typeof inventoryItem.variants === "string"
+              ? JSON.parse(inventoryItem.variants)
+              : inventoryItem.variants;
+          const matchedVariant = variants.find((v) => {
+            const vLabel = `${v.color || ""} ${v.size || ""}`.trim();
+            return (
+              vLabel === item.variant ||
+              (vLabel && item.variant.startsWith(vLabel + " "))
+            );
+          });
+          if (
+            matchedVariant &&
+            matchedVariant.cost !== undefined &&
+            matchedVariant.cost !== null
+          ) {
+            itemCost = parseFloat(matchedVariant.cost);
+          }
         }
+        orderCost += itemCost * item.quantity;
+      }
     }
+  }
 
-    if (Object.keys(ingredientMap).length > 0) {
-        allInventory.forEach(item => {
-            const name = item.name.trim().toLowerCase();
-            if (ingredientMap[name]) orderCost += ingredientMap[name] * parseFloat(item.cost || 0);
-        });
-    }
+  if (Object.keys(ingredientMap).length > 0) {
+    allInventory.forEach((item) => {
+      const name = item.name.trim().toLowerCase();
+      if (ingredientMap[name])
+        orderCost += ingredientMap[name] * parseFloat(item.cost || 0);
+    });
+  }
 
-    return parseFloat(orderCost.toFixed(2));
+  return parseFloat(orderCost.toFixed(2));
 }
 
 exports.cancelOrder = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const order = await Order.findByPk(orderId);
+  const transaction = await sequelize.transaction();
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByPk(orderId, { transaction });
 
-        if (!order) {
-            return res.status(404).json({ success: false, message: "❌ الطلب غير موجود" });
-        }
-
-        if (order.isCancelled === "Yes") {
-            return res.status(400).json({ success: false, message: "⚠️ الطلب ملغي بالفعل" });
-        }
-
-        // 🔄 استرجاع المخزون (خامات وتفريعات)
-        let orderItems = [];
-        try {
-            orderItems = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
-        } catch (e) { orderItems = []; }
-
-        if (!Array.isArray(orderItems)) orderItems = [];
-
-        for (const item of orderItems) {
-            const product = await Product.findOne({ where: { name: item.name } });
-            if (product) {
-                // 1. تقليل عدد مرات البيع
-                await product.decrement("sold", { by: item.quantity });
-
-                // 2. استرجاع المواد الخام
-                const recipeItems = await Recipe.findAll({ where: { sandwich: item.name } });
-                for (const recipe of recipeItems) {
-                    const inventoryItem = await Inventory.findOne({
-                        where: sequelize.where(sequelize.fn('LOWER', sequelize.col('name')), 'LIKE', recipe.ingredient.toLowerCase())
-                    });
-                    if (inventoryItem) {
-                        await inventoryItem.increment("quantity", { by: (recipe.amount || 1) * item.quantity });
-                    }
-                }
-
-                // 3. استرجاع التفريعة (لون/مقاس)
-                if (item.variant) {
-                    const inventoryItem = await Inventory.findOne({ where: { name: item.name } });
-                    if (inventoryItem && inventoryItem.variants) {
-                        let variants = typeof inventoryItem.variants === 'string' ? JSON.parse(inventoryItem.variants) : inventoryItem.variants;
-                        variants = variants.map(v => {
-                            const vLabel = `${v.color || ''} ${v.size || ''}`.trim();
-                            if (vLabel === item.variant) return { ...v, quantity: (v.quantity || 0) + item.quantity };
-                            return v;
-                        });
-                        await inventoryItem.update({ variants: variants });
-                    }
-                }
-            }
-        }
-
-        order.isCancelled = "Yes";
-        await order.save();
-
-        // 🔄 تحديث التقفيل اليومي والشهري إذا كان اليوم مغلقاً بالفعل
-        try {
-            const dailyClosing = await DailyClosing.findOne({ where: { closingDate: new Date(order.businessDate) } });
-            if (dailyClosing) {
-                const orderCost = await calculateOrderCost(orderItems);
-                const totalItemsQty = orderItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-
-                // تحديث التقفيل اليومي
-                dailyClosing.totalOrders = Math.max(0, dailyClosing.totalOrders - 1);
-                dailyClosing.totalSandwiches = Math.max(0, dailyClosing.totalSandwiches - totalItemsQty);
-                dailyClosing.totalRevenue = parseFloat(Math.max(0, parseFloat(dailyClosing.totalRevenue) - parseFloat(order.orderTotal)).toFixed(2));
-                dailyClosing.totalDiscount = parseFloat(Math.max(0, parseFloat(dailyClosing.totalDiscount) - parseFloat(order.discountAmount || 0)).toFixed(2));
-                
-                if (order.payment_method && order.payment_method.toLowerCase() !== "cash") {
-                    dailyClosing.onlinePaymentsTotal = parseFloat(Math.max(0, parseFloat(dailyClosing.onlinePaymentsTotal) - parseFloat(order.orderTotal)).toFixed(2));
-                }
-                
-                dailyClosing.totalCost = parseFloat(Math.max(0, parseFloat(dailyClosing.totalCost) - orderCost).toFixed(2));
-                dailyClosing.totalEarnings = parseFloat((parseFloat(dailyClosing.totalRevenue) - parseFloat(dailyClosing.totalCost) - parseFloat(dailyClosing.totalExpenses)).toFixed(2));
-                
-                await dailyClosing.save();
-                console.log(`✅ Updated DailyClosing stats for ${order.businessDate} due to cancellation of order ${order.id}`);
-
-                // تحديث التقفيل الشهري إذا كان مغلقاً أيضاً
-                const monthYear = order.businessDate.slice(0, 7); // "YYYY-MM"
-                const monthlyClosing = await MonthlyClosing.findOne({ where: { month_year: monthYear } });
-                if (monthlyClosing) {
-                    monthlyClosing.total_orders = Math.max(0, monthlyClosing.total_orders - 1);
-                    monthlyClosing.total_sandwiches = Math.max(0, monthlyClosing.total_sandwiches - totalItemsQty);
-                    monthlyClosing.total_revenue = parseFloat(Math.max(0, parseFloat(monthlyClosing.total_revenue) - parseFloat(order.orderTotal)).toFixed(2));
-                    monthlyClosing.total_cost = parseFloat(Math.max(0, parseFloat(monthlyClosing.total_cost) - orderCost).toFixed(2));
-                    monthlyClosing.totalDiscount = parseFloat(Math.max(0, parseFloat(monthlyClosing.totalDiscount) - parseFloat(order.discountAmount || 0)).toFixed(2));
-                    
-                    if (order.payment_method && order.payment_method.toLowerCase() !== "cash") {
-                        monthlyClosing.onlinePaymentsTotal = parseFloat(Math.max(0, parseFloat(monthlyClosing.onlinePaymentsTotal) - parseFloat(order.orderTotal)).toFixed(2));
-                    }
-                    
-                    monthlyClosing.total_earnings = parseFloat((parseFloat(monthlyClosing.total_revenue) - parseFloat(monthlyClosing.total_cost) - parseFloat(monthlyClosing.totalExpenses)).toFixed(2));
-                    
-                    await monthlyClosing.save();
-                    console.log(`✅ Updated MonthlyClosing stats for ${monthYear} due to cancellation of order ${order.id}`);
-                }
-            }
-        } catch (syncErr) {
-            console.error("❌ Failed to update closing stats on order cancellation:", syncErr);
-        }
-
-        // 📝 Audit Log
-        const { logAudit } = require('../utils/auditLogger');
-        logAudit(req, {
-            action: 'UPDATE',
-            tableName: 'Order',
-            recordId: orderId,
-            oldValues: { isCancelled: "No" },
-            newValues: { isCancelled: "Yes" }
-        });
-
-        res.json({ success: true, message: "✅ تم إلغاء الطلب واسترجاع المخزون" });
-    } catch (error) {
-        console.error("❌ خطأ أثناء إلغاء الطلب:", error);
-        res.status(500).json({ success: false, message: "❌ خطأ أثناء الإلغاء" });
+    if (!order) {
+      await transaction.rollback();
+      return res
+        .status(404)
+        .json({ success: false, message: "❌ الطلب غير موجود" });
     }
+
+    if (order.isCancelled === "Yes") {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ success: false, message: "⚠️ الطلب ملغي بالفعل" });
+    }
+
+    // 🔄 استرجاع المخزون (خامات وتفريعات)
+    let orderItems = [];
+    try {
+      orderItems =
+        typeof order.orderDetails === "string"
+          ? JSON.parse(order.orderDetails)
+          : order.orderDetails;
+    } catch (e) {
+      orderItems = [];
+    }
+
+    if (!Array.isArray(orderItems)) orderItems = [];
+
+    for (const item of orderItems) {
+      const product = await Product.findOne({
+        where: { name: item.name },
+        transaction,
+      });
+      if (product) {
+        // 1. تقليل عدد مرات البيع
+        await product.decrement("sold", { by: item.quantity, transaction });
+
+        // 2. استرجاع المواد الخام
+        const recipeItems = await Recipe.findAll({
+          where: { sandwich: item.name },
+          transaction,
+        });
+        for (const recipe of recipeItems) {
+          const inventoryItem = await Inventory.findOne({
+            where: sequelize.where(
+              sequelize.fn("LOWER", sequelize.col("name")),
+              "LIKE",
+              recipe.ingredient.toLowerCase(),
+            ),
+            transaction,
+          });
+          if (inventoryItem) {
+            await inventoryItem.increment("quantity", {
+              by: (recipe.amount || 1) * item.quantity,
+              transaction,
+            });
+          }
+        }
+
+        // 3. استرجاع التفريعة (لون/مقاس)
+        if (item.variant) {
+          const inventoryItem = await Inventory.findOne({
+            where: { name: item.name },
+            transaction,
+          });
+          if (inventoryItem && inventoryItem.variants) {
+            let variants =
+              typeof inventoryItem.variants === "string"
+                ? JSON.parse(inventoryItem.variants)
+                : inventoryItem.variants;
+            variants = variants.map((v) => {
+              const vLabel = `${v.color || ""} ${v.size || ""}`.trim();
+              if (vLabel === item.variant)
+                return { ...v, quantity: (v.quantity || 0) + item.quantity };
+              return v;
+            });
+            await inventoryItem.update({ variants: variants }, { transaction });
+          }
+        }
+      }
+    }
+
+    order.isCancelled = "Yes";
+    await order.save({ transaction });
+
+    // 🔄 تحديث التقفيل اليومي والشهري إذا كان اليوم مغلقاً بالفعل
+    const dailyClosing = await DailyClosing.findOne({
+      where: { closingDate: new Date(order.businessDate) },
+      transaction,
+    });
+    if (dailyClosing) {
+      const orderCost = await calculateOrderCost(orderItems);
+      const totalItemsQty = orderItems.reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0),
+        0,
+      );
+
+      // تحديث التقفيل اليومي
+      dailyClosing.totalOrders = Math.max(0, dailyClosing.totalOrders - 1);
+      dailyClosing.totalSandwiches = Math.max(
+        0,
+        dailyClosing.totalSandwiches - totalItemsQty,
+      );
+      dailyClosing.totalRevenue = parseFloat(
+        Math.max(
+          0,
+          parseFloat(dailyClosing.totalRevenue) - parseFloat(order.orderTotal),
+        ).toFixed(2),
+      );
+      dailyClosing.totalDiscount = parseFloat(
+        Math.max(
+          0,
+          parseFloat(dailyClosing.totalDiscount) -
+            parseFloat(order.discountAmount || 0),
+        ).toFixed(2),
+      );
+
+      if (
+        order.payment_method &&
+        order.payment_method.toLowerCase() !== "cash"
+      ) {
+        dailyClosing.onlinePaymentsTotal = parseFloat(
+          Math.max(
+            0,
+            parseFloat(dailyClosing.onlinePaymentsTotal) -
+              parseFloat(order.orderTotal),
+          ).toFixed(2),
+        );
+      }
+
+      dailyClosing.totalCost = parseFloat(
+        Math.max(0, parseFloat(dailyClosing.totalCost) - orderCost).toFixed(2),
+      );
+      dailyClosing.totalEarnings = parseFloat(
+        (
+          parseFloat(dailyClosing.totalRevenue) -
+          parseFloat(dailyClosing.totalCost) -
+          parseFloat(dailyClosing.totalExpenses)
+        ).toFixed(2),
+      );
+
+      await dailyClosing.save({ transaction });
+
+      // تحديث التقفيل الشهري إذا كان مغلقاً أيضاً
+      const monthYear = order.businessDate.slice(0, 7);
+      const monthlyClosing = await MonthlyClosing.findOne({
+        where: { month_year: monthYear },
+        transaction,
+      });
+      if (monthlyClosing) {
+        monthlyClosing.total_orders = Math.max(
+          0,
+          monthlyClosing.total_orders - 1,
+        );
+        monthlyClosing.total_sandwiches = Math.max(
+          0,
+          monthlyClosing.total_sandwiches - totalItemsQty,
+        );
+        monthlyClosing.total_revenue = parseFloat(
+          Math.max(
+            0,
+            parseFloat(monthlyClosing.total_revenue) -
+              parseFloat(order.orderTotal),
+          ).toFixed(2),
+        );
+        monthlyClosing.total_cost = parseFloat(
+          Math.max(
+            0,
+            parseFloat(monthlyClosing.total_cost) - orderCost,
+          ).toFixed(2),
+        );
+        monthlyClosing.totalDiscount = parseFloat(
+          Math.max(
+            0,
+            parseFloat(monthlyClosing.totalDiscount) -
+              parseFloat(order.discountAmount || 0),
+          ).toFixed(2),
+        );
+
+        if (
+          order.payment_method &&
+          order.payment_method.toLowerCase() !== "cash"
+        ) {
+          monthlyClosing.onlinePaymentsTotal = parseFloat(
+            Math.max(
+              0,
+              parseFloat(monthlyClosing.onlinePaymentsTotal) -
+                parseFloat(order.orderTotal),
+            ).toFixed(2),
+          );
+        }
+
+        monthlyClosing.total_earnings = parseFloat(
+          (
+            parseFloat(monthlyClosing.total_revenue) -
+            parseFloat(monthlyClosing.total_cost) -
+            parseFloat(monthlyClosing.totalExpenses)
+          ).toFixed(2),
+        );
+
+        await monthlyClosing.save({ transaction });
+      }
+    }
+
+    await transaction.commit();
+
+    try {
+      // 📝 Audit Log & Sync Enqueue (Outside transaction but after success)
+      const { logAudit } = require("../utils/auditLogger");
+      logAudit(req, {
+        action: "UPDATE",
+        tableName: "Order",
+        recordId: orderId,
+        oldValues: { isCancelled: "No" },
+        newValues: { isCancelled: "Yes" },
+      });
+
+      // Enqueue for Sync
+      syncService
+        .enqueue("UPDATE", "orders", order.id, order.toJSON())
+        .catch(() => {});
+    } catch (auditErr) {
+      console.error("⚠️ Audit/Sync Error (Order cancelled successfully):", auditErr);
+    }
+
+    res.json({ success: true, message: "✅ تم إلغاء الطلب واسترجاع المخزون" });
+  } catch (error) {
+    if (transaction && !transaction.finished) await transaction.rollback();
+    console.error("❌ خطأ أثناء إلغاء الطلب:", error);
+    res.status(500).json({ success: false, message: "❌ خطأ أثناء الإلغاء" });
+  }
 };
 
 // ✅ دالة إعادة طباعة أوردر موجود بالفعل
 exports.reprintOrder = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const order = await Order.findByPk(id);
-        const { printReceipt } = require("./receiptPrinter");
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+    const { printReceipt } = require("./receiptPrinter");
 
-        if (!order) return res.status(404).json({ message: "❌ الطلب غير موجود." });
+    if (!order) return res.status(404).json({ message: "❌ الطلب غير موجود." });
 
-        const orderData = {
-            id: order.id,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            customerAddress: order.customerAddress,
-            deliveryPrice: order.deliveryPrice,
-            orderTotal: order.orderTotal,
-            orderDetails: (() => {
-                try {
-                    const d = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
-                    return Array.isArray(d) ? d : [];
-                } catch(e) { return []; }
-            })(),
-            discount: order.discountAmount || 0,
-            orderDate: (() => {
-                const d = new Date(order.createdAt);
-                const day = d.getDate();
-                const month = d.getMonth() + 1;
-                let hours = d.getHours();
-                const minutes = String(d.getMinutes()).padStart(2, '0');
-                const ampm = hours >= 12 ? 'PM' : 'AM';
-                hours = hours % 12 || 12;
-                return `${day}/${month} ${hours}:${minutes} ${ampm}`;
-            })()
-        };
+    const orderData = {
+      id: order.id,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      customerAddress: order.customerAddress,
+      deliveryPrice: order.deliveryPrice,
+      orderTotal: order.orderTotal,
+      orderDetails: (() => {
+        try {
+          const d =
+            typeof order.orderDetails === "string"
+              ? JSON.parse(order.orderDetails)
+              : order.orderDetails;
+          return Array.isArray(d) ? d : [];
+        } catch (e) {
+          return [];
+        }
+      })(),
+      discount: order.discountAmount || 0,
+      orderDate: (() => {
+        const d = new Date(order.createdAt);
+        const day = d.getDate();
+        const month = d.getMonth() + 1;
+        let hours = d.getHours();
+        const minutes = String(d.getMinutes()).padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12;
+        return `${day}/${month} ${hours}:${minutes} ${ampm}`;
+      })(),
+    };
 
-        printReceipt(orderData);
-        res.json({ message: "✅ تم إرسال الطلب للطابعة." });
-    } catch (error) {
-        console.error("❌ خطأ أثناء إعادة الطباعة:", error);
-        res.status(500).json({ message: "❌ فشل في الطباعة." });
-    }
+    printReceipt(orderData);
+    res.json({ message: "✅ تم إرسال الطلب للطابعة." });
+  } catch (error) {
+    console.error("❌ خطأ أثناء إعادة الطباعة:", error);
+    res.status(500).json({ message: "❌ فشل في الطباعة." });
+  }
 };

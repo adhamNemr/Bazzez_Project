@@ -179,26 +179,30 @@ exports.addTransaction = async (req, res) => {
         await merchant.save({ transaction: t });
         await t.commit();
 
-        // ✅ Enqueue for Sync
-        syncService.enqueue('INSERT', 'merchant_transactions', transaction.id, transaction.toJSON())
-            .catch(err => console.error('Sync queue error:', err));
-        
-        // Also sync the updated merchant balance
-        syncService.enqueue('UPDATE', 'merchants', merchant.id, merchant.toJSON())
-            .catch(err => console.error('Sync queue error:', err));
+        try {
+            // ✅ Enqueue for Sync
+            syncService.enqueue('INSERT', 'merchant_transactions', transaction.id, transaction.toJSON())
+                .catch(err => console.error('Sync queue error:', err));
+            
+            // Also sync the updated merchant balance
+            syncService.enqueue('UPDATE', 'merchants', merchant.id, merchant.toJSON())
+                .catch(err => console.error('Sync queue error:', err));
 
-        // 📝 Audit Log
-        const { logAudit } = require('../utils/auditLogger');
-        logAudit(req, {
-            action: 'CREATE',
-            tableName: 'MerchantTransaction',
-            recordId: transaction.id,
-            newValues: transaction.toJSON()
-        });
+            // 📝 Audit Log
+            const { logAudit } = require('../utils/auditLogger');
+            logAudit(req, {
+                action: 'CREATE',
+                tableName: 'MerchantTransaction',
+                recordId: transaction.id,
+                newValues: transaction.toJSON()
+            });
+        } catch (postErr) {
+            console.error('⚠️ Post-Transaction Error:', postErr);
+        }
 
         res.json({ success: true, transaction, newBalance: merchant.balance });
     } catch (err) {
-        await t.rollback();
+        if (t && !t.finished) await t.rollback();
         console.error(err);
         res.status(500).json({ error: 'فشل إضافة الحركة المالية' });
     }

@@ -47,28 +47,37 @@ body {
   color: var(--luxury-slate);
   min-height: 100vh;
   direction: rtl;
-  padding-top: 85px; /* header space */
-  padding-right: 250px; /* sidebar space */
+  margin: 0;
 }
 
 body[dir="ltr"] {
   font-family: var(--font-en);
   direction: ltr;
-  padding-left: 250px;
-  padding-right: 0;
 }
 
-@media (max-width: 768px) {
-  body { padding-right: 0; padding-top: 60px; }
-  body[dir="ltr"] { padding-left: 0; }
+/* ── Fix header to top (same as all other pages) ── */
+.main-brand-header {
+  background: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.75rem 2rem;
+  box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* ── Main Layout ── */
 .discounts-main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 28px 32px 60px;
+  width: 100%;
+  margin: 0;
+  padding: 2rem 2.5rem 4rem;
+  padding-top: calc(85px + 2rem); /* 85px for fixed header + spacing */
   animation: fadeInUp 0.4s ease both;
+  box-sizing: border-box;
 }
 
 @keyframes fadeInUp {

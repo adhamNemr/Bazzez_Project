@@ -426,8 +426,8 @@ async function openFormModal(discount) {
 
     <div class="form-group">
       <label for="swal-value">${t('labelValue')} <span class="required">*</span></label>
-      <input id="swal-value" class="form-control" type="number" min="0" step="0.01"
-             placeholder="${t('placeholderValue')}" value="${discValue}" />
+      <input id="swal-value" class="form-control" type="text" inputmode="decimal"
+             placeholder="${t('placeholderValue')}" value="${discValue}" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" />
     </div>
 
     <div class="form-row">

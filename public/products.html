@@ -155,14 +155,14 @@
                         <label id="loc-label-price">سعر القطاعي</label>
                         <div class="input-with-icon">
                             <i class="fas fa-money-bill-wave"></i>
-                            <input type="number" id="product-price" required step="0.01" placeholder="0.00">
+                            <input type="text" id="product-price" required inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
                         </div>
                     </div>
                     <div class="input-group">
                         <label id="loc-label-wholesale">سعر الجملة</label>
                         <div class="input-with-icon">
                             <i class="fas fa-store"></i>
-                            <input type="number" id="product-wholesale-price" required step="0.01" placeholder="0.00">
+                            <input type="text" id="product-wholesale-price" required inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
                         </div>
                     </div>
                 </div>

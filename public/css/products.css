@@ -233,19 +233,15 @@ html[dir="ltr"] .orders-table th {
     filter: brightness(1.1);
 }
 
-.cancel-button {
-    background: #ef4444; /* Solid Red for Delete */
-    color: white;
-    padding: 0.85rem 1.75rem;
-    border-radius: 14px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 15px rgba(239, 68, 68, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* 🔹 Drawer Input Refinement */
+.input-with-icon input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.input-with-icon input[type="number"]::-webkit-outer-spin-button,
+.input-with-icon input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .cancel-button:hover {

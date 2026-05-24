@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { TokenBlacklist } = require('../models');
 
-const secretKey = process.env.JWT_SECRET || 'mySuperSecretKey123';
+const secretKey = process.env.JWT_SECRET || 'fallback_secret_for_dev';
 
 // ✅ Middleware للتحقق من التوكن وتحديد هوية المستخدم
 const authMiddleware = (allowedRoles) => async (req, res, next) => {

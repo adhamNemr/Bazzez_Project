@@ -36,15 +36,17 @@ class SyncService {
         }
     }
 
-    // ✅ سحب المنتجات الجديدة من Supabase فقط (مش تكتب فوق الموجودة محلياً)
+    // ✅ سحب المنتجات وتحديثها (Bidirectional Sync)
     async pullNewProducts() {
         this.isSyncing = true;
         try {
             if (global.logToUI) global.logToUI('📡 Sync: Pulling products from cloud...');
             const url = `${process.env.SUPABASE_URL}/rest/v1/products?select=*`;
+            
+            // 🛡️ SECURITY: Use ANON_KEY for read operations to minimize Service Key exposure
             const headers = {
                 'apikey': process.env.SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+                'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
             };
 
             const response = await fetch(url, { headers });
@@ -57,11 +59,9 @@ class SyncService {
             if (global.logToUI) global.logToUI(`📡 Sync: Found ${remoteProducts.length} products on cloud.`);
 
             for (const remote of remoteProducts) {
-                // تحقق لو المنتج موجود محلياً
                 const localProduct = await Product.findOne({ where: { id: remote.id } });
 
                 if (!localProduct) {
-                    // منتج جديد — أضفه
                     if (global.logToUI) global.logToUI(`📡 Sync: Adding new product: ${remote.name}`);
                     await Product.create({
                         id: remote.id,
@@ -73,8 +73,21 @@ class SyncService {
                         sync_status: 'synced'
                     });
                 } else {
-                    // موجود محلياً — لا تكتب فوقه
-                    if (global.logToUI) global.logToUI(`📡 Sync: Updating local product: ${remote.name}`);
+                    // ✅ FIX: Update local product if cloud data changed
+                    const needsUpdate = localProduct.name !== remote.name || 
+                                      localProduct.price !== remote.price || 
+                                      localProduct.category !== remote.category;
+                    
+                    if (needsUpdate) {
+                        if (global.logToUI) global.logToUI(`📡 Sync: Updating local product: ${remote.name}`);
+                        await localProduct.update({
+                            name: remote.name,
+                            category: remote.category,
+                            price: remote.price,
+                            wholesalePrice: remote.wholesalePrice,
+                            sync_status: 'synced'
+                        });
+                    }
                 }
             }
 
@@ -86,14 +99,16 @@ class SyncService {
         }
     }
 
-    // ✅ سحب المخزن الجديد من Supabase فقط
+    // ✅ سحب المخزن وتحديث الكميات محلياً
     async pullNewInventory() {
         try {
             if (global.logToUI) global.logToUI('📡 Sync: Pulling inventory from cloud...');
             const url = `${process.env.SUPABASE_URL}/rest/v1/inventory?select=*`;
+            
+            // 🛡️ SECURITY: Use ANON_KEY for read operations
             const headers = {
                 'apikey': process.env.SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
+                'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`
             };
 
             const response = await fetch(url, { headers });
@@ -106,7 +121,6 @@ class SyncService {
                 const localItem = await Inventory.findOne({ where: { id: item.id } });
 
                 if (!localItem) {
-                    // عنصر جديد — أضفه
                     if (global.logToUI) global.logToUI(`📡 Sync: Adding new inventory item: ${item.name}`);
                     await Inventory.create({
                         id: item.id,
@@ -120,8 +134,17 @@ class SyncService {
                         sync_status: 'synced'
                     });
                 } else {
-                    // موجود محلياً — لا تكتب فوقه
-                    if (global.logToUI) global.logToUI(`📡 Sync: Updating inventory item: ${item.name}`);
+                    // ✅ FIX: Update local inventory quantity/cost from cloud
+                    if (localItem.quantity !== item.quantity || localItem.cost !== item.cost) {
+                        if (global.logToUI) global.logToUI(`📡 Sync: Updating inventory item: ${item.name}`);
+                        await localItem.update({
+                            quantity: item.quantity,
+                            cost: item.cost,
+                            total: item.total,
+                            variants: item.variants,
+                            sync_status: 'synced'
+                        });
+                    }
                 }
             }
 
