@@ -19,17 +19,26 @@ if (!gotTheLock) {
     function loadEnv() {
         const envPath = path.join(__dirname, '.env');
         if (fs.existsSync(envPath)) {
-            const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+            const content = fs.readFileSync(envPath, 'utf8');
+            const lines = content.split(/\r?\n/);
             lines.forEach(line => {
                 const index = line.indexOf('=');
                 if (index > 0) {
                     const key = line.substring(0, index).trim();
-                    const value = line.substring(index + 1).trim();
-                    if (key && !process.env[key]) process.env[key] = value;
+                    let value = line.substring(index + 1).trim();
+                    // Remove quotes if present
+                    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                        value = value.substring(1, value.length - 1);
+                    }
+                    if (key) process.env[key] = value;
                 }
             });
         }
-        process.env.DB_PATH  = path.join(app.getPath('userData'), 'database.sqlite');
+        
+        // Ensure critical paths are absolute for Portable version
+        if (!process.env.DB_PATH) {
+            process.env.DB_PATH = path.join(app.getPath('userData'), 'database.sqlite');
+        }
         process.env.PORT     = '8083';
         process.env.NODE_ENV = 'production';
     }

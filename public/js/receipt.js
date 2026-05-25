@@ -43,7 +43,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     // 🏆 Large Order ID
     const largeIdEl = document.getElementById("order-id-large");
-    if (largeIdEl) largeIdEl.innerText = `#${receiptData.id || "000"}`;
+    if (largeIdEl) {
+        // ✅ استخدام dailySerial لو متاح عشان يبدأ من 1 كل يوم
+        largeIdEl.innerText = `#${receiptData.dailySerial || receiptData.id || "000"}`;
+    }
 
     // 👤 Customer Data Logic
     const cleanValue = (val, forbiddenKeywords = []) => {
@@ -63,9 +66,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.getElementById("customer-name").innerText = cleanValue(receiptData.customerName, ["تيك أوي", "نقدي", "Guest"]);
     document.getElementById("customer-phone").innerText = cleanValue(receiptData.customerPhone);
     
-    // ✅ وضع رقم الأوردر مكان العنوان كما طلب العميل
+    // ✅ وضع رقم الأوردر اليومي (dailySerial) مكان العنوان
     const orderIdLabel = document.getElementById("order-id-label");
-    if (orderIdLabel) orderIdLabel.innerText = receiptData.id || "-";
+    if (orderIdLabel) {
+        orderIdLabel.innerText = receiptData.dailySerial || receiptData.id || "-";
+    }
     
     document.getElementById("order-date").innerText = receiptData.orderDate || "-";
     const deliveryEl = document.getElementById("delivery-price");

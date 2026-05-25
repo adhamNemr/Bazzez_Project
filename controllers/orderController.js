@@ -291,6 +291,7 @@ exports.createOrder = async (req, res) => {
 
     const orderData = {
       id: order.id,
+      dailySerial: order.dailySerial, // ✅ إضافة الرقم اليومي
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       customerAddress: order.customerAddress,
