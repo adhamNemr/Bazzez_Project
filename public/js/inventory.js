@@ -566,7 +566,7 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
             <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; padding: 1rem; text-align: ${isAr ? "right" : "left"};">
                 <div>
                     <label style="display:block; font-weight:700; margin-bottom:5px;">${isAr ? "الاسم / الخامة" : "Name / Fabric"}</label>
-                    <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ""}" placeholder="${isAr ? "أحمر" : "Red"}" ${initialData?.name ? "disabled" : ""}>
+                    <input id="v-name" class="swal2-input" style="width:100%; margin:0;" value="${initialData?.name || ""}" placeholder="${isAr ? "أحمر" : "Red"}">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
@@ -1021,9 +1021,10 @@ async function selectItem(item, preExistingData = null) {
 
       const getCur = () => ({
         name: document.getElementById("swal-edit-name").value,
-        quantity: document.getElementById("swal-edit-qty").value,
-        min: document.getElementById("swal-edit-min").value,
-        cost: document.getElementById("swal-edit-cost").value,
+        quantity:
+          parseFloat(document.getElementById("swal-edit-qty").value) || 0,
+        min: parseFloat(document.getElementById("swal-edit-min").value) || 0,
+        cost: parseFloat(document.getElementById("swal-edit-cost").value) || 0,
         expiryDate: !isRetail
           ? document.getElementById("swal-edit-expiry").value
           : "",
@@ -1086,27 +1087,18 @@ async function selectItem(item, preExistingData = null) {
         0,
       );
 
-      let variantsToSave = [...state.variants];
-
-      // 🧠 Rule: If parent quantity is explicitly set and different from the variants sum,
-      // we assume the user wants "Bulk Tracking". Zero out the children quantities AND min.
-      if (parentQty > 0 && parentQty !== variantsSum) {
-        variantsToSave = variantsToSave.map((v) => ({
-          ...v,
-          quantity: 0,
-          min: 0,
-        }));
-      }
+      // 🧠 الحساب الصح: مجموع الكميات التفريعات يصير هو الكمية الرئيسية
+      const finalParentQty = variantsSum > 0 ? variantsSum : parentQty;
 
       return {
         name,
-        quantity: parentQty,
+        quantity: finalParentQty,
         min: parseFloat(document.getElementById("swal-edit-min").value) || 0,
         cost: parseFloat(document.getElementById("swal-edit-cost").value) || 0,
         expiryDate: !isRetail
           ? document.getElementById("swal-edit-expiry").value
           : null,
-        variants: variantsToSave,
+        variants: state.variants,
       };
     },
   });
