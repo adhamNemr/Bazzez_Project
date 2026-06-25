@@ -6,11 +6,18 @@ const addComment = async (req, res) => {
         const { commentText, color, price } = req.body;
 
         // 🔥 التحقق من البيانات
-        if (!commentText.trim() || !color.trim() || typeof price !== 'number') {
+        if (!commentText || !color || typeof price !== 'number') {
             return res.status(400).json({ message: '❌ commentText, color و price مطلوبين ويجب أن يكون price رقمًا.' });
         }
 
-        const newComment = await Comment.create({ commentText, color, price });
+        const cleanText = commentText.trim();
+        const cleanColor = color.trim();
+
+        if (!cleanText || !cleanColor) {
+            return res.status(400).json({ message: '❌ النصوص لا يمكن أن تكون فارغة.' });
+        }
+
+        const newComment = await Comment.create({ commentText: cleanText, color: cleanColor, price });
         res.status(201).json(newComment);
     } catch (error) {
         console.error('❌ خطأ أثناء إضافة التعليق:', error);

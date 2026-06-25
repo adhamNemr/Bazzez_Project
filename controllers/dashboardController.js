@@ -190,10 +190,12 @@ exports.checkSystemStatus = async (req, res) => {
         }
 
         res.json({
-            systemStatus,
-            internetStatus,
             databaseStatus,
+            database: databaseStatus, // For compatibility with tests
+            internetStatus,
+            internet: internetStatus, // For compatibility with tests
             printerStatus,
+            systemStatus
         });
 
     } catch (error) {

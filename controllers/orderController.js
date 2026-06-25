@@ -1,4 +1,4 @@
-const { Op, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 const {
   Order,
   Customer,
@@ -7,7 +7,6 @@ const {
   Payment,
   Recipe,
   Inventory,
-  Comment,
   Setting,
   sequelize,
 } = require("../models");
@@ -15,11 +14,7 @@ const { printReceipt } = require("./receiptPrinter");
 const syncService = require("../services/syncService");
 
 // ✅ دالة لحساب الخصم تلقائيًا بناءً على المنتجات الموجودة في الطلب
-exports.applyAutomaticDiscount = async (
-  orderDetails,
-  orderTotal,
-  discountCode,
-) => {
+exports.applyAutomaticDiscount = async (orderDetails, discountCode) => {
   let discountValue = 0;
   let appliedDiscounts = [];
 
@@ -69,7 +64,6 @@ exports.createOrder = async (req, res) => {
     const {
       customer,
       deliveryPrice,
-      orderTotal,
       orderDetails,
       payment_method,
       discountCode,
@@ -82,30 +76,14 @@ exports.createOrder = async (req, res) => {
     const finalDeliveryPrice = Number(deliveryPrice) || 0;
     const productNamesInOrder = [...new Set(orderDetails.map((i) => i.name))];
 
-    // 🚀 PRE-FETCH DATA: Fetch recipes and inventory outside transaction to keep it fast
-    const [existingCustomer, allRecipes, allInventoryItems] = await Promise.all(
-      [
-        Customer.findOne({ where: { phone } }),
-        Recipe.findAll({
-          where: { sandwich: { [Op.in]: productNamesInOrder } },
-          raw: true,
-        }),
-        Inventory.findAll({
-          where: {
-            name: {
-              [Op.or]: [
-                { [Op.in]: productNamesInOrder },
-                {
-                  [Op.in]: Sequelize.literal(
-                    `(SELECT ingredient FROM recipes WHERE sandwich IN (${productNamesInOrder.map((n) => `'${n.replace(/'/g, "''")}'`).join(",")}))`,
-                  ),
-                },
-              ],
-            },
-          },
-        }),
-      ],
-    );
+    // 🚀 PRE-FETCH DATA: Fetch recipes outside transaction to keep it fast
+    const [existingCustomer, allRecipes] = await Promise.all([
+      Customer.findOne({ where: { phone } }),
+      Recipe.findAll({
+        where: { sandwich: { [Op.in]: productNamesInOrder } },
+        raw: true,
+      }),
+    ]);
 
     // 1. Calculate Totals (In-Memory)
     let manualDiscountTotal = 0;
@@ -126,7 +104,6 @@ exports.createOrder = async (req, res) => {
 
     const { discountValue } = await this.applyAutomaticDiscount(
       orderDetails,
-      orderTotal,
       discountCode,
     );
     const totalDiscountAmount = discountValue + manualDiscountTotal;

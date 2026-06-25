@@ -55,15 +55,17 @@ const updateInventoryItem = async (req, res) => {
         const item = await Inventory.findByPk(id);
         if (!item) return res.status(404).json({ error: "العنصر غير موجود" });
 
-        const total = quantity * cost;
+        const numQuantity = parseFloat(quantity) || 0;
+        const numCost = parseFloat(cost) || 0;
+        const total = numQuantity * numCost;
 
         // Force Sequelize to recognize the JSON change
         item.set({
-            name,
-            quantity,
-            cost,
+            name: name || item.name,
+            quantity: numQuantity,
+            cost: numCost,
             min: min || 0,
-            total,
+            total: total,
             expiryDate: expiryDate || null,
             variants: variants || []
         });

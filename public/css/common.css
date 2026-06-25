@@ -770,6 +770,12 @@ span.flatpickr-weekday {
 
 /* Offline State: Professional Alert */
 .sync-indicator.offline {
+  color: #64748b;
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.sync-indicator.offline.has-pending {
   color: #dc2626;
   background: rgba(254, 242, 242, 0.9);
   border-color: rgba(220, 38, 38, 0.2);
@@ -777,6 +783,11 @@ span.flatpickr-weekday {
 }
 
 .sync-indicator.offline i {
+  color: #94a3b8;
+}
+
+.sync-indicator.offline.has-pending i {
+  color: #dc2626;
   animation: pulseRed 2s infinite;
 }
 

@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
     const DailyClosing = sequelize.define("DailyClosing", {
         closingDate: {
-            type: DataTypes.DATE,
+            type: DataTypes.DATEONLY,
             allowNull: false,
             unique: true 
         },

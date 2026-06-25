@@ -1,19 +1,16 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
-# Install build tools in case sqlite3 needs to compile from source
-RUN apk add --no-cache python3 make g++ 
+RUN apk add --no-cache python3 make g++ linux-headers eudev-dev libusb-dev
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
 
-# Copy application files
+RUN npm ci --only=production --ignore-scripts && \
+    npm rebuild sqlite3
+
 COPY . .
 
-# Expose the correct port
 EXPOSE 8083
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

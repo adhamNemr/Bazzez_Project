@@ -8,6 +8,7 @@ const {
   DailyClosing,
   MonthlyClosing,
 } = require("../models");
+const syncService = require("../services/syncService");
 
 exports.fetchOrders = async (req, res) => {
   try {

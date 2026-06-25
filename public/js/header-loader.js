@@ -8,16 +8,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const icon = container.getAttribute("data-icon") || "fa-list-alt";
 
     // Auto-detect Language & Mode
-    const currentLang = localStorage.getItem('lang') || 'ar';
-    const isAr = currentLang === 'ar';
-    const systemMode = localStorage.getItem('systemMode') || 'retail';
+    const currentLang = localStorage.getItem("lang") || "ar";
+    const isAr = currentLang === "ar";
+    const systemMode = localStorage.getItem("systemMode") || "retail";
 
     const translations = {
       "Admin Dashboard": isAr ? "لوحة التحكم الإدارية" : "Admin Dashboard",
-      "إدارة المخزن": isAr ? (systemMode === 'restaurant' ? "إدارة الخامات" : "إدارة المخزن") : "Inventory Management",
-      "إدارة الطلبات": isAr ? (systemMode === 'restaurant' ? "فواتير المطعم" : "إدارة الطلبات") : "Manage Orders",
+      "إدارة المخزن": isAr
+        ? systemMode === "restaurant"
+          ? "إدارة الخامات"
+          : "إدارة المخزن"
+        : "Inventory Management",
+      "إدارة الطلبات": isAr
+        ? systemMode === "restaurant"
+          ? "فواتير المطعم"
+          : "إدارة الطلبات"
+        : "Manage Orders",
       "إعدادات النظام": isAr ? "إعدادات النظام" : "System Settings",
       "إدارة المنتجات": isAr ? "إدارة المنتجات" : "Products Management",
+      "إدارة الخصومات": isAr ? "إدارة الخصومات" : "Discounts Management",
       "إدارة المصروفات": isAr ? "إدارة المصروفات" : "Expense Management",
       "حسابات الجملة": isAr ? "حسابات الجملة" : "Wholesale Ledger",
     };
@@ -92,13 +101,19 @@ async function initSyncMonitor() {
 
       if (indicator && icon && countSpan) {
         if (status.isOnline) {
-          indicator.classList.remove("offline");
+          indicator.classList.remove("offline", "has-pending");
           indicator.classList.add("online");
           icon.className = "fas fa-wifi";
         } else {
           indicator.classList.remove("online");
           indicator.classList.add("offline");
           icon.className = "fas fa-wifi-slash";
+
+          if (status.pendingCount > 0 || status.failedCount > 0) {
+            indicator.classList.add("has-pending");
+          } else {
+            indicator.classList.remove("has-pending");
+          }
         }
 
         if (status.isSyncing) {
@@ -114,7 +129,7 @@ async function initSyncMonitor() {
     } catch (err) {
       console.warn("📡 Sync Monitor Error:", err.message);
       if (indicator) {
-        indicator.classList.remove("online");
+        indicator.classList.remove("online", "has-pending");
         indicator.classList.add("offline");
         if (icon) icon.className = "fas fa-wifi-slash";
       }

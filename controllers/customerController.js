@@ -1,4 +1,4 @@
-const { Customer } = require('../models/index');
+const { Customer, Order, Payment } = require('../models/index');
 const { Op } = require('sequelize');
 
 exports.getCustomerHistory = async (req, res) => {

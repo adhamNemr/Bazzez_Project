@@ -1,140 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>الخصومات | Discounts — Vortex POS</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>الخصومات | Discounts — Vortex POS</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- FontAwesome 6 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- FontAwesome 6 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
 
-  <!-- Flatpickr -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" />
+    <!-- Flatpickr -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css"
+    />
 
-  <!-- SweetAlert2 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+    <!-- SweetAlert2 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
 
-  <link rel="stylesheet" href="./css/common.css">
-  <!-- Discount CSS -->
-  <link rel="stylesheet" href="./css/discount.css" />
-  <script src="./js/auth-wrapper.js"></script>
-</head>
-<body>
+    <link rel="stylesheet" href="./css/common.css" />
+    <!-- Discount CSS -->
+    <link rel="stylesheet" href="./css/discount.css" />
+    <script src="./js/auth-wrapper.js"></script>
+  </head>
+  <body class="luxury-workstation">
+    <!-- 🏗️ Global Sidebar Container -->
+    <div id="sidebar-container"></div>
 
-  <!-- Header (loaded dynamically) -->
-  <div id="header-container" data-title="الخصومات | Discounts" data-icon="fa-tags"></div>
+    <div class="main-content">
+      <!-- Header (loaded dynamically) -->
+      <div
+        id="header-container"
+        data-title="إدارة الخصومات"
+        data-icon="fa-tags"
+      ></div>
 
-  <!-- Main Content -->
-  <main class="discounts-main">
-
-    <!-- Page Top Bar -->
-    <div class="page-topbar">
-      <div class="page-topbar__info">
-        <div class="page-topbar__icon">
-          <i class="fa-solid fa-tags"></i>
+      <!-- Main Content -->
+      <main class="discounts-main">
+        <!-- Page Top Bar -->
+        <div class="page-topbar">
+          <div class="page-topbar__info">
+            <div class="page-topbar__icon">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+            <div>
+              <h1 class="page-topbar__title" data-i18n="pageTitle">
+                إدارة الخصومات
+              </h1>
+              <p class="page-topbar__subtitle" data-i18n="pageSubtitle">
+                أنشئ وأدر أكواد الخصم بكل سهولة
+              </p>
+            </div>
+          </div>
+          <button class="btn-add" id="btnAddDiscount">
+            <i class="fa-solid fa-plus"></i>
+            <span data-i18n="addBtn">إضافة كود جديد</span>
+          </button>
         </div>
-        <div>
-          <h1 class="page-topbar__title" data-i18n="pageTitle">إدارة الخصومات</h1>
-          <p class="page-topbar__subtitle" data-i18n="pageSubtitle">أنشئ وأدر أكواد الخصم بكل سهولة</p>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+          <div class="stat-card">
+            <div class="stat-card__icon stat-card__icon--total">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <p class="stat-card__label" data-i18n="statTotal">
+                إجمالي الأكواد
+              </p>
+              <p class="stat-card__value" id="statTotal">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon stat-card__icon--active">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <p class="stat-card__label" data-i18n="statActive">أكواد نشطة</p>
+              <p class="stat-card__value" id="statActive">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon stat-card__icon--inactive">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div>
+              <p class="stat-card__label" data-i18n="statInactive">
+                أكواد معطلة
+              </p>
+              <p class="stat-card__value" id="statInactive">0</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon stat-card__icon--expired">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+              <p class="stat-card__label" data-i18n="statExpired">
+                منتهية الصلاحية
+              </p>
+              <p class="stat-card__value" id="statExpired">0</p>
+            </div>
+          </div>
         </div>
-      </div>
-      <button class="btn-add" id="btnAddDiscount">
-        <i class="fa-solid fa-plus"></i>
-        <span data-i18n="addBtn">إضافة كود جديد</span>
-      </button>
+
+        <!-- Search & Filter Bar -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-box__icon"></i>
+            <input
+              type="text"
+              id="searchInput"
+              class="search-box__input"
+              data-i18n-placeholder="searchPlaceholder"
+              placeholder="ابحث عن كود خصم..."
+            />
+          </div>
+          <div class="filter-tabs">
+            <button
+              class="filter-tab active"
+              data-filter="all"
+              data-i18n="filterAll"
+            >
+              الكل
+            </button>
+            <button
+              class="filter-tab"
+              data-filter="active"
+              data-i18n="filterActive"
+            >
+              نشط
+            </button>
+            <button
+              class="filter-tab"
+              data-filter="inactive"
+              data-i18n="filterInactive"
+            >
+              معطل
+            </button>
+            <button
+              class="filter-tab"
+              data-filter="expired"
+              data-i18n="filterExpired"
+            >
+              منتهي
+            </button>
+          </div>
+        </div>
+
+        <!-- Discounts Grid -->
+        <div class="discounts-grid" id="discountsGrid">
+          <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none">
+          <div class="empty-state__icon">
+            <i class="fa-solid fa-tags"></i>
+          </div>
+          <h3 class="empty-state__title" data-i18n="emptyTitle">
+            لا توجد خصومات بعد
+          </h3>
+          <p class="empty-state__subtitle" data-i18n="emptySubtitle">
+            أضف أول كود خصم لبدء العروض الترويجية
+          </p>
+          <button class="btn-add" id="btnAddDiscountEmpty">
+            <i class="fa-solid fa-plus"></i>
+            <span data-i18n="addBtn">إضافة كود جديد</span>
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+          <div class="loading-spinner"></div>
+          <p data-i18n="loading">جاري التحميل...</p>
+        </div>
+      </main>
     </div>
 
-    <!-- Stats Bar -->
-    <div class="stats-bar">
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--total">
-          <i class="fa-solid fa-layer-group"></i>
-        </div>
-        <div>
-          <p class="stat-card__label" data-i18n="statTotal">إجمالي الأكواد</p>
-          <p class="stat-card__value" id="statTotal">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--active">
-          <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div>
-          <p class="stat-card__label" data-i18n="statActive">أكواد نشطة</p>
-          <p class="stat-card__value" id="statActive">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--inactive">
-          <i class="fa-solid fa-circle-xmark"></i>
-        </div>
-        <div>
-          <p class="stat-card__label" data-i18n="statInactive">أكواد معطلة</p>
-          <p class="stat-card__value" id="statInactive">0</p>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card__icon stat-card__icon--expired">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-        </div>
-        <div>
-          <p class="stat-card__label" data-i18n="statExpired">منتهية الصلاحية</p>
-          <p class="stat-card__value" id="statExpired">0</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search & Filter Bar -->
-    <div class="filter-bar">
-      <div class="search-box">
-        <i class="fa-solid fa-magnifying-glass search-box__icon"></i>
-        <input type="text" id="searchInput" class="search-box__input" data-i18n-placeholder="searchPlaceholder" placeholder="ابحث عن كود خصم..." />
-      </div>
-      <div class="filter-tabs">
-        <button class="filter-tab active" data-filter="all" data-i18n="filterAll">الكل</button>
-        <button class="filter-tab" data-filter="active" data-i18n="filterActive">نشط</button>
-        <button class="filter-tab" data-filter="inactive" data-i18n="filterInactive">معطل</button>
-        <button class="filter-tab" data-filter="expired" data-i18n="filterExpired">منتهي</button>
-      </div>
-    </div>
-
-    <!-- Discounts Grid -->
-    <div class="discounts-grid" id="discountsGrid">
-      <!-- Cards injected by JS -->
-    </div>
-
-    <!-- Empty State -->
-    <div class="empty-state" id="emptyState" style="display:none;">
-      <div class="empty-state__icon">
-        <i class="fa-solid fa-tags"></i>
-      </div>
-      <h3 class="empty-state__title" data-i18n="emptyTitle">لا توجد خصومات بعد</h3>
-      <p class="empty-state__subtitle" data-i18n="emptySubtitle">أضف أول كود خصم لبدء العروض الترويجية</p>
-      <button class="btn-add" id="btnAddDiscountEmpty">
-        <i class="fa-solid fa-plus"></i>
-        <span data-i18n="addBtn">إضافة كود جديد</span>
-      </button>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading-state" id="loadingState">
-      <div class="loading-spinner"></div>
-      <p data-i18n="loading">جاري التحميل...</p>
-    </div>
-
-  </main>
-
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ar.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="./js/header-loader.js"></script>
-  <!-- <script src="./js/sidebar-loader.js"></script> -->
-  <script src="./js/discount.js"></script>
-</body>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./js/header-loader.js"></script>
+    <script src="./js/sidebar-loader.js"></script>
+    <script src="./js/discount.js"></script>
+  </body>
 </html>

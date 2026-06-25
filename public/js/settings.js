@@ -69,10 +69,37 @@ const t = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    applyTranslations();
-    await fetchSettings();
-    
-    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+  // تحويل الأرقام العربي إلى إنجليزي تلقائياً في أي حقل إدخال
+  document.addEventListener('input', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      let val = e.target.value;
+      
+      // 1. تحويل الأرقام العربي لإنجليزي
+      let convertedVal = val.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+      
+      // 2. لو الحقل رقمي, نمنع أي حروف تتكتب
+      if (e.target.inputMode === 'decimal' || e.target.type === 'number') {
+        convertedVal = convertedVal.replace(/[^0-9.]/g, '');
+        // نمنع أكتر من علامة عشرية
+        const parts = convertedVal.split('.');
+        if (parts.length > 2) {
+          convertedVal = parts[0] + '.' + parts.slice(1).join('');
+        }
+      }
+
+      if (val !== convertedVal) {
+        let start = e.target.selectionStart;
+        let end = e.target.selectionEnd;
+        e.target.value = convertedVal;
+        try { e.target.setSelectionRange(start, end); } catch (err) {}
+      }
+    }
+  });
+
+  applyTranslations();
+  await fetchSettings();
+  
+  document.getElementById('settings-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const formData = new FormData(e.target);

@@ -11,8 +11,10 @@ const systemMode = localStorage.getItem("systemMode") || "retail";
 const t = {
   ar: {
     pageTitle: systemMode === "restaurant" ? "إدارة الخامات" : "إدارة المخزن",
-    searchPlaceholder: systemMode === "restaurant" ? "ابحث عن خامة..." : "ابحث عن صنف...",
-    totalItems: systemMode === "restaurant" ? "إجمالي الخامات" : "إجمالي الأصناف",
+    searchPlaceholder:
+      systemMode === "restaurant" ? "ابحث عن خامة..." : "ابحث عن صنف...",
+    totalItems:
+      systemMode === "restaurant" ? "إجمالي الخامات" : "إجمالي الأصناف",
     lowStock: systemMode === "restaurant" ? "خامات منتهية" : "نواقص المخزن",
     nearExpiry: "قرب الانتهاء",
     msgAdded: "✅ تم الإضافة بنجاح.",
@@ -34,7 +36,10 @@ const t = {
     filterExpiry: "قرب الانتهاء",
     btnAdd: systemMode === "restaurant" ? "إضافة خامة جديدة" : "إضافة صنف جديد",
     editTitle: systemMode === "restaurant" ? "تعديل الخامة" : "تعديل الصنف",
-    addTitle: systemMode === "restaurant" ? "إضافة خامة جديدة للمطبخ" : "إضافة صنف جديد للمخزن",
+    addTitle:
+      systemMode === "restaurant"
+        ? "إضافة خامة جديدة للمطبخ"
+        : "إضافة صنف جديد للمخزن",
     saveChanges: "حفظ التعديلات",
     deleteItem: "حذف",
     cancelBtn: "إلغاء",
@@ -45,9 +50,14 @@ const t = {
     size: "مقاس:",
   },
   en: {
-    pageTitle: systemMode === "restaurant" ? "Kitchen Inventory" : "Inventory Management",
-    searchPlaceholder: systemMode === "restaurant" ? "Search ingredients..." : "Search items...",
-    totalItems: systemMode === "restaurant" ? "Total Ingredients" : "Total Items",
+    pageTitle:
+      systemMode === "restaurant"
+        ? "Kitchen Inventory"
+        : "Inventory Management",
+    searchPlaceholder:
+      systemMode === "restaurant" ? "Search ingredients..." : "Search items...",
+    totalItems:
+      systemMode === "restaurant" ? "Total Ingredients" : "Total Items",
     lowStock: systemMode === "restaurant" ? "Out of Stock" : "Low Stock",
     nearExpiry: "Near Expiry",
     msgAdded: "✅ Added successfully.",
@@ -69,7 +79,10 @@ const t = {
     filterExpiry: "Near Expiry",
     btnAdd: systemMode === "restaurant" ? "Add Ingredient" : "Add New Item",
     editTitle: systemMode === "restaurant" ? "Edit Ingredient" : "Edit Item",
-    addTitle: systemMode === "restaurant" ? "Add New Kitchen Item" : "Add New Inventory Item",
+    addTitle:
+      systemMode === "restaurant"
+        ? "Add New Kitchen Item"
+        : "Add New Inventory Item",
     saveChanges: "Save Changes",
     deleteItem: "Delete",
     cancelBtn: "Cancel",
@@ -558,25 +571,83 @@ async function openVariantEntryModal(isAr, langT, initialData = null) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ""}" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.-]/g, '')">
+                        <input id="v-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.quantity !== undefined ? initialData.quantity : ""}" placeholder="0">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ""}" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.-]/g, '')">
+                        <input id="v-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.min !== undefined ? initialData.min : ""}" placeholder="0">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px; color: #008060;">${isAr ? "💰 سعر البيع" : "💰 Selling Price"}</label>
-                        <input id="v-price" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0; border-color: #008060;" value="${initialData && initialData.price !== undefined ? initialData.price : initialData?.cost || ""}" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                        <input id="v-price" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0; border-color: #008060;" value="${initialData && initialData.price !== undefined ? initialData.price : initialData?.cost || ""}" placeholder="0.00">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px; color: #ca8a04;">${isAr ? "📦 سعر التكلفة" : "📦 Cost Price"}</label>
-                        <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.cost !== undefined ? initialData.cost : ""}" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                        <input id="v-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${initialData && initialData.cost !== undefined ? initialData.cost : ""}" placeholder="0.00">
                     </div>
                 </div>
             </div>
         `,
+    didOpen: () => {
+      // Helper function to handle number input
+      function setupNumberInput(inputId, allowNegative = false) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.addEventListener("input", (e) => {
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            let val = e.target.value;
+
+            // Convert arabic numbers to english first
+            const arabicToEnglish = {
+              "٠": "0",
+              "١": "1",
+              "٢": "2",
+              "٣": "3",
+              "٤": "4",
+              "٥": "5",
+              "٦": "6",
+              "٧": "7",
+              "٨": "8",
+              "٩": "9",
+            };
+            val = val
+              .split("")
+              .map((char) => arabicToEnglish[char] || char)
+              .join("");
+
+            // Now filter allowed chars
+            const allowedPattern = allowNegative ? /[^0-9.-]/g : /[^0-9.]/g;
+            val = val.replace(allowedPattern, "");
+
+            // Prevent multiple dots
+            const firstDot = val.indexOf(".");
+            if (firstDot !== -1) {
+              val =
+                val.slice(0, firstDot + 1) +
+                val.slice(firstDot + 1).replace(/\./g, "");
+            }
+            e.target.value = val;
+
+            // Keep cursor position (simple approach)
+            try {
+              e.target.setSelectionRange(
+                Math.min(start, val.length),
+                Math.min(end, val.length),
+              );
+            } catch (err) {
+              /* ignore for inputs that don't support this */
+            }
+          });
+        }
+      }
+      setupNumberInput("v-qty", true);
+      setupNumberInput("v-min", false);
+      setupNumberInput("v-price", false);
+      setupNumberInput("v-cost", false);
+    },
     showCancelButton: true,
     confirmButtonText: isAr ? "حفظ" : "Save",
     cancelButtonText: langT.cancelBtn,
@@ -631,15 +702,15 @@ async function openAddModal(preExistingData = null) {
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="swal-qty" type="text" class="swal2-input" style="width:100%; margin:0;" value="${state.quantity}">
+                        <input id="swal-qty" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${state.quantity}">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="swal-min" type="text" class="swal2-input" style="width:100%; margin:0;" value="${state.min}">
+                        <input id="swal-min" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${state.min}">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                        <input id="swal-cost" type="text" class="swal2-input" style="width:100%; margin:0;" value="${state.cost}">
+                        <input id="swal-cost" type="text" inputmode="decimal" class="swal2-input" style="width:100%; margin:0;" value="${state.cost}">
                     </div>
                     ${
                       !isRetail
@@ -684,6 +755,62 @@ async function openAddModal(preExistingData = null) {
             </div>
         `,
     didOpen: () => {
+      // Helper function to handle number input
+      function setupNumberInput(inputId, allowNegative = false) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.addEventListener("input", (e) => {
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            let val = e.target.value;
+
+            // Convert arabic numbers to english first
+            const arabicToEnglish = {
+              "٠": "0",
+              "١": "1",
+              "٢": "2",
+              "٣": "3",
+              "٤": "4",
+              "٥": "5",
+              "٦": "6",
+              "٧": "7",
+              "٨": "8",
+              "٩": "9",
+            };
+            val = val
+              .split("")
+              .map((char) => arabicToEnglish[char] || char)
+              .join("");
+
+            // Now filter allowed chars
+            const allowedPattern = allowNegative ? /[^0-9.-]/g : /[^0-9.]/g;
+            val = val.replace(allowedPattern, "");
+
+            // Prevent multiple dots
+            const firstDot = val.indexOf(".");
+            if (firstDot !== -1) {
+              val =
+                val.slice(0, firstDot + 1) +
+                val.slice(firstDot + 1).replace(/\./g, "");
+            }
+            e.target.value = val;
+
+            // Keep cursor position (simple approach)
+            try {
+              e.target.setSelectionRange(
+                Math.min(start, val.length),
+                Math.min(end, val.length),
+              );
+            } catch (err) {
+              /* ignore */
+            }
+          });
+        }
+      }
+      setupNumberInput("swal-qty", true);
+      setupNumberInput("swal-min", false);
+      setupNumberInput("swal-cost", false);
+
       const getCur = () => ({
         name: document.getElementById("swal-name").value,
         quantity: document.getElementById("swal-qty").value,
@@ -783,15 +910,15 @@ async function selectItem(item, preExistingData = null) {
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableQty}</label>
-                        <input id="swal-edit-qty" type="text" inputmode="decimal" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[^0-9.-]/g, '')">
+                        <input id="swal-edit-qty" type="text" inputmode="decimal" class="swal2-input" value="${state.quantity}" style="width:100%; margin:0;">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableMin}</label>
-                        <input id="swal-edit-min" type="text" inputmode="decimal" class="swal2-input" value="${state.min}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[^0-9.-]/g, '')">
+                        <input id="swal-edit-min" type="text" inputmode="decimal" class="swal2-input" value="${state.min}" style="width:100%; margin:0;">
                     </div>
                     <div>
                         <label style="display:block; font-weight:700; margin-bottom:5px;">${langT.tableCost}</label>
-                        <input id="swal-edit-cost" type="text" inputmode="decimal" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')">
+                        <input id="swal-edit-cost" type="text" inputmode="decimal" class="swal2-input" value="${state.cost}" style="width:100%; margin:0;">
                     </div>
                     ${
                       !isRetail
@@ -836,6 +963,62 @@ async function selectItem(item, preExistingData = null) {
             </div>
         `,
     didOpen: () => {
+      // Helper function to handle number input
+      function setupNumberInput(inputId, allowNegative = false) {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.addEventListener("input", (e) => {
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+            let val = e.target.value;
+
+            // Convert arabic numbers to english first
+            const arabicToEnglish = {
+              "٠": "0",
+              "١": "1",
+              "٢": "2",
+              "٣": "3",
+              "٤": "4",
+              "٥": "5",
+              "٦": "6",
+              "٧": "7",
+              "٨": "8",
+              "٩": "9",
+            };
+            val = val
+              .split("")
+              .map((char) => arabicToEnglish[char] || char)
+              .join("");
+
+            // Now filter allowed chars
+            const allowedPattern = allowNegative ? /[^0-9.-]/g : /[^0-9.]/g;
+            val = val.replace(allowedPattern, "");
+
+            // Prevent multiple dots
+            const firstDot = val.indexOf(".");
+            if (firstDot !== -1) {
+              val =
+                val.slice(0, firstDot + 1) +
+                val.slice(firstDot + 1).replace(/\./g, "");
+            }
+            e.target.value = val;
+
+            // Keep cursor position (simple approach)
+            try {
+              e.target.setSelectionRange(
+                Math.min(start, val.length),
+                Math.min(end, val.length),
+              );
+            } catch (err) {
+              /* ignore */
+            }
+          });
+        }
+      }
+      setupNumberInput("swal-edit-qty", true);
+      setupNumberInput("swal-edit-min", false);
+      setupNumberInput("swal-edit-cost", false);
+
       const getCur = () => ({
         name: document.getElementById("swal-edit-name").value,
         quantity: document.getElementById("swal-edit-qty").value,

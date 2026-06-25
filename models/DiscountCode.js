@@ -11,12 +11,24 @@ module.exports = (sequelize, DataTypes) => {
             unique: true
         },
         discount_type: {
-            type: DataTypes.ENUM('percentage', 'fixed'),
+            type: DataTypes.ENUM('percentage', 'fixed', 'buy_x_get_y'),
             allowNull: false
         },
         discount_value: {
             type: DataTypes.DECIMAL(10, 2),
             allowNull: false
+        },
+        buy_quantity: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        get_quantity: {
+            type: DataTypes.INTEGER,
+            allowNull: true
+        },
+        get_discount_value: {
+            type: DataTypes.DECIMAL(10, 2),
+            allowNull: true // لو 100 يبقى مجاناً، لو أقل يبقى بخصم
         },
         start_date: {
             type: DataTypes.DATEONLY,

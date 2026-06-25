@@ -39,6 +39,9 @@ OrderDetail.belongsTo(Product, { foreignKey: "productId" });
 Merchant.hasMany(MerchantTransaction, { foreignKey: "merchantId", as: "transactions", onDelete: 'CASCADE' });
 MerchantTransaction.belongsTo(Merchant, { foreignKey: "merchantId", as: "merchant" });
 
+Order.hasMany(Payment, { foreignKey: 'order_id' });
+Payment.belongsTo(Order, { foreignKey: 'order_id' });
+
 // ✅ تصدير الموديلات
 module.exports = {
     sequelize,

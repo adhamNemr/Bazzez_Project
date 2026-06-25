@@ -1,198 +1,499 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>إدارة المنتجات - Vortex POS</title>
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="./css/products.css">
+    <link rel="stylesheet" href="./css/common.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/products.css" />
     <script src="./js/auth-wrapper.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body>
-    
+  </head>
+  <body>
     <div id="sidebar-container"></div>
-    <div id="header-container" data-title="إدارة المنتجات" data-icon="fa-warehouse"></div>
+    <div
+      id="header-container"
+      data-title="إدارة المنتجات"
+      data-icon="fa-warehouse"
+    ></div>
 
     <div class="main-content">
-
-        <div class="container">
-
-            <!-- 📊 Quick Stats Panel -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; ">
-                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
-                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(0, 128, 96, 0.1); display: flex; align-items: center; justify-content: center; color: var(--luxury-emerald); font-size: 1.5rem;">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-total">إجمالي المنتجات</p>
-                        <h3 id="stat-total-count" style="margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--luxury-slate);">0</h3>
-                    </div>
-                </div>
-
-                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
-                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 1.5rem;">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-best">الأكثر مبيعاً</p>
-                        <h3 id="stat-best-seller" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--luxury-slate);">---</h3>
-                    </div>
-                </div>
-
-                <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid var(--luxury-border); display: flex; align-items: center; gap: 1.25rem; box-shadow: var(--luxury-shadow);">
-                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.5rem;">
-                        <i class="fas fa-shopping-cart"></i>
-                    </div>
-                    <div>
-                        <p style="margin: 0; color: #64748b; font-size: 0.85rem; font-weight: 700;" id="loc-stat-sold">إجمالي المبيعات</p>
-                        <h3 id="stat-total-sold" style="margin: 0; font-size: 1.5rem; font-weight: 800; color: var(--luxury-slate);">0</h3>
-                    </div>
-                </div>
+      <div class="container">
+        <!-- 📊 Quick Stats Panel -->
+        <div
+          style="
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+          "
+        >
+          <div
+            style="
+              background: white;
+              padding: 1.5rem;
+              border-radius: 16px;
+              border: 1px solid var(--luxury-border);
+              display: flex;
+              align-items: center;
+              gap: 1.25rem;
+              box-shadow: var(--luxury-shadow);
+            "
+          >
+            <div
+              style="
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+                background: rgba(0, 128, 96, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--luxury-emerald);
+                font-size: 1.5rem;
+              "
+            >
+              <i class="fas fa-boxes"></i>
             </div>
-
-            <!-- ✨ Optimized Toolbar -->
-            <div class="toolbar" style="background: white; border-radius: 16px;  box-shadow: var(--luxury-shadow);">
-                <form id="add-product-form">
-                    <div class="search-bar-container">
-                        <div class="search-container" style="position:relative; flex:2;">
-                            <i class="fas fa-search" style="position:absolute; right:1.25rem; top:50%; transform:translateY(-50%); color:#94a3b8;"></i>
-                            <input 
-                                type="text" 
-                                id="search-bar" 
-                                class="search-bar" 
-                                placeholder="ابحث بالاسم، الفئة أو الكود..." 
-                                oninput="searchProducts()" 
-                                style="padding-right: 3rem; width: 100%;"
-                            />
-                        </div>
-                        
-                        <div class="filter-group" style="display: flex; gap: 1rem; flex: 1.5;">
-                            <select id="filter-options" class="filter-dropdown" onchange="applyFilter()" style="flex: 1;">
-                                <option value="" id="loc-filter-by">تصفية حسب...</option>
-                                <option value="most-sold" id="loc-best-seller">الأكثر مبيعاً</option>
-                                <option value="highest-price" id="loc-expensive">الأعلى سعراً</option>
-                                <option value="lowest-price" id="loc-cheapest">الأقل سعراً</option>
-                            </select>
-
-                            <select id="category-filter" class="filter-dropdown" onchange="applyFilter()" style="flex: 1; border-color: var(--luxury-emerald); color: var(--luxury-emerald); font-weight: 700;">
-                                <option value="all" id="loc-all-cats">كل الفئات</option>
-                            </select>
-                        </div>
-
-                        <button type="button" id="open-add-drawer" class="main-button" style="min-width: 180px; background: var(--luxury-emerald); box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);">
-                            <i class="fas fa-plus"></i>
-                            <span id="loc-btn-add-new">إضافة منتج</span>
-                        </button>
-                    </div>
-                </form>
+            <div>
+              <p
+                style="
+                  margin: 0;
+                  color: #64748b;
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                "
+                id="loc-stat-total"
+              >
+                إجمالي المنتجات
+              </p>
+              <h3
+                id="stat-total-count"
+                style="
+                  margin: 0;
+                  font-size: 1.5rem;
+                  font-weight: 800;
+                  color: var(--luxury-slate);
+                "
+              >
+                0
+              </h3>
             </div>
+          </div>
 
-            <!-- 📦 Products Table -->
-            <div class="products-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: var(--luxury-shadow);">
-                <div class="table-container">
-                    <table class="orders-table">
-                        <thead>
-                            <tr>
-                                <th id="loc-id">ID</th>
-                                <th id="loc-name">الاسم</th>
-                                <th id="loc-category">الفئة</th>
-                                <th id="loc-price">السعر</th>
-                                <th id="loc-wholesale">جملة</th>
-                                <th id="loc-sold">المبيعات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="product-table"></tbody>
-                    </table>
-                </div>
+          <div
+            style="
+              background: white;
+              padding: 1.5rem;
+              border-radius: 16px;
+              border: 1px solid var(--luxury-border);
+              display: flex;
+              align-items: center;
+              gap: 1.25rem;
+              box-shadow: var(--luxury-shadow);
+            "
+          >
+            <div
+              style="
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+                background: rgba(59, 130, 246, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #3b82f6;
+                font-size: 1.5rem;
+              "
+            >
+              <i class="fas fa-fire"></i>
             </div>
+            <div>
+              <p
+                style="
+                  margin: 0;
+                  color: #64748b;
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                "
+                id="loc-stat-best"
+              >
+                الأكثر مبيعاً
+              </p>
+              <h3
+                id="stat-best-seller"
+                style="
+                  margin: 0;
+                  font-size: 1.25rem;
+                  font-weight: 800;
+                  color: var(--luxury-slate);
+                "
+              >
+                ---
+              </h3>
+            </div>
+          </div>
 
-            <!-- 📥 Footer Actions -->
-            <div class="footer">
-                <button onclick="exportProductsToExcel()" id="loc-btn-excel" class="main-button">
-                    <i class="fas fa-file-excel"></i> Export Excel
-                </button>
+          <div
+            style="
+              background: white;
+              padding: 1.5rem;
+              border-radius: 16px;
+              border: 1px solid var(--luxury-border);
+              display: flex;
+              align-items: center;
+              gap: 1.25rem;
+              box-shadow: var(--luxury-shadow);
+            "
+          >
+            <div
+              style="
+                width: 50px;
+                height: 50px;
+                border-radius: 12px;
+                background: rgba(16, 185, 129, 0.1);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #10b981;
+                font-size: 1.5rem;
+              "
+            >
+              <i class="fas fa-shopping-cart"></i>
             </div>
+            <div>
+              <p
+                style="
+                  margin: 0;
+                  color: #64748b;
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                "
+                id="loc-stat-sold"
+              >
+                إجمالي المبيعات
+              </p>
+              <h3
+                id="stat-total-sold"
+                style="
+                  margin: 0;
+                  font-size: 1.5rem;
+                  font-weight: 800;
+                  color: var(--luxury-slate);
+                "
+              >
+                0
+              </h3>
+            </div>
+          </div>
         </div>
+
+        <!-- ✨ Optimized Toolbar -->
+        <div
+          class="toolbar"
+          style="
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--luxury-shadow);
+          "
+        >
+          <form id="add-product-form">
+            <div class="search-bar-container">
+              <div class="search-container" style="position: relative; flex: 2">
+                <i
+                  class="fas fa-search"
+                  style="
+                    position: absolute;
+                    right: 1.25rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: #94a3b8;
+                  "
+                ></i>
+                <input
+                  type="text"
+                  id="search-bar"
+                  class="search-bar"
+                  placeholder="ابحث بالاسم، الفئة أو الكود..."
+                  oninput="searchProducts()"
+                  style="padding-right: 3rem; width: 100%"
+                />
+              </div>
+
+              <div
+                class="filter-group"
+                style="display: flex; gap: 1rem; flex: 1.5"
+              >
+                <select
+                  id="filter-options"
+                  class="filter-dropdown"
+                  onchange="applyFilter()"
+                  style="flex: 1"
+                >
+                  <option value="" id="loc-filter-by">تصفية حسب...</option>
+                  <option value="most-sold" id="loc-best-seller">
+                    الأكثر مبيعاً
+                  </option>
+                  <option value="highest-price" id="loc-expensive">
+                    الأعلى سعراً
+                  </option>
+                  <option value="lowest-price" id="loc-cheapest">
+                    الأقل سعراً
+                  </option>
+                </select>
+
+                <select
+                  id="category-filter"
+                  class="filter-dropdown"
+                  onchange="applyFilter()"
+                  style="
+                    flex: 1;
+                    border-color: var(--luxury-emerald);
+                    color: var(--luxury-emerald);
+                    font-weight: 700;
+                  "
+                >
+                  <option value="all" id="loc-all-cats">كل الفئات</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                id="open-add-drawer"
+                class="main-button"
+                style="
+                  min-width: 180px;
+                  background: var(--luxury-emerald);
+                  box-shadow: 0 4px 12px rgba(0, 128, 96, 0.2);
+                "
+              >
+                <i class="fas fa-plus"></i>
+                <span id="loc-btn-add-new">إضافة منتج</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 📦 Products Table -->
+        <div
+          class="products-card"
+          style="
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--luxury-shadow);
+          "
+        >
+          <div class="table-container">
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th id="loc-id">ID</th>
+                  <th id="loc-name">الاسم</th>
+                  <th id="loc-category">الفئة</th>
+                  <th id="loc-price">السعر</th>
+                  <th id="loc-wholesale">جملة</th>
+                  <th id="loc-sold">المبيعات</th>
+                </tr>
+              </thead>
+              <tbody id="product-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 📥 Footer Actions -->
+        <div class="footer">
+          <button
+            onclick="exportProductsToExcel()"
+            id="loc-btn-excel"
+            class="main-button"
+          >
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- 🎭 Side Drawer for Add/Edit Product -->
     <div class="side-drawer-overlay" id="drawer-overlay"></div>
     <div class="side-drawer" id="product-drawer">
-        <div class="side-drawer-header">
-            <h2 id="drawer-title">
-                <span id="loc-drawer-title">تفاصيل المنتج</span>
-            </h2>
-            <button class="close-drawer" id="close-drawer">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+      <div class="side-drawer-header">
+        <h2 id="drawer-title">
+          <span id="loc-drawer-title">تفاصيل المنتج</span>
+        </h2>
+        <button class="close-drawer" id="close-drawer">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-        <div class="side-drawer-content">
-            <form id="drawer-product-form">
-                <input type="hidden" id="product-id">
-                
-                <div class="input-group">
-                    <label id="loc-label-name">اسم المنتج</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-tag"></i>
-                        <input type="text" id="product-name" required placeholder="مثلاً: كلاسيك بيف">
-                    </div>
-                </div>
+      <div class="side-drawer-content">
+        <form id="drawer-product-form">
+          <input type="hidden" id="product-id" />
 
-                <div class="input-group">
-                    <label id="loc-label-category">الفئة / التصنيف</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-layer-group"></i>
-                        <input type="text" id="product-category" list="category-list" required placeholder="مثلاً: بيف">
-                        <datalist id="category-list"></datalist>
-                    </div>
-                </div>
+          <div class="input-group">
+            <label id="loc-label-name">اسم المنتج</label>
+            <div class="input-with-icon">
+              <i class="fas fa-tag"></i>
+              <input
+                type="text"
+                id="product-name"
+                required
+                placeholder="مثلاً: كلاسيك بيف"
+              />
+            </div>
+          </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="input-group">
-                        <label id="loc-label-price">سعر القطاعي</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <input type="text" id="product-price" required inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label id="loc-label-wholesale">سعر الجملة</label>
-                        <div class="input-with-icon">
-                            <i class="fas fa-store"></i>
-                            <input type="text" id="product-wholesale-price" required inputmode="decimal" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
-                        </div>
-                    </div>
-                </div>
+          <div class="input-group">
+            <label id="loc-label-category">الفئة / التصنيف</label>
+            <div class="input-with-icon">
+              <i class="fas fa-layer-group"></i>
+              <input
+                type="text"
+                id="product-category"
+                list="category-list"
+                required
+                placeholder="مثلاً: بيف"
+              />
+              <datalist id="category-list"></datalist>
+            </div>
+          </div>
 
-                <!-- 📊 Sales Details Section (Visible only in Edit Mode) -->
-                <div id="drawer-sales-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px dashed #e2e8f0; display: none;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid #edf2f7;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;" id="loc-retail-sales">مبيعات القطاعي</p>
-                            <h4 id="drawer-retail-sold" style="margin: 0.5rem 0 0; font-size: 1.25rem; font-weight: 800; color: var(--luxury-emerald);">0</h4>
-                        </div>
-                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; text-align: center; border: 1px solid #edf2f7;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;" id="loc-wholesale-sales">مبيعات الجملة</p>
-                            <h4 id="drawer-wholesale-sold" style="margin: 0.5rem 0 0; font-size: 1.25rem; font-weight: 800; color: #3b82f6;">0</h4>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="input-group">
+              <label id="loc-label-price">سعر القطاعي</label>
+              <div class="input-with-icon">
+                <i class="fas fa-money-bill-wave"></i>
+                <input
+                  type="text"
+                  id="product-price"
+                  required
+                  inputmode="decimal"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div class="input-group">
+              <label id="loc-label-wholesale">سعر الجملة</label>
+              <div class="input-with-icon">
+                <i class="fas fa-store"></i>
+                <input
+                  type="text"
+                  id="product-wholesale-price"
+                  required
+                  inputmode="decimal"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
 
-        <div class="side-drawer-footer">
-            <button type="button" class="drawer-btn btn-delete" id="delete-btn" style="display: none;">
-                <i class="fas fa-trash"></i>
-                <span id="loc-btn-delete">حذف</span>
-            </button>
-            <button type="submit" form="drawer-product-form" class="drawer-btn btn-save" id="save-product-btn">
-                <i class="fas fa-check"></i>
-                <span id="loc-btn-save">حفظ المنتج</span>
-            </button>
-        </div>
+          <!-- 📊 Sales Details Section (Visible only in Edit Mode) -->
+          <div
+            id="drawer-sales-section"
+            style="
+              margin-top: 2rem;
+              padding-top: 2rem;
+              border-top: 1px dashed #e2e8f0;
+              display: none;
+            "
+          >
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div
+                style="
+                  background: #f8fafc;
+                  padding: 1.5rem;
+                  border-radius: 12px;
+                  text-align: center;
+                  border: 1px solid #edf2f7;
+                "
+              >
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 0.75rem;
+                    color: #64748b;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                  "
+                  id="loc-retail-sales"
+                >
+                  مبيعات القطاعي
+                </p>
+                <h4
+                  id="drawer-retail-sold"
+                  style="
+                    margin: 0.5rem 0 0;
+                    font-size: 1.25rem;
+                    font-weight: 800;
+                    color: var(--luxury-emerald);
+                  "
+                >
+                  0
+                </h4>
+              </div>
+              <div
+                style="
+                  background: #f8fafc;
+                  padding: 1.5rem;
+                  border-radius: 12px;
+                  text-align: center;
+                  border: 1px solid #edf2f7;
+                "
+              >
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 0.75rem;
+                    color: #64748b;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                  "
+                  id="loc-wholesale-sales"
+                >
+                  مبيعات الجملة
+                </p>
+                <h4
+                  id="drawer-wholesale-sold"
+                  style="
+                    margin: 0.5rem 0 0;
+                    font-size: 1.25rem;
+                    font-weight: 800;
+                    color: #3b82f6;
+                  "
+                >
+                  0
+                </h4>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="side-drawer-footer">
+        <button
+          type="button"
+          class="drawer-btn btn-delete"
+          id="delete-btn"
+          style="display: none"
+        >
+          <i class="fas fa-trash"></i>
+          <span id="loc-btn-delete">حذف</span>
+        </button>
+        <button
+          type="submit"
+          form="drawer-product-form"
+          class="drawer-btn btn-save"
+          id="save-product-btn"
+        >
+          <i class="fas fa-check"></i>
+          <span id="loc-btn-save">حفظ المنتج</span>
+        </button>
+      </div>
     </div>
 
     <script src="./js/auth.js"></script>
@@ -203,5 +504,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable"></script>
-</body>
+  </body>
 </html>

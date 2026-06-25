@@ -1,162 +1,219 @@
-'use strict';
+"use strict";
 
 /* ── i18n Dictionary ── */
 const TRANSLATIONS = {
   ar: {
-    pageTitle:        'إدارة الخصومات',
-    pageSubtitle:     'أنشئ وأدر أكواد الخصم بكل سهولة',
-    addBtn:           'إضافة كود جديد',
-    statTotal:        'إجمالي الأكواد',
-    statActive:       'أكواد نشطة',
-    statInactive:     'أكواد معطلة',
-    statExpired:      'منتهية الصلاحية',
-    searchPlaceholder:'ابحث عن كود خصم...',
-    filterAll:        'الكل',
-    filterActive:     'نشط',
-    filterInactive:   'معطل',
-    filterExpired:    'منتهي',
-    loading:          'جاري التحميل...',
-    emptyTitle:       'لا توجد خصومات بعد',
-    emptySubtitle:    'أضف أول كود خصم لبدء العروض الترويجية',
-    formAddTitle:     '➕ إضافة كود خصم جديد',
-    formEditTitle:    '✏️ تعديل كود الخصم',
-    labelCode:        'كود الخصم',
-    labelType:        'نوع الخصم',
-    labelValue:       'قيمة الخصم',
-    labelStartDate:   'تاريخ البداية',
-    labelEndDate:     'تاريخ الانتهاء',
-    labelProducts:    'المنتجات المشمولة',
-    labelStatus:      'الحالة (نشط)',
-    typePercentage:   'نسبة مئوية (%)',
-    typeFixed:        'مبلغ ثابت (ج.م)',
-    placeholderCode:  'مثال: SUMMER20',
-    placeholderValue: '0',
-    placeholderProducts: 'اختر المنتجات...',
-    allProducts:      'جميع المنتجات',
-    searchProducts:   'ابحث عن منتج...',
-    btnSave:          'حفظ',
-    btnCancel:        'إلغاء',
-    btnEdit:          'تعديل',
-    btnDelete:        'حذف',
-    btnToggle:        'تغيير الحالة',
-    statusActive:     'نشط',
-    statusInactive:   'معطل',
-    statusExpired:    'منتهي',
-    discountValue:    'قيمة الخصم',
-    allProductsLabel: 'جميع المنتجات',
-    andMore:          'و {n} أخرى',
-    noLimit:          'بلا حد',
-    confirmDeleteTitle: 'تأكيد الحذف',
-    confirmDeleteText:  'هل أنت متأكد من حذف كود "{code}"؟ لا يمكن التراجع.',
-    confirmDeleteBtn:   'نعم، احذفه',
-    cancelBtn:          'إلغاء',
-    successSaved:    'تم حفظ الخصم بنجاح!',
-    successDeleted:  'تم حذف الخصم بنجاح!',
-    successToggled:  'تم تحديث حالة الخصم!',
-    errorLoad:       'حدث خطأ أثناء تحميل البيانات',
-    errorSave:       'حدث خطأ أثناء الحفظ',
-    errorDelete:     'حدث خطأ أثناء الحذف',
-    errorRequired:   'يرجى تعبئة جميع الحقول المطلوبة',
-    errorValue:      'يجب أن تكون قيمة الخصم أكبر من صفر',
-    errorPercent:    'النسبة المئوية لا يمكن أن تتجاوز 100%',
+    pageTitle: "إدارة الخصومات",
+    pageSubtitle: "أنشئ وأدر أكواد الخصم بكل سهولة",
+    addBtn: "إضافة كود جديد",
+    statTotal: "إجمالي الأكواد",
+    statActive: "أكواد نشطة",
+    statInactive: "أكواد معطلة",
+    statExpired: "منتهية الصلاحية",
+    searchPlaceholder: "ابحث عن كود خصم...",
+    filterAll: "الكل",
+    filterActive: "نشط",
+    filterInactive: "معطل",
+    filterExpired: "منتهي",
+    loading: "جاري التحميل...",
+    emptyTitle: "لا توجد خصومات بعد",
+    emptySubtitle: "أضف أول كود خصم لبدء العروض الترويجية",
+    formAddTitle: "➕ إضافة كود خصم جديد",
+    formEditTitle: "✏️ تعديل كود الخصم",
+    labelCode: "كود الخصم",
+    labelType: "نوع الخصم",
+    labelValue: "قيمة الخصم",
+    labelStartDate: "تاريخ البداية",
+    labelEndDate: "تاريخ الانتهاء",
+    labelProducts: "المنتجات المشمولة",
+    labelStatus: "الحالة (نشط)",
+    typePercentage: "نسبة مئوية (%)",
+    typeFixed: "مبلغ ثابت (ج.م)",
+    placeholderCode: "مثال: SUMMER20",
+    placeholderValue: "0",
+    placeholderProducts: "اختر المنتجات...",
+    allProducts: "جميع المنتجات",
+    searchProducts: "ابحث عن منتج...",
+    btnSave: "حفظ",
+    btnCancel: "إلغاء",
+    btnEdit: "تعديل",
+    btnDelete: "حذف",
+    btnToggle: "تغيير الحالة",
+    statusActive: "نشط",
+    statusInactive: "معطل",
+    statusExpired: "منتهي",
+    discountValue: "قيمة الخصم",
+    allProductsLabel: "جميع المنتجات",
+    andMore: "و {n} أخرى",
+    noLimit: "بلا حد",
+    confirmDeleteTitle: "تأكيد الحذف",
+    confirmDeleteText: 'هل أنت متأكد من حذف كود "{code}"؟ لا يمكن التراجع.',
+    confirmDeleteBtn: "نعم، احذفه",
+    cancelBtn: "إلغاء",
+    successSaved: "تم حفظ الخصم بنجاح!",
+    successDeleted: "تم حذف الخصم بنجاح!",
+    successToggled: "تم تحديث حالة الخصم!",
+    errorLoad: "حدث خطأ أثناء تحميل البيانات",
+    errorSave: "حدث خطأ أثناء الحفظ",
+    errorDelete: "حدث خطأ أثناء الحذف",
+    errorRequired: "يرجى تعبئة جميع الحقول المطلوبة",
+    errorValue: "يجب أن تكون قيمة الخصم أكبر من صفر",
+    errorPercent: "النسبة المئوية لا يمكن أن تتجاوز 100%",
+    typeBuyXGetY: "اشتري X وخد Y",
+    labelBuyQty: "اشتري كمية",
+    labelGetQty: "وخد كمية",
+    labelGetDiscount: "بخصم % (100 = مجاناً)",
   },
   en: {
-    pageTitle:        'Manage Discounts',
-    pageSubtitle:     'Create and manage discount codes with ease',
-    addBtn:           'Add New Code',
-    statTotal:        'Total Codes',
-    statActive:       'Active Codes',
-    statInactive:     'Inactive Codes',
-    statExpired:      'Expired Codes',
-    searchPlaceholder:'Search discount codes...',
-    filterAll:        'All',
-    filterActive:     'Active',
-    filterInactive:   'Inactive',
-    filterExpired:    'Expired',
-    loading:          'Loading...',
-    emptyTitle:       'No discounts yet',
-    emptySubtitle:    'Add your first discount code to start promotions',
-    formAddTitle:     '➕ Add New Discount Code',
-    formEditTitle:    '✏️ Edit Discount Code',
-    labelCode:        'Discount Code',
-    labelType:        'Discount Type',
-    labelValue:       'Discount Value',
-    labelStartDate:   'Start Date',
-    labelEndDate:     'End Date',
-    labelProducts:    'Applicable Products',
-    labelStatus:      'Status (Active)',
-    typePercentage:   'Percentage (%)',
-    typeFixed:        'Fixed Amount (EGP)',
-    placeholderCode:  'E.g: SUMMER20',
-    placeholderValue: '0',
-    placeholderProducts: 'Select products...',
-    allProducts:      'All Products',
-    searchProducts:   'Search products...',
-    btnSave:          'Save',
-    btnCancel:        'Cancel',
-    btnEdit:          'Edit',
-    btnDelete:        'Delete',
-    btnToggle:        'Toggle Status',
-    statusActive:     'Active',
-    statusInactive:   'Inactive',
-    statusExpired:    'Expired',
-    discountValue:    'Discount Value',
-    allProductsLabel: 'All Products',
-    andMore:          '+{n} more',
-    noLimit:          'No limit',
-    confirmDeleteTitle: 'Confirm Delete',
-    confirmDeleteText:  'Are you sure you want to delete "{code}"? This cannot be undone.',
-    confirmDeleteBtn:   'Yes, Delete',
-    cancelBtn:          'Cancel',
-    successSaved:    'Discount saved successfully!',
-    successDeleted:  'Discount deleted successfully!',
-    successToggled:  'Discount status updated!',
-    errorLoad:       'Error loading data',
-    errorSave:       'Error saving discount',
-    errorDelete:     'Error deleting discount',
-    errorRequired:   'Please fill all required fields',
-    errorValue:      'Discount value must be greater than zero',
-    errorPercent:    'Percentage cannot exceed 100%',
-  }
+    pageTitle: "Manage Discounts",
+    pageSubtitle: "Create and manage discount codes with ease",
+    addBtn: "Add New Code",
+    statTotal: "Total Codes",
+    statActive: "Active Codes",
+    statInactive: "Inactive Codes",
+    statExpired: "Expired Codes",
+    searchPlaceholder: "Search discount codes...",
+    filterAll: "All",
+    filterActive: "Active",
+    filterInactive: "Inactive",
+    filterExpired: "Expired",
+    loading: "Loading...",
+    emptyTitle: "No discounts yet",
+    emptySubtitle: "Add your first discount code to start promotions",
+    formAddTitle: "➕ Add New Discount Code",
+    formEditTitle: "✏️ Edit Discount Code",
+    labelCode: "Discount Code",
+    labelType: "Discount Type",
+    labelValue: "Discount Value",
+    labelStartDate: "Start Date",
+    labelEndDate: "End Date",
+    labelProducts: "Applicable Products",
+    labelStatus: "Status (Active)",
+    typePercentage: "Percentage (%)",
+    typeFixed: "Fixed Amount (EGP)",
+    placeholderCode: "E.g: SUMMER20",
+    placeholderValue: "0",
+    placeholderProducts: "Select products...",
+    allProducts: "All Products",
+    searchProducts: "Search products...",
+    btnSave: "Save",
+    btnCancel: "Cancel",
+    btnEdit: "Edit",
+    btnDelete: "Delete",
+    btnToggle: "Toggle Status",
+    statusActive: "Active",
+    statusInactive: "Inactive",
+    statusExpired: "Expired",
+    discountValue: "Discount Value",
+    allProductsLabel: "All Products",
+    andMore: "+{n} more",
+    noLimit: "No limit",
+    confirmDeleteTitle: "Confirm Delete",
+    confirmDeleteText:
+      'Are you sure you want to delete "{code}"? This cannot be undone.',
+    confirmDeleteBtn: "Yes, Delete",
+    cancelBtn: "Cancel",
+    successSaved: "Discount saved successfully!",
+    successDeleted: "Discount deleted successfully!",
+    successToggled: "Discount status updated!",
+    errorLoad: "Error loading data",
+    errorSave: "Error saving discount",
+    errorDelete: "Error deleting discount",
+    errorRequired: "Please fill all required fields",
+    errorValue: "Discount value must be greater than zero",
+    errorPercent: "Percentage cannot exceed 100%",
+    typeBuyXGetY: "Buy X Get Y",
+    labelBuyQty: "Buy Quantity",
+    labelGetQty: "Get Quantity",
+    labelGetDiscount: "Discount % (100 = Free)",
+  },
 };
 
 /* ── State ── */
-let discounts       = [];
-let products        = [];
-let currentFilter   = 'all';
-let searchQuery     = '';
+let discounts = [];
+let products = [];
+let currentFilter = "all";
+let searchQuery = "";
 let selectedProductIds = [];
-const lang = localStorage.getItem('lang') === 'en' ? 'en' : 'ar';
+const lang = localStorage.getItem("lang") === "en" ? "en" : "ar";
 
 const t = (key, vars = {}) => {
   let str = TRANSLATIONS[lang][key] || key;
-  Object.entries(vars).forEach(([k, v]) => { str = str.replace(`{${k}}`, v); });
+  Object.entries(vars).forEach(([k, v]) => {
+    str = str.replace(`{${k}}`, v);
+  });
   return str;
 };
 
-const escHtml = str => String(str)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const escHtml = (str) =>
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
-const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+const setEl = (id, val) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+};
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
+  if (!dateStr) return "—";
   try {
-    return new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    });
-  } catch { return dateStr; }
+    return new Date(dateStr).toLocaleDateString(
+      lang === "ar" ? "ar-EG" : "en-US",
+      {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      },
+    );
+  } catch {
+    return dateStr;
+  }
 };
 
 const parseProductIds = (raw) => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw.map(Number).filter(Boolean);
-  try { return JSON.parse(raw).map(Number).filter(Boolean); } catch { return []; }
+  try {
+    return JSON.parse(raw).map(Number).filter(Boolean);
+  } catch {
+    return [];
+  }
 };
 
 /* ── DOM Ready ── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
+  // تحويل الأرقام العربي إلى إنجليزي تلقائياً في أي حقل إدخال
+  document.addEventListener("input", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+      let val = e.target.value;
+
+      // 1. تحويل الأرقام العربي لإنجليزي
+      let convertedVal = val.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+
+      // 2. لو الحقل رقمي, نمنع أي حروف تتكتب
+      if (e.target.inputMode === "decimal" || e.target.type === "number") {
+        convertedVal = convertedVal.replace(/[^0-9.]/g, "");
+        // نمنع أكتر من علامة عشرية
+        const parts = convertedVal.split(".");
+        if (parts.length > 2) {
+          convertedVal = parts[0] + "." + parts.slice(1).join("");
+        }
+      }
+
+      if (val !== convertedVal) {
+        let start = e.target.selectionStart;
+        let end = e.target.selectionEnd;
+        e.target.value = convertedVal;
+        try {
+          e.target.setSelectionRange(start, end);
+        } catch (err) {}
+      }
+    }
+  });
+
   applyLang();
   applyI18n();
   bindEvents();
@@ -166,17 +223,17 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── Language ── */
 function applyLang() {
   document.documentElement.lang = lang;
-  document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.body.dir = lang === "ar" ? "rtl" : "ltr";
 }
 
 function applyI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
     const val = t(key);
     if (val !== key) el.textContent = val;
   });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
     const val = t(key);
     if (val !== key) el.placeholder = val;
   });
@@ -184,18 +241,24 @@ function applyI18n() {
 
 /* ── Events ── */
 function bindEvents() {
-  document.getElementById('btnAddDiscount')?.addEventListener('click', () => openFormModal(null));
-  document.getElementById('btnAddDiscountEmpty')?.addEventListener('click', () => openFormModal(null));
+  document
+    .getElementById("btnAddDiscount")
+    ?.addEventListener("click", () => openFormModal(null));
+  document
+    .getElementById("btnAddDiscountEmpty")
+    ?.addEventListener("click", () => openFormModal(null));
 
-  document.getElementById('searchInput')?.addEventListener('input', e => {
+  document.getElementById("searchInput")?.addEventListener("input", (e) => {
     searchQuery = e.target.value.trim().toLowerCase();
     renderGrid();
   });
 
-  document.querySelectorAll('.filter-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  document.querySelectorAll(".filter-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll(".filter-tab")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
       currentFilter = btn.dataset.filter;
       renderGrid();
     });
@@ -206,16 +269,16 @@ function bindEvents() {
 async function loadData() {
   showLoading(true);
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     const headers = { Authorization: `Bearer ${token}` };
 
     const [discountsRes, productsRes] = await Promise.all([
-      fetch('/api/discounts', { headers }),
-      fetch('/api/products', { headers }),
+      fetch("/api/discounts", { headers }),
+      fetch("/api/products", { headers }),
     ]);
 
     const discountsData = await discountsRes.json();
-    const productsData  = await productsRes.json();
+    const productsData = await productsRes.json();
 
     // Normalise discounts response
     if (Array.isArray(discountsData)) {
@@ -231,18 +294,17 @@ async function loadData() {
       products = productsData;
     } else if (productsData.data) {
       products = productsData.data;
-    } else if (typeof productsData === 'object') {
+    } else if (typeof productsData === "object") {
       // keyed by category
       products = Object.values(productsData).flat();
     } else {
       products = [];
     }
-
   } catch (err) {
-    console.error('Load error:', err);
-    showToast(t('errorLoad'), 'error');
+    console.error("Load error:", err);
+    showToast(t("errorLoad"), "error");
     discounts = [];
-    products  = [];
+    products = [];
   } finally {
     showLoading(false);
     renderGrid();
@@ -251,113 +313,139 @@ async function loadData() {
 }
 
 function showLoading(show) {
-  const el = document.getElementById('loadingState');
-  if (el) el.style.display = show ? 'flex' : 'none';
+  const el = document.getElementById("loadingState");
+  if (el) el.style.display = show ? "flex" : "none";
 }
 
 /* ── Filtering ── */
 function getStatus(d) {
   const now = new Date();
-  if (d.end_date && new Date(d.end_date) < now) return 'expired';
-  return d.is_active ? 'active' : 'inactive';
+  if (d.end_date && new Date(d.end_date) < now) return "expired";
+  return d.is_active ? "active" : "inactive";
 }
 
 function getFilteredDiscounts() {
-  return discounts.filter(d => {
+  return discounts.filter((d) => {
     const status = getStatus(d);
-    if (currentFilter !== 'all' && currentFilter !== status) return false;
-    if (searchQuery && !d.code.toLowerCase().includes(searchQuery)) return false;
+    if (currentFilter !== "all" && currentFilter !== status) return false;
+    if (searchQuery && !d.code.toLowerCase().includes(searchQuery))
+      return false;
     return true;
   });
 }
 
 /* ── Stats ── */
 function updateStats() {
-  const total    = discounts.length;
-  const active   = discounts.filter(d => getStatus(d) === 'active').length;
-  const inactive = discounts.filter(d => getStatus(d) === 'inactive').length;
-  const expired  = discounts.filter(d => getStatus(d) === 'expired').length;
+  const total = discounts.length;
+  const active = discounts.filter((d) => getStatus(d) === "active").length;
+  const inactive = discounts.filter((d) => getStatus(d) === "inactive").length;
+  const expired = discounts.filter((d) => getStatus(d) === "expired").length;
 
-  setEl('statTotal',    total);
-  setEl('statActive',   active);
-  setEl('statInactive', inactive);
-  setEl('statExpired',  expired);
+  // Update values safely using the standard helper
+  setEl("statTotal", total);
+  setEl("statActive", active);
+  setEl("statInactive", inactive);
+  setEl("statExpired", expired);
 }
 
 /* ── Render Grid ── */
 function renderGrid() {
-  const grid     = document.getElementById('discountsGrid');
-  const empty    = document.getElementById('emptyState');
+  const grid = document.getElementById("discountsGrid");
+  const empty = document.getElementById("emptyState");
   const filtered = getFilteredDiscounts();
 
   if (filtered.length === 0) {
-    grid.innerHTML = '';
-    empty.style.display = 'flex';
-    empty.style.flexDirection = 'column';
-    empty.style.alignItems = 'center';
+    grid.innerHTML = "";
+    empty.style.display = "flex";
+    empty.style.flexDirection = "column";
+    empty.style.alignItems = "center";
     return;
   }
 
-  empty.style.display = 'none';
-  grid.innerHTML = filtered.map((d, i) => buildCard(d, i)).join('');
+  empty.style.display = "none";
+  grid.innerHTML = filtered.map((d, i) => buildCard(d, i)).join("");
 
-  grid.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', e => {
+  grid.querySelectorAll("[data-action]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const action = btn.dataset.action;
-      const id     = parseInt(btn.dataset.id);
-      if (action === 'edit')   openFormModal(discounts.find(d => d.id === id));
-      if (action === 'delete') confirmDelete(id);
-      if (action === 'toggle') toggleStatus(id);
+      const id = parseInt(btn.dataset.id);
+      if (action === "edit") openFormModal(discounts.find((d) => d.id === id));
+      if (action === "delete") confirmDelete(id);
+      if (action === "toggle") toggleStatus(id);
     });
   });
 }
 
 function buildCard(d, index) {
-  const statusKey   = getStatus(d);
-  const statusLabel = t(`status${statusKey.charAt(0).toUpperCase() + statusKey.slice(1)}`);
+  const statusKey = getStatus(d);
+  const statusLabel = t(
+    `status${statusKey.charAt(0).toUpperCase() + statusKey.slice(1)}`,
+  );
 
-  // Normalise field names (API might use different keys)
-  const discType  = d.discount_type  || d.type  || 'fixed';
+  const discType = d.discount_type || d.type || "fixed";
   const discValue = d.discount_value ?? d.value ?? 0;
   const startDate = d.start_date;
-  const endDate   = d.end_date;
+  const endDate = d.end_date;
   const productIds = parseProductIds(d.applicable_products || d.product_ids);
 
-  const valueDisplay = discType === 'percentage'
-    ? `${discValue}%`
-    : `${Number(discValue).toLocaleString()} ج.م`;
+  let iconClass = "fa-tag";
+  if (discType === "buy_x_get_y") iconClass = "fa-cart-shopping";
+  if (discType === "percentage") iconClass = "fa-percent";
 
-  const typeLabel = discType === 'percentage' ? t('typePercentage') : t('typeFixed');
+  const valueDisplay =
+    discType === "percentage"
+      ? `${discValue}%`
+      : discType === "buy_x_get_y"
+        ? `<span style="font-size:20px; color:var(--luxury-emerald)">اشتري ${d.buy_quantity} وخد ${d.get_quantity}</span>`
+        : `${Number(discValue).toLocaleString()} ج.م`;
+
+  const typeLabel =
+    discType === "percentage"
+      ? t("typePercentage")
+      : discType === "buy_x_get_y"
+        ? t("typeBuyXGetY")
+        : t("typeFixed");
 
   // Validity
-  let validityText = t('noLimit');
+  let validityText = t("noLimit");
   if (startDate || endDate) {
-    const s = startDate ? formatDate(startDate) : '—';
-    const e = endDate   ? formatDate(endDate)   : '—';
+    const s = startDate ? formatDate(startDate) : "—";
+    const e = endDate ? formatDate(endDate) : "—";
     validityText = `${s} ← ${e}`;
   }
 
   // Products
-  let productsHtml = '';
+  let productsHtml = "";
   if (!productIds || productIds.length === 0) {
-    productsHtml = `<span class="product-tag">${t('allProductsLabel')}</span>`;
+    productsHtml = `<span class="product-tag">${t("allProductsLabel")}</span>`;
   } else {
-    const names   = productIds.map(id => {
-      const p = products.find(p => p.id === id || p.product_id === id);
-      return p ? (p.name || p.product_name || `#${id}`) : `#${id}`;
+    const names = productIds.map((id) => {
+      const p = products.find((p) => p.id === id || p.product_id === id);
+      return p ? p.name || p.product_name || `#${id}` : `#${id}`;
     });
     const visible = names.slice(0, 2);
-    const extra   = names.length - 2;
-    productsHtml  = visible.map(n => `<span class="product-tag">${escHtml(n)}</span>`).join('');
-    if (extra > 0) productsHtml += `<span class="product-tag product-tag--more">${t('andMore', { n: extra })}</span>`;
+    const extra = names.length - 2;
+    productsHtml = visible
+      .map((n) => `<span class="product-tag">${escHtml(n)}</span>`)
+      .join("");
+    if (extra > 0)
+      productsHtml += `<span class="product-tag product-tag--more">${t("andMore", { n: extra })}</span>`;
   }
 
+  const bxyInfo =
+    discType === "buy_x_get_y"
+      ? `<div class="discount-card__bxy-badge">
+           <i class="fa-solid fa-gift"></i>
+           <span>خصم ${d.get_discount_value || 100}% على المنتج المجاني</span>
+         </div>`
+      : "";
+
   return `
-  <div class="discount-card is-${statusKey}" style="animation-delay:${index * 0.05}s" data-id="${d.id}">
+  <div class="discount-card is-${statusKey} is-${discType}" style="animation-delay:${index * 0.05}s" data-id="${d.id}">
     <div class="discount-card__header">
       <div class="discount-card__code-wrap">
-        <div class="discount-card__icon"><i class="fa-solid fa-tag"></i></div>
+        <div class="discount-card__icon"><i class="fa-solid ${iconClass}"></i></div>
         <div>
           <div class="discount-card__code">${escHtml(d.code)}</div>
           <div class="discount-card__type">${typeLabel}</div>
@@ -368,10 +456,11 @@ function buildCard(d, index) {
 
     <div class="discount-card__body">
       <div class="discount-card__value-row">
-        <span class="discount-card__value-label">${t('discountValue')}</span>
+        <span class="discount-card__value-label">${t("discountValue")}</span>
         <span class="discount-card__value-amount">${valueDisplay}</span>
       </div>
-      <div class="discount-card__meta">
+      ${bxyInfo}
+      <div class="discount-card__meta" style="margin-top:16px">
         <div class="discount-card__meta-row">
           <i class="fa-regular fa-calendar"></i>
           <span>${validityText}</span>
@@ -384,14 +473,14 @@ function buildCard(d, index) {
     </div>
 
     <div class="discount-card__footer">
-      <button class="btn-toggle-status" data-action="toggle" data-id="${d.id}" title="${t('btnToggle')}">
-        <i class="fa-solid fa-${d.is_active ? 'toggle-on' : 'toggle-off'}"></i>
-        <span>${d.is_active ? t('statusActive') : t('statusInactive')}</span>
+      <button class="btn-toggle-status" data-action="toggle" data-id="${d.id}" title="${t("btnToggle")}">
+        <i class="fa-solid fa-${d.is_active ? "toggle-on" : "toggle-off"}"></i>
+        <span>${d.is_active ? t("statusActive") : t("statusInactive")}</span>
       </button>
-      <button class="btn-icon" data-action="edit" data-id="${d.id}" title="${t('btnEdit')}">
+      <button class="btn-icon" data-action="edit" data-id="${d.id}" title="${t("btnEdit")}">
         <i class="fa-solid fa-pen-to-square"></i>
       </button>
-      <button class="btn-icon btn-icon--danger" data-action="delete" data-id="${d.id}" title="${t('btnDelete')}">
+      <button class="btn-icon btn-icon--danger" data-action="delete" data-id="${d.id}" title="${t("btnDelete")}">
         <i class="fa-solid fa-trash-can"></i>
       </button>
     </div>
@@ -400,123 +489,167 @@ function buildCard(d, index) {
 
 /* ── Form Modal ── */
 async function openFormModal(discount) {
-  const isEdit    = !!discount;
-  const productIds = isEdit ? parseProductIds(discount.applicable_products || discount.product_ids) : [];
-  const discType  = discount ? (discount.discount_type || discount.type || 'fixed') : 'fixed';
-  const discValue = discount ? (discount.discount_value ?? discount.value ?? '') : '';
+  const isEdit = !!discount;
+  const productIds = isEdit
+    ? parseProductIds(discount.applicable_products || discount.product_ids)
+    : [];
+  const discType = discount
+    ? discount.discount_type || discount.type || "fixed"
+    : "fixed";
+  const discValue = discount
+    ? (discount.discount_value ?? discount.value ?? "")
+    : "";
 
   const formHtml = `
-  <div class="vortex-form" dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
+  <div class="vortex-form" dir="${lang === "ar" ? "rtl" : "ltr"}">
     <div class="form-row">
       <div class="form-group">
-        <label for="swal-code">${t('labelCode')} <span class="required">*</span></label>
+        <label for="swal-code">${t("labelCode")} <span class="required">*</span></label>
         <input id="swal-code" class="form-control" type="text"
-               placeholder="${t('placeholderCode')}"
-               value="${isEdit ? escHtml(discount.code) : ''}"
+               placeholder="${t("placeholderCode")}"
+               value="${isEdit ? escHtml(discount.code) : ""}"
                style="text-transform:uppercase;font-family:'Outfit',sans-serif;letter-spacing:1px;" />
       </div>
       <div class="form-group">
-        <label for="swal-type">${t('labelType')} <span class="required">*</span></label>
+        <label for="swal-type">${t("labelType")} <span class="required">*</span></label>
         <select id="swal-type" class="form-control">
-          <option value="percentage" ${discType === 'percentage' ? 'selected' : ''}>${t('typePercentage')}</option>
-          <option value="fixed"      ${discType === 'fixed'      ? 'selected' : ''}>${t('typeFixed')}</option>
+          <option value="percentage" ${discType === "percentage" ? "selected" : ""}>${t("typePercentage")}</option>
+          <option value="fixed"      ${discType === "fixed" ? "selected" : ""}>${t("typeFixed")}</option>
+          <option value="buy_x_get_y" ${discType === "buy_x_get_y" ? "selected" : ""}>${t("typeBuyXGetY")}</option>
         </select>
       </div>
     </div>
 
     <div class="form-group">
-      <label for="swal-value">${t('labelValue')} <span class="required">*</span></label>
+      <label for="swal-value">${t("labelValue")} <span class="required">*</span></label>
       <input id="swal-value" class="form-control" type="text" inputmode="decimal"
-             placeholder="${t('placeholderValue')}" value="${discValue}" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');" />
+             placeholder="${t("placeholderValue")}" value="${discValue}" />
+    </div>
+
+    <div id="buy-x-get-y-fields" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label>${t("labelBuyQty")} <span class="required">*</span></label>
+          <input id="swal-buy-qty" class="form-control" type="number" min="1" value="${isEdit && discount.buy_quantity ? discount.buy_quantity : ""}" />
+        </div>
+        <div class="form-group">
+          <label>${t("labelGetQty")} <span class="required">*</span></label>
+          <input id="swal-get-qty" class="form-control" type="number" min="1" value="${isEdit && discount.get_quantity ? discount.get_quantity : ""}" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>${t("labelGetDiscount")} <span class="required">*</span></label>
+        <input id="swal-get-disc" class="form-control" type="number" min="1" max="100" value="${isEdit && discount.get_discount_value ? discount.get_discount_value : 100}" />
+      </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label for="swal-start">${t('labelStartDate')}</label>
+        <label for="swal-start">${t("labelStartDate")}</label>
         <input id="swal-start" class="form-control" type="text" placeholder="YYYY-MM-DD"
-               value="${isEdit && discount.start_date ? discount.start_date.substring(0,10) : ''}" />
+               value="${isEdit && discount.start_date ? discount.start_date.substring(0, 10) : ""}" />
       </div>
       <div class="form-group">
-        <label for="swal-end">${t('labelEndDate')}</label>
+        <label for="swal-end">${t("labelEndDate")}</label>
         <input id="swal-end" class="form-control" type="text" placeholder="YYYY-MM-DD"
-               value="${isEdit && discount.end_date ? discount.end_date.substring(0,10) : ''}" />
+               value="${isEdit && discount.end_date ? discount.end_date.substring(0, 10) : ""}" />
       </div>
     </div>
 
     <div class="form-group">
-      <label>${t('labelProducts')}</label>
+      <label>${t("labelProducts")}</label>
       <div class="multi-select-wrapper" id="ms-wrapper">
         <div class="multi-select-trigger" id="ms-trigger" tabindex="0">
-          <span class="multi-select-placeholder" id="ms-placeholder">${t('placeholderProducts')}</span>
+          <span class="multi-select-placeholder" id="ms-placeholder">${t("placeholderProducts")}</span>
         </div>
         <div class="multi-select-dropdown" id="ms-dropdown">
           <div class="multi-select-search">
-            <input type="text" id="ms-search" placeholder="${t('searchProducts')}" />
+            <input type="text" id="ms-search" placeholder="${t("searchProducts")}" />
           </div>
           <div id="ms-options">
             <div class="multi-select-option multi-select-all-option" data-value="all">
               <input type="checkbox" id="ms-chk-all" />
-              <label for="ms-chk-all" style="cursor:pointer;">${t('allProducts')}</label>
+              <label for="ms-chk-all" style="cursor:pointer;">${t("allProducts")}</label>
             </div>
-            ${products.map(p => {
-              const pid   = p.id || p.product_id;
-              const pname = p.name || p.product_name || `#${pid}`;
-              const chked = productIds.includes(Number(pid)) ? 'checked' : '';
-              return `<div class="multi-select-option" data-value="${pid}">
+            ${products
+              .map((p) => {
+                const pid = p.id || p.product_id;
+                const pname = p.name || p.product_name || `#${pid}`;
+                const chked = productIds.includes(Number(pid)) ? "checked" : "";
+                return `<div class="multi-select-option" data-value="${pid}">
                 <input type="checkbox" id="ms-chk-${pid}" value="${pid}" ${chked} />
                 <label for="ms-chk-${pid}" style="cursor:pointer;">${escHtml(pname)}</label>
               </div>`;
-            }).join('')}
+              })
+              .join("")}
           </div>
         </div>
       </div>
     </div>
 
     <div class="status-toggle-row">
-      <label for="swal-status">${t('labelStatus')}</label>
+      <label for="swal-status">${t("labelStatus")}</label>
       <label class="toggle-switch">
-        <input type="checkbox" id="swal-status" ${!isEdit || discount.is_active ? 'checked' : ''} />
+        <input type="checkbox" id="swal-status" ${!isEdit || discount.is_active ? "checked" : ""} />
         <span class="toggle-track"></span>
       </label>
     </div>
   </div>`;
 
   const result = await Swal.fire({
-    title:             isEdit ? t('formEditTitle') : t('formAddTitle'),
-    html:              formHtml,
-    showCancelButton:  true,
-    confirmButtonText: t('btnSave'),
-    cancelButtonText:  t('btnCancel'),
+    title: isEdit ? t("formEditTitle") : t("formAddTitle"),
+    html: formHtml,
+    showCancelButton: true,
+    confirmButtonText: t("btnSave"),
+    cancelButtonText: t("btnCancel"),
     customClass: {
-      popup:         'vortex-swal',
-      title:         'vortex-title',
-      htmlContainer: 'vortex-html',
-      confirmButton: 'vortex-confirm',
-      cancelButton:  'vortex-cancel',
+      popup: "vortex-swal",
+      title: "vortex-title",
+      htmlContainer: "vortex-html",
+      confirmButton: "vortex-confirm",
+      cancelButton: "vortex-cancel",
     },
     focusConfirm: false,
-    width: '580px',
+    width: "580px",
     didOpen: () => {
       // Auto-uppercase code
-      const codeInput = document.getElementById('swal-code');
-      codeInput?.addEventListener('input', () => {
+      const codeInput = document.getElementById("swal-code");
+      codeInput?.addEventListener("input", () => {
         const pos = codeInput.selectionStart;
         codeInput.value = codeInput.value.toUpperCase();
         codeInput.setSelectionRange(pos, pos);
       });
 
       // Flatpickr dates
-      const fpOpts = { dateFormat: 'Y-m-d', allowInput: true };
-      if (lang === 'ar' && flatpickr.l10ns && flatpickr.l10ns.ar) {
+      const fpOpts = { dateFormat: "Y-m-d", allowInput: true };
+      if (lang === "ar" && flatpickr.l10ns && flatpickr.l10ns.ar) {
         fpOpts.locale = flatpickr.l10ns.ar;
       }
-      flatpickr('#swal-start', { ...fpOpts });
-      flatpickr('#swal-end',   { ...fpOpts });
+      flatpickr("#swal-start", { ...fpOpts });
+      flatpickr("#swal-end", { ...fpOpts });
+
+      // Show/hide buy_x_get_y fields
+      const typeSelect = document.getElementById("swal-type");
+      const bxyFields = document.getElementById("buy-x-get-y-fields");
+      const valGroup = document
+        .getElementById("swal-value")
+        ?.closest(".form-group");
+
+      const toggleFields = () => {
+        const isBxy = typeSelect.value === "buy_x_get_y";
+        if (bxyFields) bxyFields.style.display = isBxy ? "flex" : "none";
+        if (bxyFields) bxyFields.style.flexDirection = "column";
+        if (bxyFields) bxyFields.style.gap = "14px";
+        if (valGroup) valGroup.style.display = isBxy ? "none" : "";
+      };
+
+      toggleFields();
+      typeSelect?.addEventListener("change", toggleFields);
 
       // Init multi-select
       initMultiSelect(productIds);
     },
-    preConfirm: () => collectFormData()
+    preConfirm: () => collectFormData(),
   });
 
   if (result.isConfirmed && result.value) {
@@ -529,81 +662,90 @@ function initMultiSelect(initialIds) {
   selectedProductIds = [...initialIds];
   renderChips();
 
-  const trigger  = document.getElementById('ms-trigger');
-  const dropdown = document.getElementById('ms-dropdown');
-  const search   = document.getElementById('ms-search');
-  const allChk   = document.getElementById('ms-chk-all');
+  const trigger = document.getElementById("ms-trigger");
+  const dropdown = document.getElementById("ms-dropdown");
+  const search = document.getElementById("ms-search");
+  const allChk = document.getElementById("ms-chk-all");
 
   if (selectedProductIds.length === 0 && allChk) allChk.checked = true;
 
-  trigger?.addEventListener('click', () => {
-    dropdown?.classList.toggle('open');
-    trigger.classList.toggle('open');
-    if (dropdown?.classList.contains('open')) search?.focus();
+  trigger?.addEventListener("click", () => {
+    dropdown?.classList.toggle("open");
+    trigger.classList.toggle("open");
+    if (dropdown?.classList.contains("open")) search?.focus();
   });
 
-  document.addEventListener('mousedown', function outsideClick(e) {
-    const wrapper = document.getElementById('ms-wrapper');
+  document.addEventListener("mousedown", function outsideClick(e) {
+    const wrapper = document.getElementById("ms-wrapper");
     if (wrapper && !wrapper.contains(e.target)) {
-      dropdown?.classList.remove('open');
-      trigger?.classList.remove('open');
-      document.removeEventListener('mousedown', outsideClick);
+      dropdown?.classList.remove("open");
+      trigger?.classList.remove("open");
+      document.removeEventListener("mousedown", outsideClick);
     }
   });
 
-  search?.addEventListener('input', () => {
+  search?.addEventListener("input", () => {
     const q = search.value.toLowerCase();
-    document.querySelectorAll('#ms-options .multi-select-option:not(.multi-select-all-option)').forEach(opt => {
-      const label = opt.querySelector('label')?.textContent?.toLowerCase() || '';
-      opt.style.display = label.includes(q) ? '' : 'none';
-    });
+    document
+      .querySelectorAll(
+        "#ms-options .multi-select-option:not(.multi-select-all-option)",
+      )
+      .forEach((opt) => {
+        const label =
+          opt.querySelector("label")?.textContent?.toLowerCase() || "";
+        opt.style.display = label.includes(q) ? "" : "none";
+      });
   });
 
-  allChk?.addEventListener('change', () => {
+  allChk?.addEventListener("change", () => {
     if (allChk.checked) {
       selectedProductIds = [];
-      document.querySelectorAll('#ms-options input[type="checkbox"]:not(#ms-chk-all)').forEach(c => c.checked = false);
+      document
+        .querySelectorAll('#ms-options input[type="checkbox"]:not(#ms-chk-all)')
+        .forEach((c) => (c.checked = false));
     }
     renderChips();
   });
 
-  document.querySelectorAll('#ms-options input[type="checkbox"]:not(#ms-chk-all)').forEach(chk => {
-    chk.addEventListener('change', () => {
-      const val = parseInt(chk.value);
-      if (chk.checked) {
-        if (!selectedProductIds.includes(val)) selectedProductIds.push(val);
-        if (allChk) allChk.checked = false;
-      } else {
-        selectedProductIds = selectedProductIds.filter(id => id !== val);
-      }
-      renderChips();
+  document
+    .querySelectorAll('#ms-options input[type="checkbox"]:not(#ms-chk-all)')
+    .forEach((chk) => {
+      chk.addEventListener("change", () => {
+        const val = parseInt(chk.value);
+        if (chk.checked) {
+          if (!selectedProductIds.includes(val)) selectedProductIds.push(val);
+          if (allChk) allChk.checked = false;
+        } else {
+          selectedProductIds = selectedProductIds.filter((id) => id !== val);
+        }
+        renderChips();
+      });
     });
-  });
 }
 
 function renderChips() {
-  const trigger     = document.getElementById('ms-trigger');
-  const placeholder = document.getElementById('ms-placeholder');
+  const trigger = document.getElementById("ms-trigger");
+  const placeholder = document.getElementById("ms-placeholder");
   if (!trigger) return;
 
-  trigger.querySelectorAll('.multi-select-chip').forEach(c => c.remove());
+  trigger.querySelectorAll(".multi-select-chip").forEach((c) => c.remove());
 
   if (selectedProductIds.length === 0) {
-    if (placeholder) placeholder.style.display = '';
+    if (placeholder) placeholder.style.display = "";
     return;
   }
 
-  if (placeholder) placeholder.style.display = 'none';
+  if (placeholder) placeholder.style.display = "none";
 
-  selectedProductIds.forEach(id => {
-    const p    = products.find(p => (p.id || p.product_id) === id);
-    const name = p ? (p.name || p.product_name || `#${id}`) : `#${id}`;
-    const chip = document.createElement('span');
-    chip.className = 'multi-select-chip';
+  selectedProductIds.forEach((id) => {
+    const p = products.find((p) => (p.id || p.product_id) === id);
+    const name = p ? p.name || p.product_name || `#${id}` : `#${id}`;
+    const chip = document.createElement("span");
+    chip.className = "multi-select-chip";
     chip.innerHTML = `${escHtml(name)} <button type="button" data-id="${id}">×</button>`;
-    chip.querySelector('button')?.addEventListener('click', e => {
+    chip.querySelector("button")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      selectedProductIds = selectedProductIds.filter(i => i !== id);
+      selectedProductIds = selectedProductIds.filter((i) => i !== id);
       const chk = document.getElementById(`ms-chk-${id}`);
       if (chk) chk.checked = false;
       renderChips();
@@ -614,155 +756,180 @@ function renderChips() {
 
 /* ── Collect Form Data ── */
 function collectFormData() {
-  const code  = document.getElementById('swal-code')?.value?.trim().toUpperCase();
-  const type  = document.getElementById('swal-type')?.value;
-  const value = parseFloat(document.getElementById('swal-value')?.value);
-  const start = document.getElementById('swal-start')?.value || null;
-  const end   = document.getElementById('swal-end')?.value   || null;
-  const isActive = document.getElementById('swal-status')?.checked ?? true;
+  const code = document
+    .getElementById("swal-code")
+    ?.value?.trim()
+    .toUpperCase();
+  const type = document.getElementById("swal-type")?.value;
+  const value = parseFloat(document.getElementById("swal-value")?.value);
+  const start = document.getElementById("swal-start")?.value || null;
+  const end = document.getElementById("swal-end")?.value || null;
+  const isActive = document.getElementById("swal-status")?.checked ?? true;
+
+  const buyQty =
+    parseInt(document.getElementById("swal-buy-qty")?.value) || null;
+  const getQty =
+    parseInt(document.getElementById("swal-get-qty")?.value) || null;
+  const getDisc =
+    parseFloat(document.getElementById("swal-get-disc")?.value) || null;
+
+  const isBxy = type === "buy_x_get_y";
 
   if (!code || !type) {
-    Swal.showValidationMessage(t('errorRequired'));
+    Swal.showValidationMessage(t("errorRequired"));
     return false;
   }
-  if (isNaN(value) || value <= 0) {
-    Swal.showValidationMessage(t('errorValue'));
+
+  if (isBxy && (!buyQty || !getQty)) {
+    Swal.showValidationMessage("يرجى تحديد الكميات");
     return false;
   }
-  if (type === 'percentage' && value > 100) {
-    Swal.showValidationMessage(t('errorPercent'));
+
+  if (!isBxy && (isNaN(value) || value <= 0)) {
+    Swal.showValidationMessage(t("errorValue"));
+    return false;
+  }
+  if (type === "percentage" && value > 100) {
+    Swal.showValidationMessage(t("errorPercent"));
     return false;
   }
 
   return {
     code,
-    discount_type:         type,
-    discount_value:        value,
-    start_date:            start,
-    end_date:              end,
-    applicable_products:   JSON.stringify(selectedProductIds),
-    is_active:             isActive,
+    discount_type: type,
+    discount_value: isBxy ? 0 : value,
+    buy_quantity: buyQty,
+    get_quantity: getQty,
+    get_discount_value: getDisc,
+    start_date: start,
+    end_date: end,
+    applicable_products: JSON.stringify(selectedProductIds),
+    is_active: isActive,
   };
 }
 
 /* ── Save Discount ── */
 async function saveDiscount(id, payload) {
   try {
-    const token  = localStorage.getItem('token');
-    const method = id ? 'PUT' : 'POST';
-    const url    = id ? `/api/discounts/${id}` : '/api/discounts';
+    const token = localStorage.getItem("token");
+    const method = id ? "PUT" : "POST";
+    const url = id ? `/api/discounts/${id}` : "/api/discounts";
 
-    const res  = await fetch(url, {
+    const res = await fetch(url, {
       method,
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Save failed');
+    if (!res.ok) throw new Error(data.message || "Save failed");
 
-    showToast(t('successSaved'), 'success');
+    showToast(t("successSaved"), "success");
     await loadData();
   } catch (err) {
-    console.error('Save error:', err);
-    showToast(t('errorSave'), 'error');
+    console.error("Save error:", err);
+    showToast(t("errorSave"), "error");
   }
 }
 
 /* ── Delete ── */
 async function confirmDelete(id) {
-  const discount = discounts.find(d => d.id === id);
+  const discount = discounts.find((d) => d.id === id);
   if (!discount) return;
 
   const result = await Swal.fire({
-    title:             t('confirmDeleteTitle'),
-    text:              t('confirmDeleteText', { code: discount.code }),
-    icon:              'warning',
-    showCancelButton:  true,
-    confirmButtonText: t('confirmDeleteBtn'),
-    cancelButtonText:  t('cancelBtn'),
+    title: t("confirmDeleteTitle"),
+    text: t("confirmDeleteText", { code: discount.code }),
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: t("confirmDeleteBtn"),
+    cancelButtonText: t("cancelBtn"),
     customClass: {
-      popup:         'vortex-swal',
-      title:         'vortex-title',
-      confirmButton: 'vortex-confirm',
-      cancelButton:  'vortex-cancel',
+      popup: "vortex-swal",
+      title: "vortex-title",
+      confirmButton: "vortex-confirm",
+      cancelButton: "vortex-cancel",
     },
-    confirmButtonColor: '#dc2626',
+    confirmButtonColor: "#dc2626",
   });
 
   if (!result.isConfirmed) return;
 
   try {
-    const token = localStorage.getItem('token');
-    const res   = await fetch(`/api/discounts/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/discounts/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Delete failed');
+    if (!res.ok) throw new Error(data.message || "Delete failed");
 
-    showToast(t('successDeleted'), 'success');
+    showToast(t("successDeleted"), "success");
     await loadData();
   } catch (err) {
-    console.error('Delete error:', err);
-    showToast(t('errorDelete'), 'error');
+    console.error("Delete error:", err);
+    showToast(t("errorDelete"), "error");
   }
 }
 
 /* ── Toggle Status ── */
 async function toggleStatus(id) {
-  const discount = discounts.find(d => d.id === id);
+  const discount = discounts.find((d) => d.id === id);
   if (!discount) return;
 
-  const discType  = discount.discount_type  || discount.type  || 'fixed';
+  const discType = discount.discount_type || discount.type || "fixed";
   const discValue = discount.discount_value ?? discount.value ?? 0;
 
   const payload = {
-    code:                 discount.code,
-    discount_type:        discType,
-    discount_value:       discValue,
-    start_date:           discount.start_date  || null,
-    end_date:             discount.end_date    || null,
-    applicable_products:  typeof discount.applicable_products === 'string'
-                            ? discount.applicable_products
-                            : JSON.stringify(discount.applicable_products || []),
-    is_active:            !discount.is_active,
+    code: discount.code,
+    discount_type: discType,
+    discount_value: discValue,
+    start_date: discount.start_date || null,
+    end_date: discount.end_date || null,
+    applicable_products:
+      typeof discount.applicable_products === "string"
+        ? discount.applicable_products
+        : JSON.stringify(discount.applicable_products || []),
+    is_active: !discount.is_active,
   };
 
   try {
-    const token = localStorage.getItem('token');
-    const res   = await fetch(`/api/discounts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload)
+    const token = localStorage.getItem("token");
+    const res = await fetch(`/api/discounts/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Toggle failed');
+    if (!res.ok) throw new Error(data.message || "Toggle failed");
 
-    showToast(t('successToggled'), 'success');
+    showToast(t("successToggled"), "success");
     await loadData();
   } catch (err) {
-    console.error('Toggle error:', err);
-    showToast(t('errorSave'), 'error');
+    console.error("Toggle error:", err);
+    showToast(t("errorSave"), "error");
   }
 }
 
 /* ── Toast Notification ── */
-function showToast(message, type = 'success') {
-  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+function showToast(message, type = "success") {
+  const icons = { success: "✅", error: "❌", warning: "⚠️", info: "ℹ️" };
   const colors = {
-    success: '#008060',
-    error:   '#dc2626',
-    warning: '#d97706',
-    info:    '#2563eb'
+    success: "#008060",
+    error: "#dc2626",
+    warning: "#d97706",
+    info: "#2563eb",
   };
 
-  const toast = document.createElement('div');
+  const toast = document.createElement("div");
   toast.style.cssText = `
-    position:fixed; bottom:24px; ${lang === 'ar' ? 'right' : 'left'}:24px;
+    position:fixed; bottom:24px; ${lang === "ar" ? "right" : "left"}:24px;
     background:white; border:1px solid #e2e8f0; border-radius:14px;
     padding:14px 20px; font-family:inherit; font-size:14px; font-weight:600;
     color:#1e293b; box-shadow:0 10px 40px rgba(0,0,0,0.12);
@@ -771,9 +938,9 @@ function showToast(message, type = 'success') {
     animation:slideInToast 0.3s ease;
     max-width:320px;
   `;
-  toast.innerHTML = `<span>${icons[type] || '✅'}</span><span>${escHtml(message)}</span>`;
+  toast.innerHTML = `<span>${icons[type] || "✅"}</span><span>${escHtml(message)}</span>`;
 
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = `
     @keyframes slideInToast {
       from { opacity:0; transform:translateY(20px); }
@@ -782,6 +949,12 @@ function showToast(message, type = 'success') {
   `;
   document.head.appendChild(style);
   document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2700);
-  setTimeout(() => { toast.remove(); style.remove(); }, 3000);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s";
+  }, 2700);
+  setTimeout(() => {
+    toast.remove();
+    style.remove();
+  }, 3000);
 }
