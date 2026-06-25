@@ -611,7 +611,7 @@ function renderSizeButtons(sizes) {
     grid.innerHTML = sizes
       .map((size) => {
         const isSpecial =
-          size === "66" || size === "68" || size === "32" || size === "34";
+          parseInt(size) >= 64 || size === "32" || size === "34";
         return `
                 <button class="variant-btn-select size-btn numeric-btn ${isSpecial ? "special-price-btn" : ""}" 
                         style="height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white !important; border: 2.5px solid #f1f5f9; border-radius: 18px; transition: 0.3s; ${initialButtonStyle}" 
@@ -705,10 +705,10 @@ function addVariantToOrder(id, name, price, color, size) {
     currentProductForModal.category === "سراويل" &&
     (size === "32" || size === "34");
 
-  // Rule 3: Half-sleeve or specific long-sleeve with size "66" or "68"
+  // Rule 3: Half-sleeve or specific long-sleeve with size 64 OR LARGER (64,66,68)
   const isLargeSizeGalabeya =
     (color.includes("نص كم") || color.includes("فخامه كم طويل")) &&
-    (size === "66" || size === "68");
+    parseInt(size) >= 64;
 
   if (isFaqiSpecial || isSaruwalSpecial || isLargeSizeGalabeya) {
     finalPrice += 50;
