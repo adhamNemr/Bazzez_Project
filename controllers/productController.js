@@ -193,18 +193,24 @@ exports.deleteProduct = async (req, res) => {
     }
 
     const oldName = product.name;
+    
+    // 1. جلب السجل في Inventory المرتبط بهذا المنتج (لو موجود) قبل الحذف
+    const inventoryItem = await Inventory.findOne({ 
+      where: { name: oldName }, 
+      transaction 
+    });
 
-    // 1. حذف المنتج من جدول Products
+    // 2. حذف المنتج من جدول Products
     await product.destroy({ transaction });
 
-    // 2. 🔄 حذف السجل المقابل في جدول Inventory لضمان عدم وجود Orphaned Records
+    // 3. 🔄 حذف السجل المقابل في جدول Inventory لضمان عدم وجود Orphaned Records
     // تم استخدام transaction لضمان حذف الاثنين معاً أو لا شيء
     await Inventory.destroy({
       where: { name: oldName },
       transaction,
     });
 
-    // 3. حذف أي وصفات (Recipes) مرتبطة بهذا المنتج لضمان نظافة البيانات
+    // 4. حذف أي وصفات (Recipes) مرتبطة بهذا المنتج لضمان نظافة البيانات
     await Recipe.destroy({
       where: { sandwich: oldName },
       transaction,
@@ -217,9 +223,11 @@ exports.deleteProduct = async (req, res) => {
       .enqueue("DELETE", "products", req.params.id, { id: req.params.id })
       .catch((err) => console.error("Sync queue error:", err));
 
-    syncService
-      .enqueue("DELETE", "inventory", oldName, { name: oldName })
-      .catch((err) => console.error("Sync queue error (Inventory):", err));
+    if (inventoryItem) {
+      syncService
+        .enqueue("DELETE", "inventory", inventoryItem.id, { id: inventoryItem.id })
+        .catch((err) => console.error("Sync queue error (Inventory):", err));
+    }
 
     res.json({
       success: true,
