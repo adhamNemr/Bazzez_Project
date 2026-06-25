@@ -215,7 +215,7 @@ async function fetchProducts() {
       rawData[cat].sort((a, b) => a.name.localeCompare(b.name, "ar"));
     }
 
-    // Optimized Category Override (Single Pass)
+    // Optimized Category Override (Single Pass) - KEEPS existing products in "سراويل"!
     let saruwalProducts = [];
     for (const cat in rawData) {
       rawData[cat] = rawData[cat].filter((p) => {
@@ -227,7 +227,11 @@ async function fetchProducts() {
         return true;
       });
     }
-    if (saruwalProducts.length > 0) rawData["سراويل"] = saruwalProducts;
+    // ADD the "سروال الامثل" products to EXISTING "سراويل" category, don't REPLACE!
+    if (saruwalProducts.length > 0) {
+      if (!rawData["سراويل"]) rawData["سراويل"] = [];
+      rawData["سراويل"].push(...saruwalProducts);
+    }
 
     allCategorizedProducts = rawData;
     renderCategories();
