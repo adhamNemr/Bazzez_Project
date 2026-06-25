@@ -697,7 +697,7 @@
     border-radius: 2rem;
     z-index: 2600;
     display: none;
-    padding: 2.5rem 4rem;
+    padding: 0.5rem 4rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     /* overflow-x: hidden; */
     transition: all 0.3s ease-out;
