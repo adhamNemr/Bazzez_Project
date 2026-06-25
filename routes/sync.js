@@ -20,4 +20,14 @@ router.get('/status', authMiddleware(['manager', 'supervisor', 'cashier']), asyn
     }
 });
 
+router.post('/force-push-all', authMiddleware(['manager']), async (req, res) => {
+    try {
+        res.json({ success: true, message: 'Force push started in background!' });
+        await syncService.forcePushAllLocalData();
+    } catch (err) {
+        console.error('❌ Force push error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

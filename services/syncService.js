@@ -437,6 +437,73 @@ class SyncService {
       console.error("❌ Sync: Failed to enqueue:", err.message);
     }
   }
+
+  // 🚀 FORCE PUSH ALL LOCAL DATA TO SUPABASE (Safe merge)
+  async forcePushAllLocalData() {
+    console.log("🚀 Starting FORCE PUSH of ALL LOCAL DATA to Supabase!");
+    if (global.logToUI)
+      global.logToUI("🚀 Starting FORCE PUSH of ALL LOCAL DATA to Supabase!");
+
+    const pushTable = async (tableName, LocalModel, remoteTableName) => {
+      console.log(`📡 Pushing table: ${tableName}...`);
+      if (global.logToUI) global.logToUI(`📡 Pushing table: ${tableName}...`);
+      try {
+        const items = await LocalModel.findAll({ raw: true });
+        console.log(`✅ Found ${items.length} items locally.`);
+        if (global.logToUI)
+          global.logToUI(
+            `✅ Found ${items.length} items locally in ${tableName}.`,
+          );
+
+        for (const item of items) {
+          // Remove local-only fields
+          const { sync_status, ...cleanItem } = item;
+
+          try {
+            console.log(`   - Pushing item ID ${cleanItem.id}...`);
+            await this.pushToSupabase("INSERT", remoteTableName, cleanItem);
+          } catch (itemErr) {
+            console.warn(
+              `   ⚠️ Warning pushing ${cleanItem.id}:`,
+              itemErr.message,
+            );
+          }
+        }
+        console.log(`✅ Table ${tableName} processed!`);
+        if (global.logToUI)
+          global.logToUI(`✅ Table ${tableName} processed successfully!`);
+      } catch (tableErr) {
+        console.error(
+          `❌ Error processing table ${tableName}:`,
+          tableErr.message,
+        );
+        if (global.logToUI)
+          global.logToUI(
+            `❌ Error processing table ${tableName}: ${tableErr.message}`,
+            "error",
+          );
+      }
+    };
+
+    // Push Products
+    await pushTable("Products", Product, "Products");
+
+    // Push Inventory
+    await pushTable("Inventory", Inventory, "Inventory");
+
+    try {
+      const { Order, OrderDetails, Expense } = require("../models");
+      await pushTable("Orders", Order, "Orders");
+      await pushTable("OrderDetails", OrderDetails, "OrderDetails");
+      await pushTable("Expenses", Expense, "Expenses");
+    } catch (err) {
+      console.warn("⚠️ Could not load Order/Expense models, skipping...", err);
+    }
+
+    console.log("🚀 FORCE PUSH COMPLETED!");
+    if (global.logToUI)
+      global.logToUI("✅ FORCE PUSH COMPLETED! All data is now on Supabase!");
+  }
 }
 
 module.exports = new SyncService();

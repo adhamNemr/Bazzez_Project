@@ -1,131 +1,256 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title id="loc-title">إعدادات النظام - Vortex POS</title>
-    
+
     <!-- 🎨 Google Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
     <!-- 📄 Stylesheets -->
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="./css/settings.css">
+    <link rel="stylesheet" href="./css/common.css" />
+    <link rel="stylesheet" href="./css/settings.css" />
     <script src="./js/auth-wrapper.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!-- 🏗️ Dynamic Premium Header -->
-    <div id="header-container" data-title="إعدادات النظام" data-icon="fa-cog"></div>
+    <div
+      id="header-container"
+      data-title="إعدادات النظام"
+      data-icon="fa-cog"
+    ></div>
 
     <div class="settings-container">
-        <div class="settings-card">
-            <form id="settings-form">
-                <!-- 🏢 Section 1: Store Info -->
-                <div class="settings-section">
-                    <h3><i class="fas fa-store"></i> <span id="loc-sec-store">بيانات المحل</span></h3>
-                    <div class="settings-grid">
-                        <div class="setting-item">
-                            <label id="loc-store-name">اسم المحل</label>
-                            <input type="text" name="store_name" placeholder="Vortex POS">
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-store-address">العنوان</label>
-                            <input type="text" name="store_address" placeholder="العنوان بالتفصيل">
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-store-phone">رقم الهاتف</label>
-                            <input type="text" name="store_phone" placeholder="01xxxxxxxxx">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 🧾 Section 2: Receipt Config -->
-                <div class="settings-section">
-                    <h3><i class="fas fa-receipt"></i> <span id="loc-sec-receipt">إعدادات الفاتورة</span></h3>
-                    <div class="settings-grid">
-                        <div class="setting-item">
-                            <label id="loc-receipt-footer">رسالة التذييل (Footer)</label>
-                            <input type="text" name="receipt_footer" placeholder="شكراً لزيارتكم">
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-currency">العملة</label>
-                            <input type="text" name="currency" value="EGP">
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-vat">ضريبة القيمة المضافة (%)</label>
-                            <input type="text" name="vat_percent" value="0" inputmode="decimal">
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-show-discount">إظهار الخصم في الإيصال</label>
-                            <select name="show_discount" id="show-discount">
-                                <option value="yes">نعم (إظهار)</option>
-                                <option value="no">لا (إخفاء)</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-show-comments">إظهار الإضافات والتعليقات</label>
-                            <select name="show_comments" id="show-comments">
-                                <option value="yes">نعم (إظهار)</option>
-                                <option value="no">لا (إخفاء)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 🖥️ Section 3: System Mode & Prefs -->
-                <div class="settings-section">
-                    <h3><i class="fas fa-desktop"></i> <span id="loc-sec-system">إعدادات النظام</span></h3>
-                    <div class="settings-grid">
-                        <div class="setting-item">
-                            <label id="loc-language">لغة الواجهة</label>
-                            <select name="language" id="language-select">
-                                <option value="ar">العربية (Arabic)</option>
-                                <option value="en">English</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-system-mode">نوع النشاط (System Mode)</label>
-                            <select name="system_mode" id="system-mode">
-                                <option value="restaurant">مطعم / كافيه (Restaurant)</option>
-                                <option value="retail">تجاري / ملابس (Retail)</option>
-                            </select>
-                        </div>
-                        <div class="setting-item">
-                            <label id="loc-print-mode">وضع الطباعة</label>
-                            <select name="print_mode">
-                                <option value="thermal">طابعة حرارية (Thermal)</option>
-                                <option value="pdf">تصدير PDF فقط</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 💾 Action Container -->
-                <div class="save-btn-container">
-                    <button type="submit" class="save-btn">
-                        <i class="fas fa-save"></i>
-                        <span id="loc-btn-save">حفظ كل الإعدادات</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- 🔴 Danger Zone / Production Reset -->
-        <div class="settings-card" style="margin-top: 2rem; border: 2px dashed #ef4444; background: #fffdfd; border-radius: var(--card-radius); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);">
-            <div class="settings-section" style="margin-bottom: 0;">
-                <h3 style="color: #dc2626;"><i class="fas fa-exclamation-triangle"></i> <span id="loc-sec-danger">منطقة الخطورة - تصفير النظام للتسليم</span></h3>
-                <p style="color: #6b7280; font-size: 0.95rem; margin: 1rem 0; font-weight: 600; line-height: 1.6; font-family: 'Noto Sans Arabic', sans-serif;">
-                    تنبيه هام جداً: هذا الإجراء سيقوم بحذف وتصفير جميع الفواتير، المبيعات، المصروفات، والعمليات المسجلة على النظام بالكامل (محلياً وعلى السحابة)، ليعود البرنامج جديداً تماماً للتسليم للعميل. لن يتم مسح المنتجات أو المخزن أو الإعدادات الأساسية.
-                </p>
-                <div style="display: flex; justify-content: flex-end;">
-                    <button type="button" id="reset-db-btn" class="save-btn" style="background: #dc2626; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25); border: none; transition: 0.3s;margin: auto;">
-                        <i class="fas fa-trash-alt"></i>
-                        <span id="loc-btn-reset-db">تصفير فواتير وعمليات النظام بالكامل</span>
-                    </button>
-                </div>
+      <div class="settings-card">
+        <form id="settings-form">
+          <!-- 🏢 Section 1: Store Info -->
+          <div class="settings-section">
+            <h3>
+              <i class="fas fa-store"></i>
+              <span id="loc-sec-store">بيانات المحل</span>
+            </h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label id="loc-store-name">اسم المحل</label>
+                <input type="text" name="store_name" placeholder="Vortex POS" />
+              </div>
+              <div class="setting-item">
+                <label id="loc-store-address">العنوان</label>
+                <input
+                  type="text"
+                  name="store_address"
+                  placeholder="العنوان بالتفصيل"
+                />
+              </div>
+              <div class="setting-item">
+                <label id="loc-store-phone">رقم الهاتف</label>
+                <input
+                  type="text"
+                  name="store_phone"
+                  placeholder="01xxxxxxxxx"
+                />
+              </div>
             </div>
+          </div>
+
+          <!-- 🧾 Section 2: Receipt Config -->
+          <div class="settings-section">
+            <h3>
+              <i class="fas fa-receipt"></i>
+              <span id="loc-sec-receipt">إعدادات الفاتورة</span>
+            </h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label id="loc-receipt-footer">رسالة التذييل (Footer)</label>
+                <input
+                  type="text"
+                  name="receipt_footer"
+                  placeholder="شكراً لزيارتكم"
+                />
+              </div>
+              <div class="setting-item">
+                <label id="loc-currency">العملة</label>
+                <input type="text" name="currency" value="EGP" />
+              </div>
+              <div class="setting-item">
+                <label id="loc-vat">ضريبة القيمة المضافة (%)</label>
+                <input
+                  type="text"
+                  name="vat_percent"
+                  value="0"
+                  inputmode="decimal"
+                />
+              </div>
+              <div class="setting-item">
+                <label id="loc-show-discount">إظهار الخصم في الإيصال</label>
+                <select name="show_discount" id="show-discount">
+                  <option value="yes">نعم (إظهار)</option>
+                  <option value="no">لا (إخفاء)</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <label id="loc-show-comments">إظهار الإضافات والتعليقات</label>
+                <select name="show_comments" id="show-comments">
+                  <option value="yes">نعم (إظهار)</option>
+                  <option value="no">لا (إخفاء)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🖥️ Section 3: System Mode & Prefs -->
+          <div class="settings-section">
+            <h3>
+              <i class="fas fa-desktop"></i>
+              <span id="loc-sec-system">إعدادات النظام</span>
+            </h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label id="loc-language">لغة الواجهة</label>
+                <select name="language" id="language-select">
+                  <option value="ar">العربية (Arabic)</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <label id="loc-system-mode">نوع النشاط (System Mode)</label>
+                <select name="system_mode" id="system-mode">
+                  <option value="restaurant">مطعم / كافيه (Restaurant)</option>
+                  <option value="retail">تجاري / ملابس (Retail)</option>
+                </select>
+              </div>
+              <div class="setting-item">
+                <label id="loc-print-mode">وضع الطباعة</label>
+                <select name="print_mode">
+                  <option value="thermal">طابعة حرارية (Thermal)</option>
+                  <option value="pdf">تصدير PDF فقط</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 💾 Action Container -->
+          <div class="save-btn-container">
+            <button type="submit" class="save-btn">
+              <i class="fas fa-save"></i>
+              <span id="loc-btn-save">حفظ كل الإعدادات</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 📡 Sync Section: Force Push All Local Data -->
+      <div
+        class="settings-card"
+        style="
+          margin-top: 2rem;
+          border: 2px dashed #10b981;
+          background: #f0fdf4;
+          border-radius: var(--card-radius);
+          box-shadow: 0 10px 30px rgba(16, 185, 129, 0.05);
+        "
+      >
+        <div class="settings-section" style="margin-bottom: 0">
+          <h3 style="color: #047857">
+            <i class="fas fa-sync-alt"></i>
+            <span>رفع جميع البيانات المحلية إلى السحابة</span>
+          </h3>
+          <p
+            style="
+              color: #065f46;
+              font-size: 0.95rem;
+              margin: 1rem 0;
+              font-weight: 600;
+              line-height: 1.6;
+              font-family: &quot;Noto Sans Arabic&quot;, sans-serif;
+            "
+          >
+            إضغط على هذا الزر لرفع كل البيانات المحلية (المنتجات، المخزن،
+            الفواتير، المصروفات) إلى السحابة. هذا الإجراء آمن ولن يحذف أي
+            بيانات!
+          </p>
+          <div style="display: flex; justify-content: flex-end">
+            <button
+              type="button"
+              id="force-sync-btn"
+              class="save-btn"
+              style="
+                background: #059669;
+                box-shadow: 0 4px 15px rgba(5, 150, 105, 0.25);
+                border: none;
+                transition: 0.3s;
+                margin: auto;
+              "
+            >
+              <i class="fas fa-cloud-upload-alt"></i>
+              <span>رفع جميع البيانات إلى السحابة</span>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- 🔴 Danger Zone / Production Reset -->
+      <div
+        class="settings-card"
+        style="
+          margin-top: 2rem;
+          border: 2px dashed #ef4444;
+          background: #fffdfd;
+          border-radius: var(--card-radius);
+          box-shadow: 0 10px 30px rgba(239, 68, 68, 0.05);
+        "
+      >
+        <div class="settings-section" style="margin-bottom: 0">
+          <h3 style="color: #dc2626">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="loc-sec-danger"
+              >منطقة الخطورة - تصفير النظام للتسليم</span
+            >
+          </h3>
+          <p
+            style="
+              color: #6b7280;
+              font-size: 0.95rem;
+              margin: 1rem 0;
+              font-weight: 600;
+              line-height: 1.6;
+              font-family: &quot;Noto Sans Arabic&quot;, sans-serif;
+            "
+          >
+            تنبيه هام جداً: هذا الإجراء سيقوم بحذف وتصفير جميع الفواتير،
+            المبيعات، المصروفات، والعمليات المسجلة على النظام بالكامل (محلياً
+            وعلى السحابة)، ليعود البرنامج جديداً تماماً للتسليم للعميل. لن يتم
+            مسح المنتجات أو المخزن أو الإعدادات الأساسية.
+          </p>
+          <div style="display: flex; justify-content: flex-end">
+            <button
+              type="button"
+              id="reset-db-btn"
+              class="save-btn"
+              style="
+                background: #dc2626;
+                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25);
+                border: none;
+                transition: 0.3s;
+                margin: auto;
+              "
+            >
+              <i class="fas fa-trash-alt"></i>
+              <span id="loc-btn-reset-db"
+                >تصفير فواتير وعمليات النظام بالكامل</span
+              >
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 📚 Scripts -->
@@ -133,5 +258,5 @@
     <script src="./js/header-loader.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/settings.js"></script>
-</body>
+  </body>
 </html>
