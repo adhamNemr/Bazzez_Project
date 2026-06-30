@@ -22,16 +22,25 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install --ignore-scripts
+      - name: Create .env File
+        run: |
+          echo "DB_HOST=${{ secrets.DB_HOST }}" > .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "PRINTER_TYPE=${{ secrets.PRINTER_TYPE }}" >> .env
+          echo "PRINTER_INTERFACE=${{ secrets.PRINTER_INTERFACE }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_IP=${{ secrets.SUPABASE_IP }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
 
-      - name: Install Native Dependencies
-        run: npm rebuild
+      - name: Install Dependencies
+        run: npm install
 
       - name: Build Electron App (Windows)
         run: npm run dist:win
-        env:
-          CI: true
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
